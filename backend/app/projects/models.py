@@ -21,18 +21,12 @@ from app.core.db import Base
 from app.projects.fields import FIELDS
 from app.users.models import User
 
-MEDIA_KINDS = ("image", "video")
-
-
-def _in_list(column: str, values: tuple[str, ...]) -> str:
-    return f"{column} IN (" + ", ".join(f"'{v}'" for v in values) + ")"
-
 
 class Project(Base):
     __tablename__ = "projects"
     __table_args__ = (
         CheckConstraint("owner_id IS NOT NULL OR is_demo", name="owner_or_demo"),
-        CheckConstraint(_in_list("field", FIELDS), name="field"),
+        CheckConstraint("field IN (" + ", ".join(f"'{f}'" for f in FIELDS) + ")", name="field"),
         # Real projects: one slug per owner. Demo rows have no owner: one slug among demo rows.
         Index(
             "uq_projects_owner_id_slug",
@@ -92,7 +86,7 @@ Index("ix_projects_feed", Project.published_at.desc(), Project.id.desc())
 
 class ProjectMedia(Base):
     __tablename__ = "project_media"
-    __table_args__ = (CheckConstraint(_in_list("kind", MEDIA_KINDS), name="kind"),)
+    __table_args__ = (CheckConstraint("kind IN ('image', 'video')", name="kind"),)
     __mapper_args__: ClassVar[dict[str, Any]] = {"eager_defaults": True}
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)

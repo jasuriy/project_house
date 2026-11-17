@@ -31,7 +31,6 @@ from app.projects.models import Project, ProjectMedia
 DEFAULT_SEED_FILE = Path(__file__).resolve().parents[3] / "seed" / "demo-projects.json"
 
 VIDEO_HOSTS = ("youtube.com", "youtu.be", "loom.com", "vimeo.com")
-EXIT_REFUSED = 2
 
 
 def slugify(title: str) -> str:
@@ -54,11 +53,6 @@ def media_kind(url: str) -> str:
     raise ValueError(f"not a recognised video or gif URL: {url}")
 
 
-def _owner_url(repo_url: str) -> str:
-    owner = urlparse(repo_url).path.strip("/").split("/")[0]
-    return f"https://github.com/{owner}"
-
-
 def project_values(entry: dict[str, Any]) -> dict[str, Any]:
     """Project columns for one seed entry. Pure: no database access."""
     title = entry["title"]
@@ -79,7 +73,8 @@ def project_values(entry: dict[str, Any]) -> dict[str, Any]:
         "license": entry["license"],
         "role": None,
         "demo_author": entry["original_author"],
-        "demo_author_url": _owner_url(entry["repo_url"]),
+        "demo_author_url": "https://github.com/"
+        + urlparse(entry["repo_url"]).path.strip("/").split("/")[0],
         "published_at": datetime.fromisoformat(entry["pushed_at"]).replace(tzinfo=UTC),
     }
 
@@ -95,13 +90,6 @@ def media_rows(entry: dict[str, Any]) -> list[ProjectMedia]:
         ProjectMedia(kind=kind, url=url, position=position)
         for position, (kind, url) in enumerate(items)
     ]
-
-
-def load_entries(path: Path) -> list[dict[str, Any]]:
-    entries = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(entries, list):
-        raise TypeError(f"{path}: expected a JSON list of projects")
-    return entries
 
 
 async def upsert_demo(session: AsyncSession, entries: Sequence[dict[str, Any]]) -> int:
@@ -142,7 +130,9 @@ async def delete_demo(session: AsyncSession) -> int:
 
 
 async def _run(args: argparse.Namespace) -> int:
-    entries = None if args.delete else load_entries(args.file)
+    entries = None if args.delete else json.loads(args.file.read_text(encoding="utf-8"))
+    if entries is not None and not isinstance(entries, list):
+        raise TypeError(f"{args.file}: expected a JSON list of projects")
     try:
         async with AsyncSession(get_engine(), expire_on_commit=False) as session:
             if entries is None:
@@ -162,7 +152,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if get_settings().app_env == "production":
         print("seed_demo: refusing to run when APP_ENV=production", file=sys.stderr)
-        return EXIT_REFUSED
+        return 2
     try:
         return asyncio.run(_run(args))
     except (OSError, ValueError, KeyError, TypeError) as exc:

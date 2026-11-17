@@ -15,10 +15,6 @@ MAX_LIMIT = 60
 _LOAD = (selectinload(Project.media), joinedload(Project.owner))
 
 
-def _not_found() -> AppError:
-    return AppError(404, "project_not_found", "Project not found")
-
-
 async def list_feed(
     session: AsyncSession,
     *,
@@ -48,7 +44,7 @@ async def get_demo_project(session: AsyncSession, slug: str) -> Project:
     stmt = select(Project).options(*_LOAD).where(Project.is_demo, Project.slug == slug)
     project = await session.scalar(stmt)
     if project is None:
-        raise _not_found()
+        raise AppError(404, "project_not_found", "Project not found")
     return project
 
 
@@ -59,5 +55,5 @@ async def get_user_project(session: AsyncSession, username: str, slug: str) -> P
     stmt = select(Project).options(*_LOAD).where(Project.owner_id == user.id, Project.slug == slug)
     project = await session.scalar(stmt)
     if project is None:
-        raise _not_found()
+        raise AppError(404, "project_not_found", "Project not found")
     return project
