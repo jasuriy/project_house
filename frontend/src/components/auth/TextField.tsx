@@ -71,7 +71,7 @@ export function TextField({
           required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={note ? noteId : undefined}
-          className={`h-full min-w-0 flex-1 rounded-control bg-transparent text-ui text-fg placeholder:text-mute focus-visible:shadow-none focus-visible:outline-none ${
+          className={`h-full w-0 min-w-0 flex-1 rounded-control bg-transparent text-ui text-fg placeholder:text-mute focus-visible:shadow-none focus-visible:outline-none ${
             prefix ? "pr-3" : "px-3"
           }`}
         />
