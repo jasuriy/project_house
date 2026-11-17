@@ -188,3 +188,37 @@ async def test_weak_new_password_is_422_and_keeps_the_token_usable(auth_client, 
         f"{BASE}/password/reset", json={"token": token, "new_password": NEW_PASSWORD}
     )
     assert ok.status_code == 204
+
+
+async def test_a_successful_reset_voids_the_users_other_unused_reset_tokens(
+    auth_client, email_sender
+):
+    await _signup(auth_client)
+    await _forgot(auth_client)
+    older = email_sender.last_token()
+    await _forgot(auth_client)
+    newer = email_sender.last_token()
+    assert older != newer
+
+    ok = await auth_client.post(
+        f"{BASE}/password/reset", json={"token": newer, "new_password": NEW_PASSWORD}
+    )
+    assert ok.status_code == 204
+    stale = await auth_client.post(
+        f"{BASE}/password/reset", json={"token": older, "new_password": "another passphrase"}
+    )
+    assert stale.status_code == 400
+    assert stale.json()["error"]["code"] == "token_invalid"
+    assert (await _login(auth_client, NEW_PASSWORD)).status_code == 200
+
+
+async def test_a_reset_does_not_void_the_verify_token(auth_client, email_sender):
+    await _signup(auth_client)
+    verify_token = email_sender.last_token()
+    await _forgot(auth_client)
+    await auth_client.post(
+        f"{BASE}/password/reset",
+        json={"token": email_sender.last_token(), "new_password": NEW_PASSWORD},
+    )
+    response = await auth_client.post(f"{BASE}/email/verify", json={"token": verify_token})
+    assert response.status_code == 204

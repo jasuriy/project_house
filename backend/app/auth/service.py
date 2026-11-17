@@ -306,6 +306,16 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> Non
         PasswordCredential(user_id=user_id, password_hash=await hash_password(new_password))
     )
     await delete_user_sessions(db, user_id)
+    # Any other reset link already mailed to this user must stop working too.
+    await db.execute(
+        update(EmailToken)
+        .where(
+            EmailToken.user_id == user_id,
+            EmailToken.purpose == "reset",
+            EmailToken.used_at.is_(None),
+        )
+        .values(used_at=datetime.now(UTC))
+    )
     await db.commit()
 
 
