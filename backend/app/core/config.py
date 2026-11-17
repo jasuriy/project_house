@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     secret_key: str = ""
     public_base_url: str = "http://localhost:3000"
     cors_origins: list[str] = ["http://localhost:3000"]
+    # An empty client id or secret disables that OAuth provider (its routes return 404).
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    session_days: int = 30
 
     @model_validator(mode="after")
     def _require_or_default_secrets(self) -> Self:
