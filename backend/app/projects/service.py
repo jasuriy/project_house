@@ -51,7 +51,12 @@ async def list_user_projects(
 
 
 async def get_demo_project(session: AsyncSession, slug: str) -> Project:
-    stmt = select(Project).options(*_LOAD).where(Project.is_demo, Project.slug == slug)
+    # Only ownerless samples live under /demo/; an owned one answers at /<username>/<slug>.
+    stmt = (
+        select(Project)
+        .options(*_LOAD)
+        .where(Project.is_demo, Project.owner_id.is_(None), Project.slug == slug)
+    )
     project = await session.scalar(stmt)
     if project is None:
         raise AppError(404, "project_not_found", "Project not found")

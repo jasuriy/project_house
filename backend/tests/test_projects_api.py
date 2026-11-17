@@ -342,3 +342,14 @@ async def test_user_projects_pages_with_cursor(client, db_session):
 async def test_user_projects_unknown_user_is_404(client):
     r = await client.get("/api/v1/users/nobody/projects")
     assert (r.status_code, r.json()["error"]["code"]) == (404, "user_not_found")
+
+
+async def test_owned_sample_shows_the_owner_and_lives_under_their_name(client, db_session):
+    user = await make_user(db_session, username="bek", display_name="Bek")
+    await add_projects(db_session, make_project(slug="tool", owner_id=user.id))
+
+    card = (await client.get("/api/v1/projects")).json()["items"][0]
+    assert card["author"] == {"kind": "user", "name": "Bek", "url": "/bek"}
+    assert card["path"] == "/bek/tool"
+    assert (await client.get("/api/v1/users/bek/projects/tool")).status_code == 200
+    assert (await client.get("/api/v1/projects/demo/tool")).status_code == 404

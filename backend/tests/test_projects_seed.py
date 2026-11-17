@@ -134,7 +134,8 @@ def test_entry_mapping():
         )
     )
     assert values["slug"] == "instant-ngp"
-    assert values["is_demo"] is True and values["owner_id"] is None
+    # Ownership is the upsert's job: the mapping never carries owner_id, so an update cannot wipe it.
+    assert values["is_demo"] is True and "owner_id" not in values
     assert values["github_url"] == "https://github.com/NVlabs/instant-ngp"
     assert values["demo_author"] == "NVlabs"
     assert values["demo_author_url"] == "https://github.com/NVlabs"
@@ -237,15 +238,20 @@ async def test_one_bad_entry_writes_nothing(db_session):
     assert await count(db_session, Project) == 0
 
 
-async def test_delete_demo_removes_demo_rows_and_media_but_keeps_real_projects(db_session):
+async def test_upsert_with_owner_sets_owner_on_every_sample(db_session):
     user = await make_user(db_session)
-    await add_projects(db_session, make_project(is_demo=False, owner_id=user.id, slug="mine"))
-    await seed_demo.upsert_demo(db_session, seed_entries())
+    await seed_demo.upsert_demo(db_session, seed_entries(), owner_id=user.id)
+    owners = set(await db_session.scalars(select(Project.owner_id)))
+    assert owners == {user.id}
+    assert await db_session.scalar(select(func.count()).where(Project.is_demo)) == 29
 
-    assert await seed_demo.delete_demo(db_session) == 29
 
-    assert await count(db_session, Project) == 1
-    assert await count(db_session, ProjectMedia) == 0
+async def test_upsert_without_owner_keeps_an_existing_owner(db_session):
+    user = await make_user(db_session)
+    await seed_demo.upsert_demo(db_session, [entry(title="Some Tool")], owner_id=user.id)
+    await seed_demo.upsert_demo(db_session, [entry(title="Some Tool", result="Changed.")])
+    row = (await db_session.scalars(select(Project))).one()
+    assert (row.owner_id, row.result) == (user.id, "Changed.")
 
 
 async def test_real_seed_gives_27_projects_with_a_live_url_and_stays_27_on_reload(db_session):
@@ -266,7 +272,7 @@ async def test_real_seed_gives_27_projects_with_a_live_url_and_stays_27_on_reloa
 # ---- CLI (subprocess, real entry point) ----------------------------------------------------
 
 
-async def test_cli_loads_the_real_seed_twice_then_deletes(db_session, test_database_url):
+async def test_cli_loads_the_real_seed_twice(db_session, test_database_url):
     expected_media = sum(
         len(e["image_urls"]) + (1 if e["demo_video_url"] else 0) for e in seed_entries()
     )
@@ -278,10 +284,26 @@ async def test_cli_loads_the_real_seed_twice_then_deletes(db_session, test_datab
         assert await count(db_session, ProjectMedia) == expected_media
     assert "29" in result.stdout
 
-    result = run_loader(test_database_url, "--delete")
+
+async def test_cli_owner_gives_every_sample_to_that_account(db_session, test_database_url):
+    user = await make_user(db_session, username="bek")
+    result = run_loader(test_database_url, "--owner", "bek")
     assert result.returncode == 0, result.stderr
+    assert set(await db_session.scalars(select(Project.owner_id))) == {user.id}
+
+
+async def test_cli_owner_unknown_username_exits_2_and_writes_nothing(db_session, test_database_url):
+    result = run_loader(test_database_url, "--owner", "nobody")
+    assert result.returncode == 2
+    assert "nobody" in result.stderr
+    assert "Traceback" not in result.stderr
     assert await count(db_session, Project) == 0
-    assert await count(db_session, ProjectMedia) == 0
+
+
+def test_cli_has_no_delete_option():
+    with pytest.raises(SystemExit) as exc:
+        seed_demo.main(["--delete"])
+    assert exc.value.code == 2
 
 
 async def test_cli_loads_the_feed_end_to_end(client, test_database_url):
@@ -305,7 +327,7 @@ async def test_detail_of_the_loaded_seed_has_the_link_and_null_for_a_repository_
     assert repository_only["live_url"] is None
 
 
-@pytest.mark.parametrize("args", [(), ("--delete",)])
+@pytest.mark.parametrize("args", [(), ("--owner", "bek")])
 async def test_cli_refuses_in_production_and_writes_nothing(db_session, test_database_url, args):
     await seed_demo.upsert_demo(db_session, [entry(title="Keep Me")])
     assert await count(db_session, Project) == 1
