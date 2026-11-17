@@ -5,8 +5,6 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  cacheComponents: true,
-  partialPrefetching: true,
   // One origin in dev: /api/* is forwarded to FastAPI (production: reverse proxy).
   async rewrites() {
     const apiUrl = process.env.API_URL ?? "http://localhost:8000";

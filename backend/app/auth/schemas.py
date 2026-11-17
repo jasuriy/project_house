@@ -58,3 +58,7 @@ class AccountResponse(UserPublic):
     email: str | None
     email_verified: bool
     providers: list[str]
+
+
+class ProvidersResponse(BaseModel):
+    providers: list[str]

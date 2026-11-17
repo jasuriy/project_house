@@ -44,6 +44,10 @@ def test_reserved_list_matches_architecture():
         "search",
         "about",
         "help",
+        "forgot-password",
+        "reset-password",
+        "verify-email",
+        "onboarding",
     ]
     assert set(RESERVED_USERNAMES) == set(expected)
 
@@ -92,6 +96,17 @@ async def test_create_user_rejects_reserved_username(db_session):
             db_session, username="demo", display_name="D", account_type="developer"
         )
     assert exc.value.code == "invalid_username"
+
+
+@pytest.mark.parametrize(
+    "name", ["forgot-password", "reset-password", "verify-email", "onboarding"]
+)
+async def test_create_user_rejects_frontend_route_names(db_session, name):
+    with pytest.raises(AppError) as exc:
+        await service.create_user(
+            db_session, username=name, display_name="D", account_type="developer"
+        )
+    assert (exc.value.status, exc.value.code) == (422, "invalid_username")
 
 
 async def test_create_user_rejects_unknown_account_type(db_session):

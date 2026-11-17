@@ -14,6 +14,7 @@ from app.auth.schemas import (
     AccountResponse,
     ForgotPasswordRequest,
     LoginRequest,
+    ProvidersResponse,
     ResetPasswordRequest,
     SignupRequest,
     TokenRequest,
@@ -158,6 +159,11 @@ def _oauth_failed(provider: str, exc: Exception) -> Response:
     error text can echo codes and tokens."""
     logger.warning("OAuth step failed (%s: %s)", provider, type(exc).__name__)
     return RedirectResponse(_public_url("/login?error=oauth_failed"), status_code=302)
+
+
+@router.get("/providers")
+async def providers() -> ProvidersResponse:
+    return ProvidersResponse(providers=oauth.enabled_providers())
 
 
 @router.get("/oauth/{provider}/start")

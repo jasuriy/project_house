@@ -43,6 +43,16 @@ def _registry(google: tuple[str, str], github: tuple[str, str]) -> OAuth:
     return oauth
 
 
+def enabled_providers() -> list[str]:
+    """The providers whose client id AND secret are both set, in the order shown on the login page."""
+    settings = get_settings()
+    enabled = {
+        "google": all((settings.google_client_id, settings.google_client_secret)),
+        "github": all((settings.github_client_id, settings.github_client_secret)),
+    }
+    return [name for name, on in enabled.items() if on]
+
+
 def get_oauth_client(provider: str) -> StarletteOAuth2App:
     """FastAPI dependency: the client for `provider`, or 404 `provider_disabled` when the name is
     unknown or its client id or secret is empty."""

@@ -102,7 +102,7 @@ Integrity rules on `projects`:
   migration changing this FK to ON DELETE CASCADE. (`SET NULL` is impossible under the CHECK above.)
 
 Reserved usernames (code constant, extended as routes appear): `uz ru en api _next _vercel demo
-new messages settings login logout signup admin explore feed search about help`.
+new messages settings login logout signup admin explore feed search about help forgot-password reset-password verify-email onboarding`.
 
 ## 5. API conventions
 
@@ -146,6 +146,9 @@ new messages settings login logout signup admin explore feed search about help`.
   A password reset proves ownership of the email: it marks the email identity verified, revokes all
   sessions and other reset tokens, and, if the email was unverified before, deletes every
   non-email identity attached to the account before that proof.
+- **`GET /api/v1/auth/providers`** (public) returns `{"providers": [...]}`: only the providers whose
+  client id AND secret are both set, in the order `google`, `github`. The login page shows buttons from
+  this list, so it never offers a provider whose start route would answer 404.
 - **Email verification and password reset:** single-use tokens, hashed in `email_tokens`, expiry
   24 h (verify) / 1 h (reset). Sent through `EmailSender`; dev implementation prints to the console.
 - **Verification needs the account's session (Bek, 2026-11-17, security review N1b):** a verify

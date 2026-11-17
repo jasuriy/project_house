@@ -1,9 +1,17 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import uz from "../messages/uz.json";
-import ru from "../messages/ru.json";
-import en from "../messages/en.json";
+import { routing } from "@/i18n/routing";
+import { NAMESPACES } from "@/i18n/request";
+
+const FIELDS = ["ai-apps", "cv-ml", "web", "mobile", "devtools", "hardware", "data"];
 
 type Tree = { [key: string]: string | Tree };
+
+function load(locale: string, namespace: string): Tree {
+  const url = new URL(`../messages/${locale}/${namespace}.json`, import.meta.url);
+  return JSON.parse(readFileSync(fileURLToPath(url), "utf8"));
+}
 
 function flatten(tree: Tree, prefix = ""): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -20,34 +28,70 @@ function flatten(tree: Tree, prefix = ""): Record<string, unknown> {
 
 const keys = (tree: Tree) => Object.keys(flatten(tree)).sort();
 
-describe("message catalogues", () => {
-  it("uz has exactly the keys of en", () => {
-    expect(keys(uz)).toEqual(keys(en));
+describe("namespaces", () => {
+  it("are common, projects and auth", () => {
+    expect(NAMESPACES).toEqual(["common", "projects", "auth"]);
+  });
+});
+
+describe.each(NAMESPACES)("namespace %s", (namespace) => {
+  const en = load("en", namespace);
+
+  it.each(["uz", "ru"])("%s has exactly the keys of en", (locale) => {
+    expect(keys(load(locale, namespace))).toEqual(keys(en));
   });
 
-  it("ru has exactly the keys of en", () => {
-    expect(keys(ru)).toEqual(keys(en));
-  });
-
-  it("contains the required keys", () => {
-    expect(keys(en)).toEqual([
-      "Home.backendStatus",
-      "Home.subtitle",
-      "Home.title",
-      "Status.degraded",
-      "Status.ok",
-      "Status.unreachable",
-    ]);
-  });
-
-  it.each([
-    ["uz", uz],
-    ["ru", ru],
-    ["en", en],
-  ])("%s: every value is a non-empty string", (_name, tree) => {
-    for (const value of Object.values(flatten(tree))) {
+  it.each(routing.locales)("%s: every value is a non-empty string", (locale) => {
+    for (const value of Object.values(flatten(load(locale, namespace)))) {
       expect(typeof value).toBe("string");
       expect((value as string).trim().length).toBeGreaterThan(0);
     }
   });
+});
+
+describe("common namespace", () => {
+  const en = load("en", "common");
+
+  it("has the Nav, Fields and Errors keys", () => {
+    const fields = [...FIELDS, "all"].map((f) => `Fields.${f}`);
+    expect(keys(en)).toEqual(
+      [
+        "Nav.feed",
+        "Nav.language",
+        "Nav.login",
+        "Nav.logout",
+        "Nav.settings",
+        "Nav.signup",
+        "Nav.skip",
+        "Errors.notFound",
+        "Errors.retry",
+        "Errors.server",
+        "Errors.unreachable",
+        ...fields,
+      ].sort(),
+    );
+  });
+
+  it("writes Uzbek with the modifier letters, never an ASCII apostrophe", () => {
+    for (const namespace of NAMESPACES) {
+      for (const value of Object.values(flatten(load("uz", namespace)))) {
+        expect(value as string).not.toContain("'");
+      }
+    }
+  });
+});
+
+describe("namespace files are merged with a shallow Object.assign", () => {
+  it.each(routing.locales)(
+    "%s: no top-level key appears in two namespace files",
+    (locale) => {
+      const seen = new Map<string, string>();
+      for (const namespace of NAMESPACES) {
+        for (const key of Object.keys(load(locale, namespace))) {
+          expect(seen.get(key), `${key} in ${namespace}`).toBeUndefined();
+          seen.set(key, namespace);
+        }
+      }
+    },
+  );
 });
