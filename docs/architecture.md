@@ -83,7 +83,7 @@ This closes Step 0's Ruling B: the dev default can never silently reach producti
 | Table | Owner | Key columns and rules |
 |---|---|---|
 | `users` | foundation | `username` unique, lowercase, `^[a-z0-9_-]{3,30}$` (no dots, D17), not in the reserved list; `display_name`; `account_type` developer\|company; `headline`, `location`, `university_or_employer`, `company_name` (company accounts), `open_to_work` bool, `is_verified_company` bool, `avatar_url`, `links` jsonb |
-| `auth_identities` | Task B | `user_id` FK; `provider` google\|github\|email; `provider_user_id`; `email`; `email_verified`; unique (`provider`, `provider_user_id`) |
+| `auth_identities` | Task B | `user_id` FK; `provider` google\|github\|email; `provider_user_id`; `email`; `email_verified`; unique (`provider`, `provider_user_id`); unique (`user_id`, `provider`): one identity per provider per user |
 | `password_credentials` | Task B | `user_id` PK/FK; `password_hash` (argon2 via pwdlib) |
 | `sessions` | Task B | `user_id` FK; `token_hash` unique (SHA-256 of the cookie token); `expires_at`; `last_seen_at`; `user_agent` |
 | `email_tokens` | Task B | `user_id` FK; `purpose` verify\|reset; `token_hash`; `expires_at`; `used_at` |
@@ -97,8 +97,9 @@ Integrity rules on `projects`:
   keyset cursor cannot order NULLs, so a NULL row would silently drop out of the feed.
 - `project_media.project_id` is indexed: the feed loads media with `WHERE project_id IN (...)` and
   the cascade delete looks rows up by it.
-- `owner_id` has no ON DELETE action yet (deleting a user with projects is blocked). `SET NULL` is
-  impossible under the CHECK above; CASCADE vs keep-blocking is decided when account deletion is built.
+- `owner_id` has no ON DELETE action yet (deleting a user with projects is blocked). Decided
+  (Bek, 2026-11-17): deleting an account deletes its projects, so the account-deletion task adds a
+  migration changing this FK to ON DELETE CASCADE. (`SET NULL` is impossible under the CHECK above.)
 
 Reserved usernames (code constant, extended as routes appear): `uz ru en api _next _vercel demo
 new messages settings login logout signup admin explore feed search about help`.
@@ -124,11 +125,36 @@ new messages settings login logout signup admin explore feed search about help`.
 - **Passwords:** pwdlib with argon2. Minimum 10 characters. Never logged.
 - **OAuth (Google, GitHub):** Authlib's Starlette client. It needs Starlette `SessionMiddleware`
   (signed with `SECRET_KEY`) for the OAuth `state`; that cookie is separate from `ph_session`.
-- **Account linking:** a provider identity is linked to an existing account only when the provider
-  reports the email as verified (Google `email_verified`, GitHub verified primary email). Otherwise
-  a new account is created. Anything looser is an account-takeover hole.
+- **Account linking (Bek, 2026-11-17, after security review H1; refined by reviews N1-N3):** a
+  provider identity is linked only while the user is logged in ("log in first, then connect"),
+  never by email match alone. Reason: automatic linking on a verified email allows pre-account
+  hijack (an attacker signs up with the victim's email, the victim clicks the unsolicited verify
+  link, the victim's first Google login lands in the attacker's account).
+  OAuth callback, logged in as U (connect flow, checked first):
+  identity already U's -> no change; identity owned by another user -> no change,
+  `/settings?error=provider_in_use&provider=<p>`; U already has that provider ->
+  `/settings?error=provider_already_connected&provider=<p>`; U's email identity is unverified ->
+  `/settings?error=verify_email_first&provider=<p>` (otherwise an attacker could attach their own
+  provider account to an address they squatted); else the identity is connected to U.
+  OAuth callback, logged out: known (provider, provider_user_id) logs in; else, if any identity has
+  the same normalized email, nothing is created and the browser goes to
+  `/login?error=account_exists&provider=<p>` (the owner logs in, or resets the password, then
+  connects); else a new developer account is created.
+  A provider email is stored only when the provider reports it verified (Google `email_verified`,
+  GitHub verified primary email); otherwise it is NULL, so an unverified address can never block
+  its real owner.
+  A password reset proves ownership of the email: it marks the email identity verified, revokes all
+  sessions and other reset tokens, and, if the email was unverified before, deletes every
+  non-email identity attached to the account before that proof.
 - **Email verification and password reset:** single-use tokens, hashed in `email_tokens`, expiry
   24 h (verify) / 1 h (reset). Sent through `EmailSender`; dev implementation prints to the console.
+- **Verification needs the account's session (Bek, 2026-11-17, security review N1b):** a verify
+  token is accepted only from a request carrying a valid `ph_session` of the token's user. No
+  session -> 401 `not_authenticated` (the frontend sends the user to log in and back); a session of
+  another user -> 400 `token_invalid`; in both cases the token stays unused. Reason: clicking a
+  link proves mailbox ownership, not that the clicker created the account. Without this, a victim
+  who clicks an unsolicited verify link verifies an attacker's account, which can then carry the
+  attacker's provider identities past a password reset.
 - fastapi-users is not used: its PyPI page states "This project is now in maintenance mode" [V,
   pypi.org/project/fastapi-users, latest 15.0.5, 2026-03-27].
 - Rate limiting of login attempts: deferred to Step 0b (reverse proxy level); noted, not built.

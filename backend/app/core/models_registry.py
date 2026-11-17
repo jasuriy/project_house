@@ -8,5 +8,6 @@ Each line binds its own name, so its `noqa` stays valid no matter which other li
 shared `__all__` list forces parallel branches to edit the same line.
 """
 
+from app.auth import models as _auth_models  # noqa: F401
 from app.projects import models as _projects_models  # noqa: F401
 from app.users import models as _users_models  # noqa: F401
