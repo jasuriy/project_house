@@ -124,9 +124,17 @@ new messages settings login logout signup admin explore feed search about help`.
 - **Passwords:** pwdlib with argon2. Minimum 10 characters. Never logged.
 - **OAuth (Google, GitHub):** Authlib's Starlette client. It needs Starlette `SessionMiddleware`
   (signed with `SECRET_KEY`) for the OAuth `state`; that cookie is separate from `ph_session`.
-- **Account linking:** a provider identity is linked to an existing account only when the provider
-  reports the email as verified (Google `email_verified`, GitHub verified primary email). Otherwise
-  a new account is created. Anything looser is an account-takeover hole.
+- **Account linking (Bek, 2026-11-17, after security review H1):** a provider identity is linked
+  only while the user is logged in ("log in first, then connect"). Never by email match alone.
+  Reason: automatic linking on a verified email allows pre-account hijack. An attacker signs up
+  with the victim's email; the victim clicks the unsolicited verify link; the victim's first
+  Google login then lands in the attacker's account, whose password the attacker still knows.
+  At the callback: a known (provider, provider_user_id) logs in; else, if logged in, the identity
+  is connected to the current account; else, if any existing identity has the same (normalized)
+  email, nothing is created and the browser goes to `/login?error=account_exists&provider=<p>`
+  (the owner logs in, or resets the password, which revokes all sessions, then connects); else a
+  new developer account is created. Provider "verified email" flags (Google `email_verified`,
+  GitHub verified primary email) only decide which email is stored as verified.
 - **Email verification and password reset:** single-use tokens, hashed in `email_tokens`, expiry
   24 h (verify) / 1 h (reset). Sent through `EmailSender`; dev implementation prints to the console.
 - fastapi-users is not used: its PyPI page states "This project is now in maintenance mode" [V,

@@ -50,10 +50,13 @@ No frontend pages in this task.
    - `POST /password/reset` `{token, new_password}` -> 204; deletes all sessions of that user.
    - `GET /oauth/{provider}/start` -> redirect to the provider (Authlib Starlette client).
    - `GET /oauth/{provider}/callback` -> find identity by (provider, provider_user_id): log in;
-     else if the provider reports a **verified** email equal to an existing user's verified
-     email: link and log in; else create a new developer account (username generated from the
-     provider login / email local part, sanitized to the username rules, numeric suffix on clash).
-     Redirect to `public_base_url` (new accounts: `public_base_url + "/onboarding"`).
+     else if the request has a valid session: connect the identity to the current account;
+     else if any existing identity has the same normalized email: create nothing, redirect to
+     `public_base_url + "/login?error=account_exists&provider=<provider>"`; else create a new
+     developer account (username generated from the provider login / email local part,
+     sanitized to the username rules, numeric suffix on clash). Redirect to `public_base_url`
+     (new accounts: `public_base_url + "/onboarding"`). (Changed 2026-11-17, architecture
+     section 6: no linking by email match.)
 8. **Passwords**: pwdlib argon2; minimum 10 characters (422 `weak_password` otherwise).
 9. **EmailSender** (`app/auth/email.py`): `Protocol` with `send(to: str, subject: str, body: str)`;
    `ConsoleEmailSender` logs subject and recipient and the link (dev/test only). Injected via a
@@ -71,8 +74,12 @@ No frontend pages in this task.
 - Reset: unknown email still 202 and no email captured; known email captures one message; reset
   token changes the password and removes all existing sessions.
 - OAuth (Authlib token/userinfo exchange mocked): new identity creates a user and session;
-  verified matching email links to the existing account; **unverified** matching email creates a
-  separate account (no link); username collision gets a suffix; disabled provider 404.
+  a matching email (verified or not) while logged out creates nothing and redirects to
+  `account_exists`, and the existing account's sessions and password are untouched; the same
+  provider login while logged in connects the identity to the current account; the pre-hijack
+  scenario (attacker signup with the victim's email, victim verifies, victim's Google login) does
+  not give the victim the attacker's session; username collision gets a suffix; disabled
+  provider 404.
 - Passwords and tokens never appear in any response body (assert on all auth responses in tests).
 
 ## Out of scope
