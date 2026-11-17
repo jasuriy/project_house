@@ -62,11 +62,17 @@ def _clean(value: str | None) -> str | None:
     return value.replace("\x00", "") if value else value
 
 
+def _clean_email(value: str | None) -> str | None:
+    """An email with a NUL byte is not an address the provider verified (the repaired value
+    would be a different one), so it is dropped, not stripped."""
+    return None if value is None or "\x00" in value else value
+
+
 async def fetch_profile(provider: str, client: StarletteOAuth2App, token: dict) -> OAuthProfile:
     """The signed-in provider account. Raises on any malformed or failed provider response."""
     if provider == "google":
         info = token["userinfo"]  # parsed and validated from the ID token by Authlib
-        email = _clean(info.get("email"))
+        email = _clean_email(info.get("email"))
         return OAuthProfile(
             provider_user_id=info["sub"],
             email=email,
@@ -87,10 +93,11 @@ async def fetch_profile(provider: str, client: StarletteOAuth2App, token: dict) 
         ),
         None,
     )
+    email = _clean_email(primary["email"]) if primary else None
     return OAuthProfile(
         provider_user_id=str(user["id"]),
-        email=_clean(primary["email"]) if primary else None,
-        email_verified=primary is not None,
+        email=email,
+        email_verified=email is not None,
         username_hint=_clean(user.get("login")) or "",
         display_name=_clean(user.get("name")),
     )

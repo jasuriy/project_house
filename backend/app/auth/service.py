@@ -311,6 +311,20 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> Non
         PasswordCredential(user_id=user_id, password_hash=await hash_password(new_password))
     )
     await delete_user_sessions(db, user_id)
+    email_identity = await db.scalar(
+        select(AuthIdentity).where(
+            AuthIdentity.user_id == user_id, AuthIdentity.provider == "email"
+        )
+    )
+    if email_identity and not email_identity.email_verified:
+        # Receiving this mail proves the address is the account holder's, but whoever created
+        # the account while it was unverified (a squatter) may have attached provider identities.
+        email_identity.email_verified = True
+        await db.execute(
+            delete(AuthIdentity).where(
+                AuthIdentity.user_id == user_id, AuthIdentity.provider != "email"
+            )
+        )
     # Any other reset link already mailed to this user must stop working too.
     await db.execute(
         update(EmailToken)
@@ -350,6 +364,7 @@ class OAuthOutcome:
         "unchanged",
         "provider_in_use",
         "provider_already_connected",
+        "verify_email_first",
     ]
     session_token: str | None = None
 
@@ -383,6 +398,7 @@ async def oauth_login(
       session), outcome `provider_in_use`;
     - U already has an identity of this provider (another provider account): nothing changes,
       outcome `provider_already_connected`;
+    - U's email identity is unverified: nothing changes, outcome `verify_email_first`;
     - else the identity (provider email and its verified flag as reported) is connected to U,
       who stays signed in on the same session.
     Logged out:
@@ -414,6 +430,19 @@ async def oauth_login(
         )
         if has_provider:
             return OAuthOutcome("provider_already_connected")
+        unverified_email = await db.scalar(
+            select(AuthIdentity.id)
+            .where(
+                AuthIdentity.user_id == session.user_id,
+                AuthIdentity.provider == "email",
+                AuthIdentity.email_verified.is_(False),
+            )
+            .limit(1)
+        )
+        if unverified_email:
+            # Otherwise whoever squatted an address by signing up with it could attach their own
+            # provider account, which would survive the real owner's password reset.
+            return OAuthOutcome("verify_email_first")
         db.add(_new_identity(session.user_id, provider, profile, email))
         await db.commit()
         return OAuthOutcome("connected")
@@ -438,12 +467,15 @@ async def oauth_login(
 def _new_identity(
     user_id: int, provider: str, profile: OAuthProfile, email: str | None
 ) -> AuthIdentity:
+    """A provider email is stored only when the provider reports it verified: an unverified
+    claim must never be able to block the address's real owner (email signup, account_exists)."""
+    stored = email if profile.email_verified else None
     return AuthIdentity(
         user_id=user_id,
         provider=provider,
         provider_user_id=profile.provider_user_id,
-        email=email,
-        email_verified=profile.email_verified and email is not None,
+        email=stored,
+        email_verified=stored is not None,
     )
 
 

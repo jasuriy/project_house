@@ -4,7 +4,8 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
 
-from app.auth.models import EmailToken
+from app.auth.models import AuthIdentity, EmailToken
+from app.users.models import User
 from tests.auth_helpers import (
     PASSWORD,
     SIGNUP,
@@ -240,3 +241,78 @@ async def test_token_and_new_password_with_a_nul_byte_are_422(auth_client):
         response = await auth_client.post(f"{BASE}/password/reset", json=body)
         assert response.status_code == 422
         assert response.json()["error"]["code"] == "validation_error"
+
+
+# --- reset proves ownership of the address (N1b) ----------------------------------------------
+
+
+async def _attach_provider_identities(db_session) -> None:
+    """Give bek (an email account) a GitHub and a Google identity directly in the database,
+    the state a squatter would have reached before the connect flow required a verified email."""
+    user = await db_session.scalar(select(User).where(User.username == "bek"))
+    for provider in ("github", "google"):
+        db_session.add(
+            AuthIdentity(
+                user_id=user.id,
+                provider=provider,
+                provider_user_id=f"{provider}-1",
+                email=None,
+                email_verified=False,
+            )
+        )
+    await db_session.commit()
+
+
+async def _identities(db_session) -> dict[str, bool]:
+    rows = await db_session.scalars(select(AuthIdentity).execution_options(populate_existing=True))
+    return {i.provider: i.email_verified for i in rows}
+
+
+async def test_reset_on_an_unverified_account_verifies_the_email_and_drops_provider_identities(
+    auth_client, email_sender, db_session
+):
+    await _signup(auth_client)
+    await _attach_provider_identities(db_session)
+    await _forgot(auth_client)
+    reset = await auth_client.post(
+        f"{BASE}/password/reset",
+        json={"token": email_sender.last_token(), "new_password": NEW_PASSWORD},
+    )
+    assert reset.status_code == 204
+    assert await _identities(db_session) == {"email": True}  # github and google are gone
+    login = await _login(auth_client, NEW_PASSWORD)
+    assert login.json()["email_verified"] is True
+
+
+async def test_reset_on_a_verified_account_keeps_provider_identities(
+    auth_client, email_sender, db_session
+):
+    await _signup(auth_client)
+    await auth_client.post(f"{BASE}/email/verify", json={"token": email_sender.last_token()})
+    await _attach_provider_identities(db_session)
+    await _forgot(auth_client)
+    reset = await auth_client.post(
+        f"{BASE}/password/reset",
+        json={"token": email_sender.last_token(), "new_password": NEW_PASSWORD},
+    )
+    assert reset.status_code == 204
+    assert set(await _identities(db_session)) == {"email", "github", "google"}
+
+
+async def test_reset_does_not_touch_another_users_identities(auth_client, email_sender, db_session):
+    await _signup(auth_client)
+    await _attach_provider_identities(db_session)
+    other = await _signup(auth_client, email="two@example.com", username="two")
+    assert other.status_code == 201
+    await _forgot(auth_client, "two@example.com")
+    reset = await auth_client.post(
+        f"{BASE}/password/reset",
+        json={"token": email_sender.last_token(), "new_password": NEW_PASSWORD},
+    )
+    assert reset.status_code == 204
+    rows = list(
+        await db_session.scalars(select(AuthIdentity).execution_options(populate_existing=True))
+    )
+    by_user = {(i.user_id, i.provider): i.email_verified for i in rows}
+    assert len(by_user) == 4  # bek: email, github, google; two: email
+    assert sum(1 for (_, prov) in by_user if prov == "github") == 1

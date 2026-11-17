@@ -201,7 +201,7 @@ async def oauth_callback(
         return RedirectResponse(
             _public_url(f"/login?error=account_exists&provider={provider}"), status_code=302
         )
-    if result.kind in ("provider_in_use", "provider_already_connected"):
+    if result.kind in ("provider_in_use", "provider_already_connected", "verify_email_first"):
         return RedirectResponse(
             _public_url(f"/settings?error={result.kind}&provider={provider}"), status_code=302
         )
