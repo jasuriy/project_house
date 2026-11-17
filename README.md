@@ -38,9 +38,9 @@ Expected: `{"status":"ok","database":"ok"}` and `200`. Then open
 
 Stop with `docker compose down` (the database volume `pgdata` is kept; add `-v` to delete it).
 
-Ports: frontend 3000, backend 8000, PostgreSQL 5432 (bound to 127.0.0.1 only). If another
-PostgreSQL already uses port 5432 on your machine, `docker compose up` fails with
-"ports are not available".
+Ports: frontend 3000, backend 8000, PostgreSQL 55432 (bound to 127.0.0.1 only; inside Compose the
+backend still reaches it at `db:5432`). The host port is 55432, not 5432, because ports 5432 and
+5433 are often taken by other local PostgreSQL instances.
 
 ## Tests
 
@@ -54,8 +54,9 @@ python -m venv .venv
 
 On Linux/macOS use `.venv/bin/pip` and `.venv/bin/pytest`. One test needs a real database and is
 skipped unless `DATABASE_URL` is set. To run it against the Compose database, start the stack and
-set `DATABASE_URL` to `postgresql+asyncpg://projecthouse:projecthouse_dev@127.0.0.1:5432/projecthouse`
-(values from `.env.example`; on Windows prefer `127.0.0.1` over `localhost`).
+set `DATABASE_URL` to `postgresql+asyncpg://projecthouse:projecthouse_dev@127.0.0.1:55432/projecthouse`
+(the value from `.env.example`). Use `127.0.0.1`, not `localhost`: on Windows `localhost` tries
+IPv6 first and the 2 s fallback exceeds the backend's 2 s database check timeout.
 
 Frontend (from `frontend/`):
 
