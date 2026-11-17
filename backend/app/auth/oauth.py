@@ -5,6 +5,8 @@ audience, expiry, nonce) and `email_verified` comes from it. GitHub is plain OAu
 email is often null or private, so the email comes from `/user/emails` (primary AND verified).
 """
 
+from functools import lru_cache
+
 from authlib.integrations.starlette_client import OAuth
 from authlib.integrations.starlette_client.apps import StarletteOAuth2App
 
@@ -15,30 +17,44 @@ from app.core.errors import AppError
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
 
-def get_oauth_client(provider: str) -> StarletteOAuth2App:
-    """FastAPI dependency: the client for `provider`, or 404 `provider_disabled` when the name is
-    unknown or its client id or secret is empty. Built per request from the current settings."""
-    settings = get_settings()
+@lru_cache
+def _registry(google: tuple[str, str], github: tuple[str, str]) -> OAuth:
+    """One registry per credential set, kept for the process: the clients cache Google's
+    discovery document and signing keys, which must not be refetched on every login."""
     oauth = OAuth()
-    if provider == "google" and settings.google_client_id and settings.google_client_secret:
-        return oauth.register(
+    if all(google):
+        oauth.register(
             "google",
-            client_id=settings.google_client_id,
-            client_secret=settings.google_client_secret,
+            client_id=google[0],
+            client_secret=google[1],
             server_metadata_url=GOOGLE_DISCOVERY_URL,
             client_kwargs={"scope": "openid email profile", "code_challenge_method": "S256"},
         )
-    if provider == "github" and settings.github_client_id and settings.github_client_secret:
-        return oauth.register(
+    if all(github):
+        oauth.register(
             "github",
-            client_id=settings.github_client_id,
-            client_secret=settings.github_client_secret,
+            client_id=github[0],
+            client_secret=github[1],
             authorize_url="https://github.com/login/oauth/authorize",
             access_token_url="https://github.com/login/oauth/access_token",
             api_base_url="https://api.github.com/",
             client_kwargs={"scope": "read:user user:email"},
         )
-    raise AppError(404, "provider_disabled", "This sign-in provider is not enabled")
+    return oauth
+
+
+def get_oauth_client(provider: str) -> StarletteOAuth2App:
+    """FastAPI dependency: the client for `provider`, or 404 `provider_disabled` when the name is
+    unknown or its client id or secret is empty."""
+    settings = get_settings()
+    registry = _registry(
+        (settings.google_client_id, settings.google_client_secret),
+        (settings.github_client_id, settings.github_client_secret),
+    )
+    client = registry.create_client(provider)
+    if client is None:
+        raise AppError(404, "provider_disabled", "This sign-in provider is not enabled")
+    return client
 
 
 def _clean(value: str | None) -> str | None:

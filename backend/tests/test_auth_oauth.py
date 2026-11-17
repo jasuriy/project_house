@@ -2,6 +2,7 @@
 validation); only its HTTP transport is replaced by an in-process stub, so no network is used."""
 
 import time
+from collections.abc import Iterator
 from urllib.parse import parse_qs, urlsplit
 
 import httpx
@@ -10,6 +11,7 @@ from joserfc import jwt
 from joserfc.jwk import RSAKey
 from sqlalchemy import func, select
 
+from app.auth import oauth as oauth_module
 from app.auth.models import AuthIdentity, AuthSession
 from app.auth.oauth import get_oauth_client
 from app.core.config import get_settings
@@ -37,12 +39,15 @@ class ProviderStub:
         self.id_token_nonce: str | None = None
         self.token_status = 200
         self.github_emails_status = 200
+        self.discovery_status = 200
         self.requests: list[str] = []
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         url = str(request.url).split("?")[0]
         self.requests.append(f"{request.method} {url}")
         if url == f"{GOOGLE_ISSUER}/.well-known/openid-configuration":
+            if self.discovery_status != 200:
+                return httpx.Response(self.discovery_status, json={})
             return httpx.Response(
                 200,
                 json={
@@ -85,9 +90,10 @@ class ProviderStub:
 
 
 @pytest.fixture
-def stub(auth_client, monkeypatch) -> ProviderStub:
+def stub(auth_client, monkeypatch) -> Iterator[ProviderStub]:
     """Enable both providers and route their HTTP through the stub (set after `auth_client`,
     whose teardown clears dependency overrides)."""
+    oauth_module._registry.cache_clear()  # clients (and their cached metadata) are per process
     settings = get_settings()
     monkeypatch.setattr(settings, "google_client_id", "google-client-id")
     monkeypatch.setattr(settings, "google_client_secret", "google-secret")
@@ -102,7 +108,8 @@ def stub(auth_client, monkeypatch) -> ProviderStub:
 
     app.dependency_overrides[get_oauth_client] = client_with_stub_transport
     auth_client.watch.secrets |= {"google-secret", "github-secret", "g-access", "gh-access"}
-    return provider_stub
+    yield provider_stub
+    oauth_module._registry.cache_clear()
 
 
 async def _start(client, stub, provider, **headers):
@@ -441,3 +448,29 @@ async def test_nul_bytes_in_provider_fields_are_stripped(auth_client, stub):
         "The Octocat",
         "octo@example.com",
     )
+
+
+# --- start failures and the shared client -----------------------------------------------------
+
+
+async def test_start_failure_redirects_to_login_error_and_recovers(auth_client, stub):
+    stub.discovery_status = 500
+    failed = await auth_client.get(f"{BASE}/oauth/google/start")
+    assert failed.status_code == 302
+    assert failed.headers["location"] == FAILED
+
+    stub.discovery_status = 200
+    recovered = await auth_client.get(f"{BASE}/oauth/google/start")
+    assert recovered.status_code == 302
+    assert recovered.headers["location"].startswith("https://accounts.google.com/o/oauth2/v2/auth?")
+
+
+async def test_discovery_and_jwks_are_fetched_once_across_logins(auth_client, stub):
+    for _ in range(2):
+        auth_client.cookies.clear()
+        response = await _login_via(auth_client, stub, "google")
+        assert response.status_code == 302
+    discovery = "GET https://accounts.google.com/.well-known/openid-configuration"
+    jwks = "GET https://www.googleapis.com/oauth2/v3/certs"
+    assert stub.requests.count(discovery) == 1
+    assert stub.requests.count(jwks) == 1

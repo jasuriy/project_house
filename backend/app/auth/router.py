@@ -150,6 +150,14 @@ async def reset_password(body: ResetPasswordRequest, db: DbSession) -> None:
     await service.reset_password(db, body.token, body.new_password)
 
 
+def _oauth_failed(provider: str, exc: Exception) -> Response:
+    """Redirect a failed OAuth step to the login page: the user is in a browser, not an API
+    client, and the URL carries nothing secret. Only the class name is logged because provider
+    error text can echo codes and tokens."""
+    logger.warning("OAuth step failed (%s: %s)", provider, type(exc).__name__)
+    return RedirectResponse(_public_url("/login?error=oauth_failed"), status_code=302)
+
+
 @router.get("/oauth/{provider}/start")
 async def oauth_start(
     provider: str,
@@ -158,9 +166,12 @@ async def oauth_start(
 ) -> Response:
     # The callback URL is built from PUBLIC_BASE_URL, never from the request's Host: behind the
     # frontend proxy the backend sees its own host, which the provider would reject.
-    return await client.authorize_redirect(
-        request, _public_url(f"/api/v1/auth/oauth/{provider}/callback")
-    )
+    try:
+        return await client.authorize_redirect(
+            request, _public_url(f"/api/v1/auth/oauth/{provider}/callback")
+        )
+    except Exception as exc:  # noqa: BLE001  (e.g. discovery unreachable)
+        return _oauth_failed(provider, exc)
 
 
 @router.get("/oauth/{provider}/callback")
@@ -177,9 +188,7 @@ async def oauth_callback(
         oauth_token = await client.authorize_access_token(request)
         profile = await oauth.fetch_profile(provider, client, oauth_token)
     except Exception as exc:  # noqa: BLE001  (every failure here means the same redirect)
-        # Class name only: provider error text can echo codes and tokens.
-        logger.warning("OAuth callback failed (%s: %s)", provider, type(exc).__name__)
-        return RedirectResponse(_public_url("/login?error=oauth_failed"), status_code=302)
+        return _oauth_failed(provider, exc)
     auth, is_new = await service.oauth_login(
         db,
         provider=provider,
