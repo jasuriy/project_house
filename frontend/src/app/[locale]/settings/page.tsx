@@ -17,8 +17,11 @@ const PROVIDERS = [
 
 const BADGE_OK = "rounded-full bg-ok-soft px-2 py-px text-caption font-medium text-ok";
 const BADGE_INFO = "rounded-full bg-accent-soft px-2 py-px text-caption font-medium text-primary";
-const CONNECT =
-  "inline-flex h-11 flex-none items-center rounded-control border border-border bg-card px-3 text-small font-semibold text-fg md:h-8.5";
+const BUTTON =
+  "inline-flex h-11 flex-none items-center rounded-control border border-border bg-card px-3 text-small font-semibold md:h-8.5";
+const CONNECT = `${BUTTON} text-fg hover:border-primary`;
+// Dimmed: connecting is refused until the email is confirmed (the blue note above says why).
+const BLOCKED = `${BUTTON} cursor-not-allowed text-mute`;
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/settings">): Promise<Metadata> {
   const { locale } = await params;
@@ -93,12 +96,12 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
                   {connected ? (
                     <span className={BADGE_OK}>{t("on")}</span>
                   ) : blocked ? (
-                    <span aria-disabled="true" className={`${CONNECT} cursor-not-allowed text-mute`}>
+                    <span className={BLOCKED}>
                       {t("connect")}
                     </span>
                   ) : (
                     // A full navigation: the browser follows the redirects to the provider and back.
-                    <a href={`/api/v1/auth/oauth/${provider.key}/start`} className={`${CONNECT} hover:border-primary`}>
+                    <a href={`/api/v1/auth/oauth/${provider.key}/start`} className={CONNECT}>
                       {t("connect")}
                     </a>
                   )}
