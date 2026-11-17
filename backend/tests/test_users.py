@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -174,3 +176,38 @@ async def test_create_user_reraises_other_integrity_errors(db_session, monkeypat
         await service.create_user(
             db_session, username="aziz", display_name="A", account_type="developer"
         )
+
+
+async def _owned(user, slug: str, day: int):
+    from tests.projects_fixtures import make_project
+
+    return make_project(
+        is_demo=False,
+        owner_id=user.id,
+        demo_author=None,
+        demo_author_url=None,
+        slug=slug,
+        published_at=datetime(2026, 11, day, tzinfo=UTC),
+    )
+
+
+async def test_profile_returns_about_and_project_count(client, db_session):
+    from tests.projects_fixtures import add_projects, make_project, make_user
+
+    user = await make_user(db_session, username="aziz")
+    user.about = "Hi"
+    await add_projects(
+        db_session, await _owned(user, "one", 1), await _owned(user, "two", 2), make_project()
+    )
+
+    body = (await client.get("/api/v1/users/aziz")).json()
+    assert (body["about"], body["project_count"]) == ("Hi", 2)
+    assert "email" not in body
+
+
+async def test_profile_of_user_without_projects_has_count_zero(client, db_session):
+    from tests.projects_fixtures import make_user
+
+    await make_user(db_session, username="aziz")
+    body = (await client.get("/api/v1/users/aziz")).json()
+    assert (body["about"], body["project_count"]) == (None, 0)

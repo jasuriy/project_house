@@ -31,6 +31,7 @@ class User(Base):
     location: Mapped[str | None] = mapped_column(Text)
     university_or_employer: Mapped[str | None] = mapped_column(Text)
     company_name: Mapped[str | None] = mapped_column(Text)
+    about: Mapped[str | None] = mapped_column(Text)
     open_to_work: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     is_verified_company: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false")

@@ -31,6 +31,16 @@ async def get_demo_project(slug: str, session: Session) -> ProjectDetail:
     return ProjectDetail.from_project(await service.get_demo_project(session, slug))
 
 
+@router.get("/users/{username}/projects")
+async def list_user_projects(
+    username: str,
+    session: Session,
+    limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> FeedPage:
+    return await service.list_user_projects(session, username, limit=limit, cursor=cursor)
+
+
 @router.get("/users/{username}/projects/{slug}")
 async def get_user_project(username: str, slug: str, session: Session) -> ProjectDetail:
     return ProjectDetail.from_project(await service.get_user_project(session, username, slug))

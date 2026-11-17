@@ -295,3 +295,50 @@ async def test_user_project_route_is_scoped_to_the_owner(client, db_session):
     await add_projects(db_session, make_project(is_demo=False, owner_id=a.id, slug="mine"))
     assert (await client.get("/api/v1/users/bobur/projects/mine")).status_code == 404
     assert (await client.get("/api/v1/users/aziz/projects/mine")).status_code == 200
+
+
+def _owned(user, slug: str, day: int):
+    return make_project(
+        is_demo=False,
+        owner_id=user.id,
+        demo_author=None,
+        demo_author_url=None,
+        slug=slug,
+        published_at=_day(day),
+    )
+
+
+async def test_user_projects_lists_only_that_users_projects_newest_first(client, db_session):
+    a = await make_user(db_session, username="aaa")
+    b = await make_user(db_session, username="bbb")
+    await add_projects(
+        db_session,
+        _owned(a, "a1", 1),
+        _owned(a, "a3", 3),
+        _owned(a, "a2", 2),
+        _owned(b, "b1", 4),
+        make_project(slug="demo-x"),
+    )
+
+    r = await client.get("/api/v1/users/aaa/projects")
+    assert r.status_code == 200, r.text
+    assert [i["path"] for i in r.json()["items"]] == ["/aaa/a3", "/aaa/a2", "/aaa/a1"]
+
+
+async def test_user_projects_pages_with_cursor(client, db_session):
+    a = await make_user(db_session, username="aaa")
+    await add_projects(db_session, _owned(a, "a1", 1), _owned(a, "a2", 2), _owned(a, "a3", 3))
+
+    first = (await client.get("/api/v1/users/aaa/projects", params={"limit": 2})).json()
+    assert [i["slug"] for i in first["items"]] == ["a3", "a2"]
+    second = (
+        await client.get(
+            "/api/v1/users/aaa/projects", params={"limit": 2, "cursor": first["next_cursor"]}
+        )
+    ).json()
+    assert ([i["slug"] for i in second["items"]], second["next_cursor"]) == (["a1"], None)
+
+
+async def test_user_projects_unknown_user_is_404(client):
+    r = await client.get("/api/v1/users/nobody/projects")
+    assert (r.status_code, r.json()["error"]["code"]) == (404, "user_not_found")
