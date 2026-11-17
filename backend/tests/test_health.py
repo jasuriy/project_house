@@ -1,8 +1,4 @@
-import os
-
-import pytest
-
-from app.core.db import database_is_up
+from app.core.db import database_is_up, dispose_engine
 from app.main import app
 
 
@@ -27,7 +23,11 @@ async def test_database_is_up_false_for_unreachable_host(monkeypatch, fresh_sett
     assert await database_is_up() is False
 
 
-@pytest.mark.skipif(not os.getenv("DATABASE_URL"), reason="needs a real Postgres")
-async def test_database_is_up_true_with_real_database(fresh_settings):
-    # Runs in CI (Postgres service) and locally when DATABASE_URL points at the compose db.
-    assert await database_is_up() is True
+async def test_database_is_up_true_with_real_database(
+    monkeypatch, fresh_settings, test_database_url
+):
+    monkeypatch.setenv("DATABASE_URL", test_database_url)
+    try:
+        assert await database_is_up() is True
+    finally:
+        await dispose_engine()
