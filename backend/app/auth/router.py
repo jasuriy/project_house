@@ -6,7 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import service
 from app.auth.dependencies import SESSION_COOKIE, SessionToken, current_user
 from app.auth.email import EmailSender, get_email_sender
-from app.auth.schemas import AccountResponse, LoginRequest, SignupRequest
+from app.auth.schemas import (
+    AccountResponse,
+    ForgotPasswordRequest,
+    LoginRequest,
+    ResetPasswordRequest,
+    SignupRequest,
+    TokenRequest,
+)
 from app.core.config import get_settings
 from app.core.db import get_session
 from app.users.models import User
@@ -107,3 +114,27 @@ async def logout(db: DbSession, token: SessionToken = None) -> Response:
 @router.get("/me")
 async def me(db: DbSession, user: Annotated[User, Depends(current_user)]) -> AccountResponse:
     return await _account(db, user)
+
+
+@router.post("/email/verify", status_code=204)
+async def verify_email(body: TokenRequest, db: DbSession) -> None:
+    await service.verify_email(db, body.token)
+
+
+@router.post("/password/forgot", status_code=202)
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    db: DbSession,
+    background: BackgroundTasks,
+    sender: Annotated[EmailSender, Depends(get_email_sender)],
+) -> None:
+    """202 whether or not the email has an account (no account enumeration). The mail is sent
+    after the response, so its delay does not tell the two cases apart either."""
+    message = await service.request_password_reset(db, body.email)
+    if message:
+        background.add_task(sender.send, *message)
+
+
+@router.post("/password/reset", status_code=204)
+async def reset_password(body: ResetPasswordRequest, db: DbSession) -> None:
+    await service.reset_password(db, body.token, body.new_password)

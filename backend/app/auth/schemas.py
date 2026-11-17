@@ -19,6 +19,19 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class TokenRequest(BaseModel):
+    token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
 class AccountResponse(UserPublic):
     """The signed-in user: the public profile plus the sign-in details only they may see."""
 

@@ -1,4 +1,4 @@
-"""Shared helpers for the auth tests: a capturing EmailSender, the Origin header the CSRF check
+"""Fixtures for the auth tests: a capturing EmailSender, the Origin header the CSRF check
 needs, and a response hook that fails a test when a secret appears in any response body."""
 
 import re
@@ -8,31 +8,17 @@ from urllib.parse import parse_qs, urlsplit
 
 import httpx
 import pytest
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.email import Message, get_email_sender
-from app.auth.models import AuthSession
 from app.core.config import get_settings
 from app.main import app
+from tests.auth_helpers import PASSWORD
 
-PASSWORD = "correct horse battery"
-SIGNUP = {
-    "email": "bek@example.com",
-    "password": PASSWORD,
-    "username": "bek",
-    "display_name": "Bek",
-    "account_type": "developer",
-}
 _LINK = re.compile(r"https?://\S+")
 
 
 def public_origin() -> str:
     return get_settings().public_base_url
-
-
-def signup_body(**overrides: str) -> dict[str, str]:
-    return {**SIGNUP, **overrides}
 
 
 @dataclass
@@ -98,16 +84,3 @@ async def auth_client(
     client.event_hooks["response"].append(watch.check)
     client.watch = watch  # type: ignore[attr-defined]
     yield client
-
-
-async def session_rows(db_session: AsyncSession) -> list[AuthSession]:
-    query = select(AuthSession).order_by(AuthSession.id).execution_options(populate_existing=True)
-    return list((await db_session.scalars(query)).all())
-
-
-def set_cookie_header(response: httpx.Response, name: str) -> str:
-    """The raw Set-Cookie header for `name`."""
-    for header in response.headers.get_list("set-cookie"):
-        if header.startswith(f"{name}="):
-            return header
-    raise AssertionError(f"no Set-Cookie for {name}")

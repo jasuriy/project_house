@@ -241,3 +241,67 @@ async def account_summary(db: AsyncSession, user_id: int) -> tuple[str | None, b
         best.email_verified if best else False,
         sorted({i.provider for i in identities}),
     )
+
+
+# --- email verification and password reset ----------------------------------------------------
+
+
+def _token_invalid() -> AppError:
+    return AppError(400, "token_invalid", "This link is invalid or has expired")
+
+
+async def _consume_token(db: AsyncSession, token: str, purpose: str) -> int:
+    """Mark a matching, unused, unexpired token of `purpose` as used and return its user id.
+
+    One atomic UPDATE, so two concurrent requests cannot both consume the same token. Raises
+    AppError(400, "token_invalid") for an unknown, used, expired or wrong-purpose token."""
+    now = datetime.now(UTC)
+    user_id = await db.scalar(
+        update(EmailToken)
+        .where(
+            EmailToken.token_hash == hash_token(token),
+            EmailToken.purpose == purpose,
+            EmailToken.used_at.is_(None),
+            EmailToken.expires_at > now,
+        )
+        .values(used_at=now)
+        .returning(EmailToken.user_id)
+    )
+    if user_id is None:
+        raise _token_invalid()
+    return user_id
+
+
+async def verify_email(db: AsyncSession, token: str) -> None:
+    user_id = await _consume_token(db, token, "verify")
+    await db.execute(
+        update(AuthIdentity)
+        .where(AuthIdentity.user_id == user_id, AuthIdentity.provider == "email")
+        .values(email_verified=True)
+    )
+    await db.commit()
+
+
+async def request_password_reset(db: AsyncSession, email: str) -> Message | None:
+    """The reset email to send, or None when no account has this email (the caller answers
+    the same either way)."""
+    email = normalize_email(email)
+    identity = await _email_identity(db, email)
+    if identity is None:
+        return None
+    token = await _issue_email_token(db, identity.user_id, "reset", RESET_TOKEN_LIFETIME)
+    await db.commit()
+    link = _link("/reset-password", token)
+    return Message(email, "Reset your password", f"Choose a new password:\n{link}")
+
+
+async def reset_password(db: AsyncSession, token: str, new_password: str) -> None:
+    """Set a new password and sign the user out everywhere. The password is checked before the
+    token is consumed, so a weak password does not burn the link."""
+    validate_password(new_password)
+    user_id = await _consume_token(db, token, "reset")
+    await db.merge(
+        PasswordCredential(user_id=user_id, password_hash=await hash_password(new_password))
+    )
+    await delete_user_sessions(db, user_id)
+    await db.commit()

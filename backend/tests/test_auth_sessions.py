@@ -14,7 +14,7 @@ from app.auth.models import AuthIdentity, AuthSession, PasswordCredential
 from app.core.config import get_settings
 from app.main import app
 from app.users.models import User
-from tests.auth_fixtures import (
+from tests.auth_helpers import (
     PASSWORD,
     SIGNUP,
     session_rows,
