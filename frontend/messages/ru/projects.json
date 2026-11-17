@@ -31,5 +31,18 @@
     "sampleNotice": "Это пример проекта. Автор оригинала: {name}.",
     "details": "Подробности",
     "play": "Воспроизвести видео"
+  },
+  "Profile": {
+    "projectsTab": "Проекты ({count})",
+    "aboutTab": "О себе",
+    "companyAbout": "О компании",
+    "noAbout": "Описания пока нет.",
+    "openToWork": "Открыт к работе",
+    "verifiedCompany": "Проверенная компания",
+    "projectsStat": "{count, plural, one {проект} few {проекта} other {проектов}}",
+    "editProfile": "Редактировать профиль",
+    "privacy": "Телефон и email не показываются; связь через сообщения.",
+    "empty": "Проектов пока нет.",
+    "profileOf": "Профиль"
   }
 }

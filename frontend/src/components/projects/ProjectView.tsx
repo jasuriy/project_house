@@ -1,21 +1,12 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { formatDate } from "@/lib/format";
+import { formatDate, initials } from "@/lib/format";
 import { safeExternalUrl } from "@/lib/safe-url";
 import type { ProjectDetail } from "@/lib/types";
 import { MediaPlayer } from "./MediaPlayer";
 import { ShareButton } from "./ShareButton";
 
 const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const;
-
-function initials(name: string): string {
-  return name
-    .split(/[\s_-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]!.toUpperCase())
-    .join("");
-}
 
 /** The project page body, laid out as mockup screen 2 ("Loyiha sahifasi"). */
 export function ProjectView({ project }: { project: ProjectDetail }) {
@@ -111,14 +102,18 @@ export function ProjectView({ project }: { project: ProjectDetail }) {
               {initials(project.author.name)}
             </span>
             <div className="grid min-w-0 justify-items-start gap-0.5 text-ui font-semibold text-fg">
-              {authorUrl ? (
+              {project.author.kind === "user" ? (
+                <Link href={project.author.url} className="inline-flex min-h-11 max-w-full items-center truncate hover:text-primary md:min-h-0">
+                  {project.author.name}
+                </Link>
+              ) : authorUrl ? (
                 <a href={authorUrl} {...EXTERNAL} className="inline-flex min-h-11 max-w-full items-center truncate hover:text-primary md:min-h-0">
                   {project.author.name}
                 </a>
               ) : (
                 <span className="truncate">{project.author.name}</span>
               )}
-              {project.is_demo && (
+              {project.author.kind === "demo" && (
                 <span className="rounded-full bg-accent-soft px-2 py-px text-caption font-medium text-primary">
                   {t("sample")}
                 </span>
@@ -140,7 +135,7 @@ export function ProjectView({ project }: { project: ProjectDetail }) {
             <ShareButton label={t("share")} copiedLabel={t("copied")} />
           </div>
 
-          {project.is_demo && (
+          {project.author.kind === "demo" && (
             <p className="text-meta text-mute">{t("sampleNotice", { name: project.author.name })}</p>
           )}
         </article>

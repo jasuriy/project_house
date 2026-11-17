@@ -28,6 +28,8 @@
   --color-warn-fg: #3b2a00;     /* text on the request banner */
   --color-warn-soft: #fff7e6;   /* request banner fill */
   --color-danger: #b91c1c;      /* report / destructive text, required-field star */
+  --color-avatar-from: #bfe3f7; /* large profile avatar fill, gradient start (text stays fg) */
+  --color-avatar-to: #7cc4ea;   /* large profile avatar fill, gradient end */
 
   /* Type: Inter only (Latin, Cyrillic, Uzbek U+02BB and U+02BC verified in the font file) */
   --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;

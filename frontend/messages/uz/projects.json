@@ -31,5 +31,18 @@
     "sampleNotice": "Bu namuna loyiha. Asl muallifi: {name}.",
     "details": "Tafsilotlar",
     "play": "Videoni ijro etish"
+  },
+  "Profile": {
+    "projectsTab": "Loyihalar ({count})",
+    "aboutTab": "Haqida",
+    "companyAbout": "Kompaniya haqida",
+    "noAbout": "Hali tavsif yoʻq.",
+    "openToWork": "Ishga ochiq",
+    "verifiedCompany": "Tasdiqlangan kompaniya",
+    "projectsStat": "loyiha",
+    "editProfile": "Profilni tahrirlash",
+    "privacy": "Telefon va email ochiq koʻrsatilmaydi; bogʻlanish xabarlar orqali.",
+    "empty": "Hali loyiha yoʻq.",
+    "profileOf": "Profil"
   }
 }

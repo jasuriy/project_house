@@ -55,7 +55,10 @@ export default async function FeedPageRoute({
           {feed.data.items.map((card) => (
             <ProjectCard key={card.path} card={card} />
           ))}
-          <LoadMore initialCursor={feed.data.next_cursor} field={field} />
+          <LoadMore
+            initialCursor={feed.data.next_cursor}
+            endpoint={field ? `/api/v1/projects?field=${field}` : "/api/v1/projects"}
+          />
         </div>
       )}
     </>
