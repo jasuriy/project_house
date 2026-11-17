@@ -80,6 +80,17 @@ our description tag from the one-line problem field, not from free text.
 - Feed grids: 4 columns on desktop (Devpost, Behance, Dribbble, Hugging Face), 3 (Arduino);
   1 column on mobile everywhere except Arduino (2).
 
+## Correction (Bek, 2026-11-17): desktop first
+
+The first draft of this study judged patterns by the first PHONE screen. Bek corrected the
+priority: Project House is mainly a website (spec D18). The gap in section 1 holds on desktop
+too - no site shows demo + problem + result + tech + contact together on the first desktop
+screen: Devpost (tech at the end, no contact), Product Hunt (no tech field, no contact), Behance
+(Message in the side rail, but tags at the end and no problem/result), GitHub (topic chips
+visible, but no demo and no contact), Hugging Face (the live app, no tech field, no contact). Pattern P7 (bottom tab bar) moves to the phone layout, designed last. The desktop
+answer is a two-column first screen: demo on the left, the evaluation panel (problem, result,
+tech, role, licence, author with Message) on the right.
+
 ## 5. What this means for our design
 
 Our distinctive move is an **evaluation-first project page**: on the first phone screen, in this

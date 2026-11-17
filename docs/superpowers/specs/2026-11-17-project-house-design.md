@@ -78,6 +78,7 @@ Starting market: Uzbekistan. Interface languages: **Uzbek, Russian, English**.
 | D15 | **Login for everyone: Google, email, or GitHub.** |
 | D16 | **Seed content:** Bek's ~30 friends sign up and add their own projects. No placeholder or "claim profile" feature. |
 | D17 | **No language in URLs** (next-intl `localePrefix: 'never'`, decided 2026-11-17). One link per page, e.g. `<domain>/<username>/<project>`. Interface language comes from the visitor's saved choice (cookie) or browser, with a language switcher. Usernames and project slugs may not contain dots and may not equal `uz`, `ru`, `en` or start with reserved prefixes (`api`, `_next`, `_vercel`). Implemented at the start of Step 1. |
+| D18 | **Desktop-first website** (Bek, 2026-11-17). Project House is mainly a website, not a mobile app. Screens are designed for desktop first, then tablet; the phone layout is designed last (it must still work, since shared links open on phones). |
 
 ## 6. Approaches considered
 

@@ -45,7 +45,8 @@ recruiter judge one project in under a minute, on a phone?
 
 A pattern is adopted only if it serves at least one of:
 1. the fixed project card (judge one project in under a minute),
-2. mobile-first use,
+2. ~~mobile-first use~~ desktop-first use, with the phone layout designed last
+   (corrected by Bek 2026-11-17, spec D18: the product is mainly a website),
 3. the Telegram share preview.
 Everything else is noted, not adopted.
 
