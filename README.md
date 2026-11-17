@@ -34,13 +34,15 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/uz
 ```
 
 Expected: `{"status":"ok","database":"ok"}` and `200`. Then open
-<http://localhost:3000/uz>, `/ru` and `/en`: each page shows its language and an "OK" status.
+<http://localhost:3000/uz>, `/ru` and `/en`: each page shows its language and the backend status
+(`OK` on `/en`, `Ishlayapti` on `/uz`, `Работает` on `/ru`).
 
 Stop with `docker compose down` (the database volume `pgdata` is kept; add `-v` to delete it).
 
-Ports: frontend 3000, backend 8000, PostgreSQL 55432 (bound to 127.0.0.1 only; inside Compose the
-backend still reaches it at `db:5432`). The host port is 55432, not 5432, because ports 5432 and
-5433 are often taken by other local PostgreSQL instances.
+Ports: frontend 3000 and backend 8000 (published on all host interfaces), PostgreSQL 55432
+(bound to 127.0.0.1 only; inside Compose the backend still reaches it at `db:5432`). The host
+port is 55432, not 5432, because ports 5432 and 5433 are often taken by other local PostgreSQL
+instances.
 
 ## Tests
 

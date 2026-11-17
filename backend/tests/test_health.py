@@ -21,7 +21,8 @@ async def test_health_503_when_database_down(client):
 
 
 async def test_database_is_up_false_for_unreachable_host(monkeypatch, fresh_settings):
-    # Port 1 on localhost: nothing listens there, connection is refused fast.
+    # Port 1 on 127.0.0.1: nothing listens there. On Windows the refusal takes ~2 s, so
+    # database_is_up returns False via its 2 s timeout; on Linux it is refused in ms (OSError).
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@127.0.0.1:1/x")
     assert await database_is_up() is False
 
