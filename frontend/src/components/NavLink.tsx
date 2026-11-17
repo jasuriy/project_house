@@ -14,8 +14,9 @@ export function NavLink({ href, children, "aria-label": ariaLabel }: Props) {
       href={href}
       aria-current={active ? "page" : undefined}
       aria-label={ariaLabel}
-      className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-control px-2 text-ui transition-colors ${
-        active ? "font-semibold text-fg" : "text-mute hover:text-fg"
+      className={`min-h-11 min-w-11 items-center justify-center rounded-control px-2 text-ui transition-colors ${
+        // On a phone the header has no room for a link to the page you are on (auth mockup, phone).
+        active ? "hidden font-semibold text-fg md:inline-flex" : "inline-flex text-mute hover:text-fg"
       }`}
     >
       {children}
