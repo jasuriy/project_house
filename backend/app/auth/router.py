@@ -22,7 +22,8 @@ from app.auth.schemas import (
 from app.core.config import get_settings
 from app.core.db import get_session
 from app.users.models import User
-from app.users.schemas import UserPublic
+from app.users.profile import update_profile
+from app.users.schemas import ProfileUpdate, UserPublic
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,13 @@ async def logout(db: DbSession, token: SessionToken = None) -> Response:
 @router.get("/me")
 async def me(db: DbSession, user: Annotated[User, Depends(current_user)]) -> AccountResponse:
     return await _account(db, user)
+
+
+@router.patch("/me")
+async def edit_me(
+    body: ProfileUpdate, db: DbSession, user: Annotated[User, Depends(current_user)]
+) -> AccountResponse:
+    return await _account(db, await update_profile(db, user, body))
 
 
 @router.post("/email/verify", status_code=204)

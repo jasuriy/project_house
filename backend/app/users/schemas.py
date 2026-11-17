@@ -28,3 +28,29 @@ class ProfileResponse(UserPublic):
     """The public profile page: the profile plus how many projects the user has."""
 
     project_count: int
+
+
+class LinksUpdate(BaseModel):
+    """Profile links to change: an absent key stays, an empty string removes the link."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    github: str | None = None
+    linkedin: str | None = None
+    website: str | None = None
+
+
+class ProfileUpdate(BaseModel):
+    """PATCH /auth/me: any subset of the editable fields. Values are checked in the service, so each
+    failure gets its own error code (the form shows it next to the field)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str | None = None
+    headline: str | None = None
+    location: str | None = None
+    university_or_employer: str | None = None
+    company_name: str | None = None
+    open_to_work: bool | None = None
+    about: str | None = None
+    links: LinksUpdate | None = None
