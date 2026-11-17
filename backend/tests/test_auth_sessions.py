@@ -13,6 +13,7 @@ from app.auth.dependencies import current_user, current_user_optional
 from app.auth.models import AuthIdentity, AuthSession, PasswordCredential
 from app.core.config import get_settings
 from app.main import app
+from app.users import service as users_service
 from app.users.models import User
 from tests.auth_helpers import (
     PASSWORD,
@@ -342,3 +343,26 @@ async def test_login_with_a_nul_byte_is_422(auth_client, field):
     response = await auth_client.post(f"{BASE}/login", json=body)
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "validation_error"
+
+
+@pytest.mark.parametrize(("provider", "verified"), [("google", True), ("github", False)])
+async def test_signup_is_409_when_any_identity_already_holds_the_email(
+    auth_client, db_session, provider, verified
+):
+    owner = await users_service.create_user(
+        db_session, username="owner", display_name="Owner", account_type="developer"
+    )
+    db_session.add(
+        AuthIdentity(
+            user_id=owner.id,
+            provider=provider,
+            provider_user_id="p-1",
+            email=SIGNUP["email"],
+            email_verified=verified,
+        )
+    )
+    await db_session.commit()
+    response = await _signup(auth_client, email="BEK@example.com")
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "email_taken"
+    assert len((await db_session.execute(select(User))).all()) == 1

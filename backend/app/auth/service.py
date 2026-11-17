@@ -168,7 +168,8 @@ async def signup(
     with the verification email to send after the response."""
     email = normalize_email(email)
     validate_password(password)
-    if await _email_identity(db, email):
+    # Any identity (email, Google or GitHub) holding this address blocks the signup.
+    if await db.scalar(select(AuthIdentity.id).where(AuthIdentity.email == email).limit(1)):
         raise AppError(409, "email_taken", "An account with this email already exists")
     user = await users_service.create_user(
         db, username=username, display_name=display_name, account_type=account_type
