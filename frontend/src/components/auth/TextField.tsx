@@ -59,7 +59,7 @@ export function TextField({
       <div
         className={`flex h-11 items-center rounded-control border bg-card md:h-10.5 ${
           error ? "border-danger" : "border-border"
-        } focus-within:border-primary`}
+        } focus-within:border-primary focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)]`}
       >
         {prefix && <span className="pl-3 text-ui text-mute">{prefix}</span>}
         <input
