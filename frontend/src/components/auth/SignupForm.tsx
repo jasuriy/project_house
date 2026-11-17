@@ -33,8 +33,7 @@ export function SignupForm() {
       account_type: value("account_type"),
     });
     if (result.ok) {
-      // Onboarding (with the "confirm your email" line) arrives with its own page; the feed until then.
-      router.replace("/");
+      router.replace("/onboarding?verify=1");
       router.refresh();
       return;
     }

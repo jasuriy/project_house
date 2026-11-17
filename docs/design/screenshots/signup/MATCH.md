@@ -14,7 +14,8 @@ Known differences (accepted):
 - The header's right-hand group sits about 8 px further left: the "Kirish" link has a 44 px touch area (same as on login and every page).
 - Typed test values differ from the drawing's sample text (`aziz.new@example.com`, `login-check`).
 - The drawing's desktop frame sits 8 px further right in its screenshot (screenshot framing, not layout).
-- After a successful sign-up the browser goes to the feed until the onboarding page exists (then `/onboarding?verify=1`).
+
+After a successful sign-up the browser goes to `/onboarding?verify=1` (checked when onboarding was built).
 
 Found and fixed while comparing: on phones the username input's default width made the whole card
 column wider than the card (inputs and buttons stuck out); the input now has a zero base width.

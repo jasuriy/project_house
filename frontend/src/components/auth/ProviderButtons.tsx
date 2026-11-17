@@ -21,7 +21,7 @@ export function ProviderButtons({
             href={`/api/v1/auth/oauth/${provider}/start`}
             className="inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-control border border-border bg-card text-ui font-semibold text-fg hover:border-primary"
           >
-            {provider === "google" ? <GoogleMark /> : <GitHubMark />}
+            <ProviderMark provider={provider} />
             {labels[provider]}
           </a>
         ))}
@@ -33,6 +33,11 @@ export function ProviderButtons({
       </div>
     </>
   );
+}
+
+/** The Google or GitHub logo (18 px), shared with the settings page. */
+export function ProviderMark({ provider }: { provider: "google" | "github" }) {
+  return provider === "google" ? <GoogleMark /> : <GitHubMark />;
 }
 
 function GoogleMark() {
