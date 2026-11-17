@@ -222,3 +222,21 @@ async def test_a_reset_does_not_void_the_verify_token(auth_client, email_sender)
     )
     response = await auth_client.post(f"{BASE}/email/verify", json={"token": verify_token})
     assert response.status_code == 204
+
+
+async def test_forgot_with_a_nul_byte_is_422(auth_client):
+    response = await _forgot(auth_client, "a\x00b@example.com")
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
+
+
+async def test_token_and_new_password_with_a_nul_byte_are_422(auth_client):
+    verify = await auth_client.post(f"{BASE}/email/verify", json={"token": "ab\x00cd"})
+    assert verify.status_code == 422
+    for body in (
+        {"token": "ab\x00cd", "new_password": NEW_PASSWORD},
+        {"token": "abcd", "new_password": "a long enough\x00password"},
+    ):
+        response = await auth_client.post(f"{BASE}/password/reset", json=body)
+        assert response.status_code == 422
+        assert response.json()["error"]["code"] == "validation_error"

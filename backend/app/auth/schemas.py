@@ -6,30 +6,41 @@ from app.auth.email import check_email
 from app.users.schemas import UserPublic
 
 
+def _reject_nul(value: str) -> str:
+    # PostgreSQL text cannot hold NUL: without this it would surface as a 500.
+    if "\x00" in value:
+        raise ValueError("must not contain NUL characters")
+    return value
+
+
+# Every string a client sends to the auth routes.
+Text = Annotated[str, AfterValidator(_reject_nul)]
+
+
 class SignupRequest(BaseModel):
-    email: Annotated[str, AfterValidator(check_email)]
-    password: str
-    username: str
-    display_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
-    account_type: str
+    email: Annotated[Text, AfterValidator(check_email)]
+    password: Text
+    username: Text
+    display_name: Annotated[Text, StringConstraints(strip_whitespace=True, min_length=1)]
+    account_type: Text
 
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: Text
+    password: Text
 
 
 class TokenRequest(BaseModel):
-    token: str
+    token: Text
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: str
+    email: Text
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
+    token: Text
+    new_password: Text
 
 
 class AccountResponse(UserPublic):

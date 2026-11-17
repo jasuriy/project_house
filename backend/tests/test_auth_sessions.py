@@ -322,3 +322,23 @@ async def test_current_user_dependency_guards_a_route(auth_client):
         app.router.routes[:] = [
             r for r in app.router.routes if not getattr(r, "path", "").startswith("/api/v1/_test")
         ]
+
+
+# --- NUL bytes: PostgreSQL text cannot hold them, so they must be a 422, never a 500 ----------
+
+
+@pytest.mark.parametrize("field", ["email", "password", "username", "display_name", "account_type"])
+async def test_signup_with_a_nul_byte_is_422(auth_client, field):
+    value = "a\x00b@example.com" if field == "email" else "ab\x00cdefghijkl"
+    auth_client.watch.secrets.add(value)
+    response = await _signup(auth_client, **{field: value})
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
+
+
+@pytest.mark.parametrize("field", ["email", "password"])
+async def test_login_with_a_nul_byte_is_422(auth_client, field):
+    body = {"email": SIGNUP["email"], "password": PASSWORD, field: "x\x00y"}
+    response = await auth_client.post(f"{BASE}/login", json=body)
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"

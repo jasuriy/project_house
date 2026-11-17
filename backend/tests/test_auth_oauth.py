@@ -427,3 +427,17 @@ async def test_github_emails_failure_redirects_to_login_error(auth_client, stub,
     _, params = await _start(auth_client, stub, "github")
     stub.github_emails_status = 500
     await _assert_failed(auth_client, await _callback(auth_client, "github", params), db_session)
+
+
+async def test_nul_bytes_in_provider_fields_are_stripped(auth_client, stub):
+    stub.github_user["login"] = "octo\x00cat"
+    stub.github_user["name"] = "The\x00 Octocat"
+    stub.github_emails = [{"email": "octo\x00@example.com", "primary": True, "verified": True}]
+    response = await _login_via(auth_client, stub, "github")
+    assert response.headers["location"] == f"{PUBLIC}/onboarding"
+    me = (await auth_client.get(f"{BASE}/me")).json()
+    assert (me["username"], me["display_name"], me["email"]) == (
+        "octocat",
+        "The Octocat",
+        "octo@example.com",
+    )

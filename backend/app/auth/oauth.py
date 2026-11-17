@@ -41,17 +41,22 @@ def get_oauth_client(provider: str) -> StarletteOAuth2App:
     raise AppError(404, "provider_disabled", "This sign-in provider is not enabled")
 
 
+def _clean(value: str | None) -> str | None:
+    """Provider-controlled text goes into PostgreSQL text columns, which cannot hold NUL."""
+    return value.replace("\x00", "") if value else value
+
+
 async def fetch_profile(provider: str, client: StarletteOAuth2App, token: dict) -> OAuthProfile:
     """The signed-in provider account. Raises on any malformed or failed provider response."""
     if provider == "google":
         info = token["userinfo"]  # parsed and validated from the ID token by Authlib
-        email = info.get("email")
+        email = _clean(info.get("email"))
         return OAuthProfile(
             provider_user_id=info["sub"],
             email=email,
             email_verified=info.get("email_verified") is True,
             username_hint=email.split("@")[0] if email else "",
-            display_name=info.get("name"),
+            display_name=_clean(info.get("name")),
         )
     user_response = await client.get("user", token=token)
     user_response.raise_for_status()
@@ -68,8 +73,8 @@ async def fetch_profile(provider: str, client: StarletteOAuth2App, token: dict) 
     )
     return OAuthProfile(
         provider_user_id=str(user["id"]),
-        email=primary["email"] if primary else None,
+        email=_clean(primary["email"]) if primary else None,
         email_verified=primary is not None,
-        username_hint=user.get("login") or "",
-        display_name=user.get("name"),
+        username_hint=_clean(user.get("login")) or "",
+        display_name=_clean(user.get("name")),
     )
