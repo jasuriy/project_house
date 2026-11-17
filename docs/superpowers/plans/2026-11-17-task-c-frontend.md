@@ -63,6 +63,18 @@ is applied in this version.
   logic, exact pins, small commits, no emoji, no overengineering.
 - Gate before every commit: `npm run lint`, `npm test`, `npm run build` in `frontend/` (and the
   backend gate when backend files change).
+- **Visual verification (Bek, 2026-11-18; binding for every UI step):** before reporting, run the
+  app (`npm run build` + `npm run start` against a backend with the demo seed) and take Playwright
+  screenshots at 1440, 768 and 390 px of every page you built; open the mockup
+  (`docs/design/2026-11-17-screens-mockup.html`, served with `python -m http.server` from
+  `docs/design/`) at the same widths and compare. Measure in the browser, not by eye, the
+  ui-ux-pro-max checklist (`C:/Users/HP/.claude/skills/ui-ux-pro-max/references/quick-reference.md`):
+  `touch-target-size` (every interactive element >= 44 x 44 px at 390), `focus-states` (Tab through
+  the page; the ring is the design-guide one: `primary` border + 3 px `accent-soft` halo),
+  `nav-state-active` (current page highlighted, `aria-current="page"`), `horizontal-scroll` (none),
+  `color-contrast` (only measured pairs), `heading-hierarchy`, `reduced-motion`. Report a table:
+  mockup vs ours vs verdict, with the screenshot file names (save them under `.playwright-mcp/`).
+  Stop every server you start.
 
 ## Rendering pattern (frozen 2026-11-18 from the C1 spike; Bek chose variant G)
 
@@ -326,6 +338,7 @@ explore, admin, the phone bottom tab bar (it would only hold one working item), 
 
 - Re-run `npm run lint`, `npm test`, `npm run build` (and the backend gate for C1).
 - `curl -I` on an existing and a missing project (status per "Rendering pattern").
+- Repeat the visual verification above independently (screenshots + measured checklist).
 - Playwright against a backend with the demo seed: desktop 1440, tablet 768, phone 390 screenshots
   of the feed and a project page compared with the mockups; Review Focus 4 (Accept-Language ru,
   switch survives reload and restart, query kept) and 5 (double submit, offline submit); login,
