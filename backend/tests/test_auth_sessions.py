@@ -366,3 +366,48 @@ async def test_signup_is_409_when_any_identity_already_holds_the_email(
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "email_taken"
     assert len((await db_session.execute(select(User))).all()) == 1
+
+
+# --- configuration and error paths ------------------------------------------------------------
+
+
+async def test_cookie_max_age_and_session_expiry_follow_session_days(
+    auth_client, db_session, monkeypatch
+):
+    monkeypatch.setattr(get_settings(), "session_days", 7)
+    response = await _signup(auth_client)
+    assert "max-age=604800" in _cookie_parts(response)
+    row = (await session_rows(db_session))[0]
+    remaining = row.expires_at - datetime.now(UTC)
+    assert timedelta(days=6, hours=23) < remaining <= timedelta(days=7)
+
+
+async def test_signup_race_on_the_email_unique_constraint_is_409(auth_client, db_session):
+    """The pre-check misses an identity whose `email` column differs, so the insert itself trips
+    the (provider, provider_user_id) constraint, as a concurrent signup would."""
+    owner = await users_service.create_user(
+        db_session, username="owner", display_name="Owner", account_type="developer"
+    )
+    db_session.add(
+        AuthIdentity(
+            user_id=owner.id,
+            provider="email",
+            provider_user_id=SIGNUP["email"],
+            email=None,
+            email_verified=False,
+        )
+    )
+    await db_session.commit()
+    response = await _signup(auth_client)
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "email_taken"
+    assert len((await db_session.execute(select(User))).all()) == 1
+    assert await session_rows(db_session) == []
+
+
+async def test_logout_clears_the_cookie_with_secure_in_production(auth_client, monkeypatch):
+    monkeypatch.setattr(get_settings(), "app_env", "production")
+    response = await auth_client.post(f"{BASE}/logout")
+    assert response.status_code == 204
+    parts = _cookie_parts(response)
+    assert {"max-age=0", "secure", "httponly", "samesite=lax", "path=/"} <= set(parts)

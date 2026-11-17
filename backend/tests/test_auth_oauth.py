@@ -169,6 +169,7 @@ async def test_oauth_state_cookie_is_lax_httponly_and_short_lived(auth_client, s
     assert "httponly" in parts
     assert "samesite=lax" in parts
     assert "max-age=600" in parts
+    assert "path=/api/v1/auth/oauth" in parts
     assert "secure" not in parts
     assert not any(p.startswith("domain") for p in parts)
 
