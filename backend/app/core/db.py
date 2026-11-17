@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from app.config import get_settings
+from app.core.config import get_settings
 
 DB_CHECK_TIMEOUT_SECONDS = 2
 

@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from app.db import database_is_up
+from app.core.db import database_is_up
 from app.main import app
 
 

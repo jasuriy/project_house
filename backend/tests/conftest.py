@@ -3,8 +3,8 @@ from collections.abc import AsyncIterator, Iterator
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.config import get_settings
-from app.db import get_engine
+from app.core.config import get_settings
+from app.core.db import get_engine
 from app.main import app
 
 
