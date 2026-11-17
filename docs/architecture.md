@@ -93,7 +93,12 @@ This closes Step 0's Ruling B: the dev default can never silently reach producti
 Integrity rules on `projects`:
 - `CHECK (owner_id IS NOT NULL OR is_demo)`: only demo rows may have no owner.
 - Unique `(owner_id, slug)` for real projects; unique `slug` among demo rows.
-- Feed index on `(published_at DESC, id DESC)`.
+- Feed index on `(published_at DESC, id DESC)`. `published_at` is NOT NULL (default `now()`): the
+  keyset cursor cannot order NULLs, so a NULL row would silently drop out of the feed.
+- `project_media.project_id` is indexed: the feed loads media with `WHERE project_id IN (...)` and
+  the cascade delete looks rows up by it.
+- `owner_id` has no ON DELETE action yet (deleting a user with projects is blocked). `SET NULL` is
+  impossible under the CHECK above; CASCADE vs keep-blocking is decided when account deletion is built.
 
 Reserved usernames (code constant, extended as routes appear): `uz ru en api _next _vercel demo
 new messages settings login logout signup admin explore feed search about help`.
