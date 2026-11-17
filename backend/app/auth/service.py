@@ -6,6 +6,7 @@ housekeeping (expired-row deletion, `last_seen_at`).
 
 import asyncio
 import hashlib
+import re
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -21,6 +22,7 @@ from app.core.config import get_settings
 from app.core.errors import AppError
 from app.users import service as users_service
 from app.users.models import User
+from app.users.usernames import RESERVED_USERNAMES
 
 MIN_PASSWORD_LENGTH = 10
 LAST_SEEN_INTERVAL = timedelta(hours=1)
@@ -305,3 +307,90 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> Non
     )
     await delete_user_sessions(db, user_id)
     await db.commit()
+
+
+# --- OAuth login ------------------------------------------------------------------------------
+
+
+@dataclass
+class OAuthProfile:
+    """What a provider told us about the person who just signed in."""
+
+    provider_user_id: str
+    email: str | None
+    email_verified: bool
+    username_hint: str  # provider login or email local part; sanitized into a username
+    display_name: str | None
+
+
+async def _free_username(db: AsyncSession, hint: str) -> str:
+    """A valid, unreserved, unused username derived from `hint`, with a numeric suffix on a
+    clash. The base is cut to 24 characters so a suffix still fits in 30."""
+    base = re.sub(r"[^a-z0-9_-]", "-", hint.lower()).strip("-_")[:24]
+    if len(base) < 3:
+        base = "user"
+    username, n = base, 1
+    while username in RESERVED_USERNAMES or await users_service.username_exists(db, username):
+        n += 1
+        username = f"{base}{n}"
+    return username
+
+
+async def oauth_login(
+    db: AsyncSession,
+    *,
+    provider: str,
+    profile: OAuthProfile,
+    user_agent: str | None,
+    old_token: str | None,
+) -> tuple[Authenticated, bool]:
+    """Sign in with a provider identity; returns (session, is_new_account).
+
+    A known (provider, provider_user_id) logs in. Otherwise the identity is linked to an existing
+    account only when the provider reports a VERIFIED email equal to an existing VERIFIED email;
+    any looser rule lets someone take over an account by registering its address elsewhere.
+    Else a new developer account is created."""
+    identity = await db.scalar(
+        select(AuthIdentity).where(
+            AuthIdentity.provider == provider,
+            AuthIdentity.provider_user_id == profile.provider_user_id,
+        )
+    )
+    is_new = False
+    if identity:
+        user_id = identity.user_id
+    else:
+        email = normalize_email(profile.email) if profile.email else None
+        verified = profile.email_verified and email is not None
+        match = None
+        if verified:
+            match = await db.scalar(
+                select(AuthIdentity)
+                .where(AuthIdentity.email == email, AuthIdentity.email_verified.is_(True))
+                .order_by(AuthIdentity.id)
+                .limit(1)
+            )
+        if match:
+            user_id = match.user_id
+        else:
+            username = await _free_username(db, profile.username_hint)
+            new_user = await users_service.create_user(
+                db,
+                username=username,
+                display_name=profile.display_name or profile.username_hint or username,
+                account_type="developer",
+            )
+            user_id, is_new = new_user.id, True
+        db.add(
+            AuthIdentity(
+                user_id=user_id,
+                provider=provider,
+                provider_user_id=profile.provider_user_id,
+                email=email,
+                email_verified=verified,
+            )
+        )
+    user = await users_service.get_by_id(db, user_id)
+    session_token = await start_session(db, user_id, user_agent, old_token)
+    await db.commit()
+    return Authenticated(user, session_token), is_new

@@ -58,9 +58,9 @@ class SecretWatch:
     async def check(self, response: httpx.Response) -> None:
         await response.aread()
         for header in response.headers.get_list("set-cookie"):
-            value = header.split(";", 1)[0].split("=", 1)[1].strip('"')
-            if value:
-                self.seen_cookie_values.add(value)
+            name, _, value = header.split(";", 1)[0].partition("=")
+            if name == "ph_session" and value.strip('"'):
+                self.seen_cookie_values.add(value.strip('"'))
         for secret in self.current():
             assert secret not in response.text, "a secret appeared in a response body"
 

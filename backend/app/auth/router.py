@@ -1,11 +1,15 @@
+import logging
 from typing import Annotated
 
+from authlib.integrations.starlette_client.apps import StarletteOAuth2App
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import service
+from app.auth import oauth, service
 from app.auth.dependencies import SESSION_COOKIE, SessionToken, current_user
 from app.auth.email import EmailSender, get_email_sender
+from app.auth.oauth import get_oauth_client
 from app.auth.schemas import (
     AccountResponse,
     ForgotPasswordRequest,
@@ -19,9 +23,15 @@ from app.core.db import get_session
 from app.users.models import User
 from app.users.schemas import UserPublic
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
+
+
+def _public_url(path: str = "") -> str:
+    return get_settings().public_base_url.rstrip("/") + path
 
 
 def _set_session_cookie(response: Response, token: str) -> None:
@@ -138,3 +148,45 @@ async def forgot_password(
 @router.post("/password/reset", status_code=204)
 async def reset_password(body: ResetPasswordRequest, db: DbSession) -> None:
     await service.reset_password(db, body.token, body.new_password)
+
+
+@router.get("/oauth/{provider}/start")
+async def oauth_start(
+    provider: str,
+    request: Request,
+    client: Annotated[StarletteOAuth2App, Depends(get_oauth_client)],
+) -> Response:
+    # The callback URL is built from PUBLIC_BASE_URL, never from the request's Host: behind the
+    # frontend proxy the backend sees its own host, which the provider would reject.
+    return await client.authorize_redirect(
+        request, _public_url(f"/api/v1/auth/oauth/{provider}/callback")
+    )
+
+
+@router.get("/oauth/{provider}/callback")
+async def oauth_callback(
+    provider: str,
+    request: Request,
+    db: DbSession,
+    client: Annotated[StarletteOAuth2App, Depends(get_oauth_client)],
+    token: SessionToken = None,
+) -> Response:
+    """Any failure (cancelled, forged state, failed exchange) is a redirect to the login page;
+    the user is in a browser, not an API client, and the URL carries nothing secret."""
+    try:
+        oauth_token = await client.authorize_access_token(request)
+        profile = await oauth.fetch_profile(provider, client, oauth_token)
+    except Exception as exc:  # noqa: BLE001  (every failure here means the same redirect)
+        # Class name only: provider error text can echo codes and tokens.
+        logger.warning("OAuth callback failed (%s: %s)", provider, type(exc).__name__)
+        return RedirectResponse(_public_url("/login?error=oauth_failed"), status_code=302)
+    auth, is_new = await service.oauth_login(
+        db,
+        provider=provider,
+        profile=profile,
+        user_agent=request.headers.get("user-agent"),
+        old_token=token,
+    )
+    response = RedirectResponse(_public_url("/onboarding" if is_new else ""), status_code=302)
+    _set_session_cookie(response, auth.session_token)
+    return response
