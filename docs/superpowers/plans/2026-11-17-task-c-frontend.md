@@ -33,9 +33,13 @@ is applied in this version.
 
 - Read `frontend/AGENTS.md`: this Next.js has breaking changes; check `node_modules/next/dist/docs/`
   before using an API.
-- **Rendering pattern (cacheComponents):** follow the section "Rendering pattern" exactly. Runtime
-  data (`cookies()`, `headers()`, uncached `fetch`, `usePathname` in shared layouts) lives inside
-  `<Suspense>` leaves with a fallback; never at the top of a layout.
+- **Rendering pattern:** follow the section "Rendering pattern" exactly. Page data (the project or
+  feed fetch and `notFound()`) runs at the top level of the page, NEVER inside `<Suspense>` or under a
+  `loading.tsx`: Next cannot change the status code after streaming starts, so a missing project
+  would return 200. Suspense is used only in the layout: the header's user slot and
+  `LanguageSwitcher`.
+- **Pages render no `<main>`:** the layout provides `<main className="page-width ...">` (max width
+  1280 plus side padding 40/24/16); pages render their content directly inside it.
 - **Locale in every page:** each page and each `generateMetadata` awaits `params.locale`, checks it
   with `hasLocale`, then calls `setRequestLocale(locale)` (or `getTranslations({ locale, namespace })`).
   The layout's call does not cover pages.
@@ -89,7 +93,7 @@ real 404 for browsers and Googlebot, and server-renders the title and metadata.
   shares the fetch through React `cache()`.
 - **No `loading.tsx`** above project routes: it wraps the page in Suspense and turns the 404 into a
   soft 404 again.
-- **Layout:** awaits `params.locale`; the header's user slot (reads `cookies()`) sits in its own
+- **Layout:** awaits `params.locale`; the header's user slot (reads the request `headers()` for the cookie) sits in its own
   `<Suspense>`; `LanguageSwitcher` (uses `usePathname`/`useSearchParams`) sits in its own
   `<Suspense>`: without it the build fails (`useSearchParams() should be wrapped in a suspense
   boundary`).
