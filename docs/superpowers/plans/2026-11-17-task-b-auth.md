@@ -44,7 +44,9 @@ No frontend pages in this task.
      `invalid_credentials` (same message whether the email exists or not).
    - `POST /logout` -> 204, session row deleted, cookie cleared.
    - `GET /me` -> current user (`UserPublic` plus `email`, `email_verified`, `providers`) or 401.
-   - `POST /email/verify` `{token}` -> 204; single use; expired -> 400 `token_invalid`.
+   - `POST /email/verify` `{token}` -> 204; single use; expired -> 400 `token_invalid`. Requires a
+     `ph_session` of the token's user: none -> 401 `not_authenticated`, another user's -> 400
+     `token_invalid`; the token is not consumed in either case (architecture section 6).
    - `POST /password/forgot` `{email}` -> 202 always (no account enumeration); sends reset email
      only if the account exists.
    - `POST /password/reset` `{token, new_password}` -> 204; deletes all sessions and other

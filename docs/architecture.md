@@ -147,6 +147,13 @@ new messages settings login logout signup admin explore feed search about help`.
   non-email identity attached to the account before that proof.
 - **Email verification and password reset:** single-use tokens, hashed in `email_tokens`, expiry
   24 h (verify) / 1 h (reset). Sent through `EmailSender`; dev implementation prints to the console.
+- **Verification needs the account's session (Bek, 2026-11-17, security review N1b):** a verify
+  token is accepted only from a request carrying a valid `ph_session` of the token's user. No
+  session -> 401 `not_authenticated` (the frontend sends the user to log in and back); a session of
+  another user -> 400 `token_invalid`; in both cases the token stays unused. Reason: clicking a
+  link proves mailbox ownership, not that the clicker created the account. Without this, a victim
+  who clicks an unsolicited verify link verifies an attacker's account, which can then carry the
+  attacker's provider identities past a password reset.
 - fastapi-users is not used: its PyPI page states "This project is now in maintenance mode" [V,
   pypi.org/project/fastapi-users, latest 15.0.5, 2026-03-27].
 - Rate limiting of login attempts: deferred to Step 0b (reverse proxy level); noted, not built.
