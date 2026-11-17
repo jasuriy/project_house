@@ -1,1 +1,13 @@
-{}
+{
+  "Feed": {
+    "title": "New projects",
+    "sub": "Newest first. Filter by field.",
+    "sort": "Sort: newest",
+    "filters": "Field",
+    "empty": "No projects in this field yet.",
+    "loadMore": "Show more",
+    "loading": "Loading",
+    "demo": "Sample",
+    "video": "Video"
+  }
+}

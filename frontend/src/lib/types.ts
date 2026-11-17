@@ -10,15 +10,15 @@ export type FieldName =
   | "hardware"
   | "data";
 
-// Display order of the field filters.
+// Display order of the field filters, as in the approved mockup's feed.
 export const FIELD_NAMES: FieldName[] = [
   "ai-apps",
   "cv-ml",
+  "hardware",
   "web",
   "mobile",
-  "devtools",
-  "hardware",
   "data",
+  "devtools",
 ];
 
 export function isFieldName(value: string): value is FieldName {

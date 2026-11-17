@@ -1,1 +1,13 @@
-{}
+{
+  "Feed": {
+    "title": "Yangi loyihalar",
+    "sub": "Eng yangilari birinchi. Yoʻnalish boʻyicha saralang.",
+    "sort": "Saralash: eng yangi",
+    "filters": "Yoʻnalish",
+    "empty": "Bu yoʻnalishda hali loyiha yoʻq.",
+    "loadMore": "Yana koʻrsatish",
+    "loading": "Yuklanmoqda",
+    "demo": "Namuna",
+    "video": "Video"
+  }
+}
