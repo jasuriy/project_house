@@ -1,0 +1,526 @@
+<title>Project House screens</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: desktop mockups (1280 px, scaled to fit) of the five main screens, palette 2 (professional blue + green), Minimalism, Inter. */
+:root {
+  --page: #f3f4f6; --page-ink: #1b1f27; --page-mute: #5c6370; --page-line: #d8dbe1; --page-card: #ffffff; --page-focus: #2457d6;
+  --bg: #f0f9ff; --card: #ffffff; --fg: #0c4a6e; --mute: #475569; --border: #d6ebf8; --muted: #e7eff5; --primary: #0369a1; --accent-soft: #e0f0fa; --ok: #166534; --ok-soft: #dcfce7; --deco: #0ea5e9; --warn-soft: #fff7e6; --warn: #8a5a00; --danger: #b91c1c;
+  --font: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #15181d; --page-ink: #e9ebef; --page-mute: #a3a9b4; --page-line: #2c313a; --page-card: #1d2128; --page-focus: #8fb0ff; color-scheme: dark; } }
+:root[data-theme="dark"] { --page: #15181d; --page-ink: #e9ebef; --page-mute: #a3a9b4; --page-line: #2c313a; --page-card: #1d2128; --page-focus: #8fb0ff; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--page-ink); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 64px; display: grid; gap: 36px; }
+.intro { display: grid; gap: 10px; max-width: 76ch; }
+.intro h1 { font-size: clamp(26px, 4vw, 34px); line-height: 1.15; margin: 0; font-weight: 700; letter-spacing: -0.015em; }
+.intro p { margin: 0; color: var(--page-mute); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { font-size: 14px; color: var(--page-ink); text-decoration: none; border: 1px solid var(--page-line); background: var(--page-card); border-radius: 999px; padding: 4px 12px; }
+section.scr { display: grid; gap: 12px; scroll-margin-top: 16px; }
+.scr h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.scr > p { margin: 0; color: var(--page-mute); max-width: 80ch; }
+.note { font-size: 13px; color: var(--page-mute); margin: 0; }
+.browser { border: 1px solid var(--page-line); border-radius: 12px; overflow: hidden; background: var(--page-card); }
+.browser .chrome { height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--page-line); font-size: 12px; color: var(--page-mute); }
+.browser .chrome i { width: 9px; height: 9px; border-radius: 50%; background: var(--page-line); display: block; }
+.browser .chrome span { margin-left: 10px; }
+.stage { position: relative; overflow: hidden; }
+.screen { width: 1280px; transform-origin: 0 0; position: absolute; left: 0; top: 0; }
+
+/* ---------- mock system ---------- */
+.m { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+.m .nav { height: 64px; display: flex; align-items: center; gap: 28px; padding: 0 40px; background: var(--card); border-bottom: 1px solid var(--border); }
+.m .logo { font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 9px; letter-spacing: -0.01em; }
+.m .logo b { width: 26px; height: 26px; border-radius: 7px; background: var(--deco); display: grid; place-items: center; color: #fff; font-size: 13px; }
+.m .nav a { font-size: 15px; color: var(--mute); }
+.m .nav a.on { color: var(--fg); font-weight: 600; }
+.m .search { flex: 1; max-width: 440px; height: 40px; border-radius: 8px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; background: var(--muted); color: var(--mute); }
+.m .right { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+.m .dot { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 12px; font-weight: 600; margin-left: 6px; }
+.m .btn { height: 40px; padding: 0 16px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--font); border: 0; background: var(--primary); color: #fff; white-space: nowrap; }
+.m .btn.ghost { background: var(--card); color: var(--fg); border: 1px solid var(--border); }
+.m .btn.sm { height: 34px; font-size: 14px; padding: 0 12px; }
+.m .btn.danger { background: var(--card); color: var(--danger); border: 1px solid var(--border); }
+.m .me { width: 36px; height: 36px; border-radius: 50%; background: var(--muted); border: 1px solid var(--border); }
+.m .main { padding: 28px 40px 36px; }
+.m .ph { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 10px; }
+.m .ph .win { position: absolute; inset: 12% 9% 15% 9%; border-radius: 5px; background: rgba(255,255,255,.12); display: grid; grid-template-rows: 9% 1fr 12%; }
+.m .ph .win i { display: block; }
+.m .ph .win .bar { background: rgba(255,255,255,.2); border-radius: 5px 5px 0 0; }
+.m .ph .win .tl { margin: 0 6%; background: repeating-linear-gradient(90deg, rgba(255,255,255,.5) 0 6%, transparent 6% 8%); border-radius: 2px; }
+.m .ph .play { position: absolute; left: 50%; top: 50%; width: 32px; height: 32px; transform: translate(-50%, -50%); border-radius: 50%; background: #fff; color: #111827; display: grid; place-items: center; }
+.m .ph .play::before { content: ""; border-left: 10px solid currentColor; border-top: 6px solid transparent; border-bottom: 6px solid transparent; margin-left: 3px; }
+.m .ph.lg .play { width: 62px; height: 62px; }
+.m .ph.lg .play::before { border-left-width: 18px; border-top-width: 11px; border-bottom-width: 11px; margin-left: 5px; }
+.m .ph .dur { position: absolute; right: 10px; bottom: 10px; font-size: 13px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,.6); color: #fff; font-variant-numeric: tabular-nums; }
+.m .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.m .chip { font-size: 13px; padding: 3px 10px; border-radius: 6px; background: var(--muted); color: var(--fg); border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 6px; }
+.m .chip.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+.m .chip .x { color: var(--mute); font-size: 12px; }
+.m .badge { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
+.m .badge.blue { background: var(--accent-soft); color: var(--primary); }
+.m .av { width: 44px; height: 44px; border-radius: 50%; background: var(--muted); border: 1px solid var(--border); display: grid; place-items: center; font-weight: 600; font-size: 14px; flex: none; color: var(--fg); }
+.m .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+.m .h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.015em; }
+.m .sub { margin: 4px 0 0; font-size: 15px; color: var(--mute); }
+.m .muted { color: var(--mute); }
+.m .grid { display: grid; gap: 20px; }
+.m .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: grid; align-content: start; }
+.m .card .ph { border-radius: 0; }
+.m .card .in { padding: 12px 14px 14px; display: grid; gap: 8px; }
+.m .card h4 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.25; }
+.m .card p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--mute); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.8em; }
+.m .card .chip { font-size: 12px; padding: 1px 8px; }
+.m .card .by { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mute); padding-top: 8px; border-top: 1px solid var(--border); }
+.m .card .by i { width: 22px; height: 22px; border-radius: 50%; background: var(--muted); border: 1px solid var(--border); display: block; }
+.m .card .by span { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* feed */
+.m .filters { display: flex; align-items: center; gap: 8px; margin: 18px 0 22px; }
+.m .filters .chip { padding: 6px 12px; font-size: 14px; background: var(--card); border-radius: 999px; }
+.m .filters .chip.on { background: var(--primary); }
+.m .sort { margin-left: auto; font-size: 14px; color: var(--mute); border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 6px 12px; }
+
+/* project page */
+.m .crumb { font-size: 14px; color: var(--mute); margin-bottom: 14px; }
+.m .split { display: grid; grid-template-columns: 768px 1fr; gap: 32px; align-items: start; }
+.m .thumbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 12px; }
+.m .thumbs .ph { border-radius: 6px; }
+.m .thumbs .ph.cur { outline: 2px solid var(--primary); outline-offset: 2px; }
+.m .pp { display: grid; gap: 16px; }
+.m .title { margin: 0; font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+.m .problem { margin: 0; font-size: 17px; line-height: 1.5; }
+.m .result { border-radius: 10px; background: var(--accent-soft); padding: 12px 14px; display: grid; gap: 2px; }
+.m .result small { font-size: 13px; color: var(--mute); }
+.m .result strong { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+.m .result span { font-size: 14px; }
+.m .kv { display: grid; grid-template-columns: 120px 1fr; gap: 8px 12px; font-size: 14px; margin: 0; }
+.m .kv dt { color: var(--mute); }
+.m .kv dd { margin: 0; }
+.m .hr { height: 1px; background: var(--border); }
+.m .author { display: flex; align-items: center; gap: 12px; }
+.m .who { display: grid; gap: 2px; font-size: 15px; font-weight: 600; }
+.m .acts { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.m .links { display: flex; gap: 18px; font-size: 14px; }
+.m .links a { color: var(--primary); }
+
+/* profile */
+.m .prof { display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start; }
+.m .pside { display: grid; gap: 14px; }
+.m .bigav { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #bfe3f7, #7cc4ea); border: 1px solid var(--border); display: grid; place-items: center; font-size: 30px; font-weight: 700; color: var(--fg); }
+.m .pname { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.015em; }
+.m .phead { margin: 0; font-size: 15px; }
+.m .facts { display: grid; gap: 6px; font-size: 14px; color: var(--mute); margin: 0; padding: 0; list-style: none; }
+.m .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.m .stats div { background: var(--muted); border-radius: 10px; padding: 10px 12px; display: grid; }
+.m .stats b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.m .stats span { font-size: 13px; color: var(--mute); }
+.m .tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.m .tabs a { padding: 10px 0; font-size: 15px; color: var(--mute); }
+.m .tabs a.on { color: var(--fg); font-weight: 600; box-shadow: inset 0 -2px 0 var(--primary); }
+
+/* add project */
+.m .formgrid { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: start; }
+.m .form { display: grid; gap: 18px; }
+.m .field { display: grid; gap: 6px; }
+.m .field label { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.m .field label .req { color: var(--danger); font-weight: 600; }
+.m .field .help { font-size: 13px; color: var(--mute); }
+.m .input { min-height: 42px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 10px 12px; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.m .input.area { min-height: 96px; align-items: flex-start; line-height: 1.45; }
+.m .input.focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--accent-soft); }
+.m .ai { font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--primary); }
+.m .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.m .drop { border: 1px dashed #9ccbe8; border-radius: 10px; padding: 14px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; background: var(--card); }
+.m .drop .ph { border-radius: 6px; }
+.m .drop .add { aspect-ratio: 16 / 9; border-radius: 6px; border: 1px dashed #9ccbe8; display: grid; place-items: center; font-size: 22px; color: var(--primary); }
+.m .ok { display: flex; gap: 12px; align-items: center; background: var(--ok-soft); color: var(--ok); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+.m .ok b { color: var(--ok); }
+.m .steps { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--mute); margin-top: 6px; }
+.m .steps b { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; background: var(--muted); color: var(--fg); }
+.m .steps .done b { background: var(--ok); color: #fff; }
+.m .steps .cur { color: var(--fg); font-weight: 600; }
+.m .steps .cur b { background: var(--primary); color: #fff; }
+.m .steps i { width: 28px; height: 1px; background: var(--border); display: block; }
+.m .footer-acts { display: flex; gap: 10px; justify-content: flex-end; padding-top: 6px; border-top: 1px solid var(--border); }
+.m .preview { display: grid; gap: 14px; position: sticky; top: 0; }
+.m .tg { border-radius: 14px; padding: 10px 12px; background: #e7f0f9; color: #10202f; font-size: 13px; display: grid; gap: 6px; border-left: 3px solid #3d8bd8; }
+.m .tg .site { color: #2b6fb3; font-weight: 600; }
+.m .tg .t { font-weight: 600; }
+.m .og { aspect-ratio: 1.91 / 1; border-radius: 8px; overflow: hidden; background: var(--primary); color: #fff; padding: 14px; display: grid; align-content: space-between; }
+.m .og .k { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.m .og .p { font-size: 12px; opacity: .92; }
+.m .og .bot { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.m .og .bot i { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.35); display: block; }
+
+/* messages */
+.m .chat { display: grid; grid-template-columns: 340px 1fr; height: 700px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.m .clist { border-right: 1px solid var(--border); display: grid; grid-template-rows: auto auto 1fr; min-height: 0; }
+.m .clist .top { padding: 16px 16px 10px; display: grid; gap: 10px; }
+.m .clist .top .search { max-width: none; }
+.m .ctabs { display: flex; gap: 20px; padding: 0 16px; border-bottom: 1px solid var(--border); }
+.m .ctabs a { padding: 8px 0; font-size: 14px; color: var(--mute); }
+.m .ctabs a.on { color: var(--fg); font-weight: 600; box-shadow: inset 0 -2px 0 var(--primary); }
+.m .items { overflow: hidden; }
+.m .item { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; }
+.m .item.on { background: var(--accent-soft); }
+.m .item .nm { font-size: 14px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.m .item .pv { font-size: 13px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
+.m .item .tm { font-size: 12px; color: var(--mute); }
+.m .conv { display: grid; grid-template-rows: auto auto 1fr auto; min-height: 0; }
+.m .chead { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.m .chead .who small { font-size: 13px; font-weight: 400; color: var(--mute); }
+.m .reqbar { margin: 14px 20px 0; padding: 14px 16px; border-radius: 10px; background: var(--warn-soft); color: #3b2a00; display: grid; gap: 10px; }
+.m .reqbar p { margin: 0; font-size: 14px; }
+.m .reqbar .b { display: flex; gap: 8px; }
+.m .msgs { padding: 18px 20px; display: grid; gap: 12px; align-content: start; }
+.m .bub { max-width: 560px; background: var(--muted); border-radius: 14px 14px 14px 4px; padding: 12px 14px; font-size: 15px; }
+.m .bub small { display: block; font-size: 12px; color: var(--mute); margin-top: 4px; }
+.m .shared { max-width: 360px; display: grid; grid-template-columns: 120px 1fr; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; }
+.m .shared .ph { border-radius: 6px; }
+.m .shared b { font-size: 14px; }
+.m .shared span { font-size: 13px; color: var(--mute); }
+.m .composer { border-top: 1px solid var(--border); padding: 12px 20px; display: flex; gap: 10px; align-items: center; }
+.m .composer .input { flex: 1; color: var(--mute); background: var(--muted); border-color: transparent; }
+.m .composer.locked .input { color: var(--mute); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--page-focus); outline-offset: 2px; }
+/* ---------- tablet (768 px) ---------- */
+.m.t .nav { padding: 0 24px; gap: 16px; }
+.m.t .search { max-width: none; }
+.m.t .main { padding: 20px 24px 28px; }
+.m .subtabs { display: flex; gap: 22px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.m .subtabs a { padding: 8px 0; font-size: 15px; color: var(--mute); }
+.m .subtabs a.on { color: var(--fg); font-weight: 600; box-shadow: inset 0 -2px 0 var(--primary); }
+.m .hrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.m.t .filters { flex-wrap: nowrap; overflow: hidden; margin: 14px 0 18px; -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
+.m.t .filters .chip { flex: none; }
+.m.t .split { grid-template-columns: 1fr; gap: 16px; }
+.m.t .thumbs { margin-top: 10px; }
+.m.t .title { font-size: 26px; }
+.m.t .pp { gap: 14px; }
+.m.t .pp .kv { grid-template-columns: 110px 1fr 110px 1fr; }
+.m.t .prof { grid-template-columns: 1fr; gap: 20px; }
+.m.t .phd { display: grid; grid-template-columns: 96px 1fr; gap: 6px 20px; align-items: start; }
+.m.t .phd .bigav { grid-row: span 3; }
+.m.t .phd .acts { grid-column: 2; grid-template-columns: auto auto; justify-content: start; }
+.m.t .phd .facts { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.m.t .phd .stats { display: flex; gap: 10px; }
+.m.t .formgrid { grid-template-columns: 1fr; gap: 20px; }
+.m.t .preview { position: static; grid-template-columns: 1fr 1fr; align-items: start; }
+.m.t .chat { grid-template-columns: 280px 1fr; height: 780px; }
+.m.t .item { grid-template-columns: 40px 1fr auto; gap: 10px; padding: 12px; }
+.m.t .item .pv { max-width: 150px; }
+.m.t .av { width: 40px; height: 40px; }
+.m.t .reqbar .b { flex-wrap: wrap; }
+.m.t .bub { max-width: 100%; }
+.m.t .chead .who small { display: block; }
+
+/* view switch */
+.switch { display: inline-flex; justify-self: start; border: 1px solid var(--page-line); border-radius: 10px; overflow: hidden; background: var(--page-card); }
+.switch button { font: 600 14px var(--font); padding: 8px 16px; border: 0; background: transparent; color: var(--page-ink); cursor: pointer; }
+.switch button[aria-pressed="true"] { background: var(--page-ink); color: var(--page); }
+.tabwrap { max-width: 770px; }
+/* ---------- phone (390 x 844, first screen) ---------- */
+.phones { display: flex; gap: 24px; align-items: flex-start; }
+.phone-frame { width: 390px; height: 844px; border-radius: 34px; border: 1px solid var(--page-line); overflow: hidden; background: var(--page-card); flex: none; position: relative; }
+.phone-cap { font-size: 13px; color: var(--page-mute); margin: 0 0 8px; }
+.m.p { width: 390px; height: 844px; position: relative; overflow: hidden; font-size: 15px; }
+.m.p .topbar { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 16px; background: var(--card); border-bottom: 1px solid var(--border); }
+.m.p .topbar .tt { font-weight: 600; font-size: 17px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m.p .ic { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; color: var(--fg); position: relative; flex: none; }
+.m.p .ic svg { width: 22px; height: 22px; }
+.m.p .ic .dot { position: absolute; top: 4px; right: 2px; margin: 0; min-width: 18px; height: 18px; font-size: 11px; }
+.m.p .content { padding: 14px 16px 90px; display: grid; gap: 14px; align-content: start; }
+.m.p .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 66px; background: var(--card); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; padding-bottom: 6px; }
+.m.p .tabbar span { display: grid; justify-items: center; gap: 2px; font-size: 11px; color: var(--mute); }
+.m.p .tabbar span.on { color: var(--primary); font-weight: 600; }
+.m.p .tabbar svg { width: 22px; height: 22px; }
+.m.p .tabbar .plus { width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: #fff; display: grid; place-items: center; }
+.m.p .actionbar { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 16px 14px; background: var(--card); border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.m.p .btn { height: 44px; }
+.m.p .btn.sm { height: 40px; }
+.m.p .subtabs { margin: 0; }
+.m.p .filters { flex-wrap: nowrap; overflow: hidden; margin: 0; -webkit-mask-image: linear-gradient(90deg, #000 80%, transparent); mask-image: linear-gradient(90deg, #000 80%, transparent); }
+.m.p .filters .chip { flex: none; }
+.m.p .h1 { font-size: 21px; }
+.m.p .demo-edge .ph { border-radius: 0; }
+.m.p .title { font-size: 22px; }
+.m.p .problem { font-size: 16px; }
+.m.p .result strong { font-size: 20px; }
+.m.p .kv { grid-template-columns: 100px 1fr; }
+.m.p .bigav { width: 72px; height: 72px; font-size: 24px; }
+.m.p .pname { font-size: 21px; }
+.m.p .facts { font-size: 14px; }
+.m.p .progress { height: 4px; border-radius: 2px; background: var(--muted); overflow: hidden; }
+.m.p .progress i { display: block; width: 66%; height: 100%; background: var(--primary); }
+.m.p .item { grid-template-columns: 44px 1fr auto; padding: 12px 16px; }
+.m.p .item .pv { max-width: 230px; }
+.m.p .reqbar { margin: 12px 16px 0; }
+.m.p .reqbar .b { flex-wrap: wrap; }
+.m.p .msgs { padding: 14px 16px; }
+.m.p .bub { max-width: 100%; }
+.m.p .composer { position: absolute; left: 0; right: 0; bottom: 0; background: var(--card); padding: 10px 16px 14px; }
+</style>
+
+<div class="wrap">
+  <div class="intro">
+    <h1>Project House screens</h1>
+    <p>The five main screens in the chosen system: professional blue + green, Inter, Minimalism. Desktop is drawn at 1280 px, tablet at 768 px (held upright), phone at 390 px. A tablet held sideways, about 1024 px, uses the desktop layout with smaller margins. Phone screens show the first screen only (390 x 844), because that screen decides whether someone keeps reading.</p>
+    <p class="note">All people, companies and the student's projects here are made up (Aziz Rahimov, Dilnoza Karimova, Nova Systems). The feed uses projects from our temporary demo data, described in our own words. Images are drawn placeholders. Uzbek interface text is a first draft.</p>
+  </div>
+  <div class="switch" role="group" aria-label="Screen size"><button type="button" id="b-desktop" aria-pressed="true">Desktop</button><button type="button" id="b-tablet" aria-pressed="false">Planshet</button><button type="button" id="b-phone" aria-pressed="false">Telefon</button></div>
+  <nav class="toc" aria-label="Screens"><a href="#s-feed">1. Lenta</a><a href="#s-project">2. Loyiha sahifasi</a><a href="#s-profile">3. Profil</a><a href="#s-add">4. Loyiha qoʻshish</a><a href="#s-messages">5. Xabarlar</a></nav>
+  <div id="screens"></div>
+</div>
+
+<script>
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const ph = (h, cls, dur, l) => `<div class="ph${cls ? " " + cls : ""}" style="background: linear-gradient(135deg, hsl(${h} 45% ${l || 30}%), hsl(${(h + 30) % 360} 50% ${(l || 30) + 12}%))"><div class="win"><i class="bar"></i><i></i><i class="tl"></i></div><span class="play"></span>${dur ? `<span class="dur">${dur}</span>` : ""}</div>`;
+const nav = (on, t) => t
+  ? `<div class="nav"><span class="logo"><b>P</b>Project House</span><div class="search">Qidirish</div><div class="right"><a class="${on === "msg" ? "on" : ""}">Xabarlar<span class="dot">2</span></a><button class="btn" type="button">+ Qoʻshish</button><span class="me"></span></div></div>`
+  : `<div class="nav"><span class="logo"><b>P</b>Project House</span><a class="${on === "feed" ? "on" : ""}">Lenta</a><a>Kashf etish</a><div class="search">Loyiha, texnologiya yoki muallifni qidiring</div><div class="right"><a class="${on === "msg" ? "on" : ""}">Xabarlar<span class="dot">2</span></a><button class="btn" type="button">Loyiha qoʻshish</button><span class="me"></span></div></div>`;
+const card = x => `<div class="card">${ph(x.hue)}<div class="in"><h4>${esc(x.t)}</h4><p>${esc(x.p)}</p><div class="chips">${x.tech.map(t => `<span class="chip">${t}</span>`).join("")}</div><div class="by"><i></i>${x.by}<span>${x.n} yoqtirish</span></div></div></div>`;
+const M = t => `m${t ? " t" : ""}`;
+
+const FEED = [
+  { t: "Labelme", p: "Training vision models needs hand-labelled images, and labelling tools are often heavy or hard to install.", tech: ["Python", "Qt"], by: "wkentaro", hue: 214, n: 312 },
+  { t: "Sesame Robot", p: "An accessible walking robot with expressive movement on ESP32, without a steep learning curve.", tech: ["ESP32", "C++"], by: "dorianborian", hue: 28, n: 187 },
+  { t: "screenpipe", p: "Knowledge workers' computer activity is invisible to the AI agents meant to help with that work.", tech: ["Rust"], by: "screenpipe", hue: 248, n: 954 },
+  { t: "JPL Open Source Rover", p: "An open, affordable six-wheel rover based on a real planetary-rover design.", tech: ["Onshape", "Python"], by: "nasa-jpl", hue: 8, n: 421 },
+  { t: "Documenso", p: "Every e-signature sent through a third-party tool adds a provider the signer has to trust.", tech: ["TypeScript"], by: "documenso", hue: 150, n: 233 },
+  { t: "Server Box", p: "Checking servers from a phone usually means juggling several SSH clients and monitors.", tech: ["Flutter", "Dart"], by: "lollipopkit", hue: 190, n: 96 },
+  { t: "Perspective", p: "Interactive pivot tables and charts over large or streaming data, without a heavy server.", tech: ["Rust", "WASM"], by: "perspective-dev", hue: 330, n: 158 },
+  { t: "VHS", p: "Recording terminal demos by hand cannot be repeated or tested; this scripts them.", tech: ["Go"], by: "charmbracelet", hue: 275, n: 402 }
+];
+const AZIZ = [
+  { t: "Paxta dalasida begona oʻt aniqlash", p: "Fermerlar begona oʻtni qoʻlda qidiradi; dron suratidan ularni avtomatik topadi.", tech: ["PyTorch", "YOLO"], by: "aziz-rahimov", hue: 110, n: 214 },
+  { t: "Voice Intelligence", p: "Uzun yigʻilish yozuvlarida muhim qarorlar yoʻqoladi; nutqni matnga oʻgirib, spikerlarni ajratadi.", tech: ["FastAPI", "Next.js"], by: "aziz-rahimov", hue: 220, n: 167 },
+  { t: "Metro yuklama prognozi", p: "Toshkent metrosida soatlik yoʻlovchi oqimini oldindan bashorat qiladi.", tech: ["Python", "LightGBM"], by: "aziz-rahimov", hue: 350, n: 88 },
+  { t: "Qoʻl yozuvi OCR (lotin)", p: "Oʻzbekcha qoʻl yozuvidagi konspektlarni raqamli matnga aylantiradi.", tech: ["PyTorch", "OpenCV"], by: "aziz-rahimov", hue: 40, n: 132 },
+  { t: "Smart issiqxona", p: "Issiqxonada harorat va namlikni ESP32 orqali kuzatib, sugʻorishni boshqaradi.", tech: ["ESP32", "MQTT"], by: "aziz-rahimov", hue: 160, n: 75 },
+  { t: "Talabalar uchun dars jadvali", p: "Universitet jadvalini Telegram bot orqali tez topish.", tech: ["aiogram", "PostgreSQL"], by: "aziz-rahimov", hue: 260, n: 51 }
+];
+const FIELDS = ["Hammasi", "AI ilovalar", "Kompyuter koʻrishi", "Apparat", "Veb", "Mobil", "Maʼlumotlar", "Dasturchilar uchun"];
+
+const feed = t => `<div class="${M(t)}">${nav("feed", t)}<div class="main">${t ? `<div class="subtabs"><a class="on">Lenta</a><a>Kashf etish</a></div>` : ""}<div class="hrow"><div><h2 class="h1">Yangi loyihalar</h2><p class="sub">Eng yangilari birinchi. Yoʻnalish boʻyicha saralang.</p></div>${t ? `<span class="sort">Saralash: eng yangi</span>` : ""}</div><div class="filters">${FIELDS.map((f, i) => `<span class="chip${i ? "" : " on"}">${f}</span>`).join("")}${t ? "" : `<span class="sort">Saralash: eng yangi</span>`}</div><div class="grid" style="grid-template-columns: repeat(${t ? 2 : 4}, 1fr)">${(t ? FEED.slice(0, 6) : FEED).map(card).join("")}</div></div></div>`;
+
+const ppBlocks = {
+  head: `<h2 class="title">Paxta dalasida begona oʻt aniqlash</h2><p class="problem">Fermerlar begona oʻtni qoʻlda qidiradi va gerbitsidni butun dalaga sepadi.</p>`,
+  result: `<div class="result"><small>Natija</small><strong>91% aniqlik</strong><span>420 ta dron suratidan iborat test toʻplamida</span></div>`,
+  chips: `<div class="chips"><span class="chip">PyTorch</span><span class="chip">YOLO</span><span class="chip">OpenCV</span></div>`,
+  kv: `<dl class="kv"><dt>Yoʻnalish</dt><dd>Kompyuter koʻrishi</dd><dt>Roli</dt><dd>Modelni oʻqitish, maʼlumot yigʻish</dd><dt>Litsenziya</dt><dd>MIT</dd><dt>Joylandi</dt><dd>17 noyabr 2026</dd></dl>`,
+  author: `<div class="author"><span class="av">AR</span><span class="who">Aziz Rahimov <span class="badge">Ishga ochiq</span></span></div>`,
+  acts: `<div class="acts"><button class="btn" type="button">Xabar yozish</button><button class="btn ghost" type="button">Saqlash</button></div>`,
+  links: `<div class="links"><a>GitHub</a><a>Demo video</a><a>Ulashish</a><a class="muted">Shikoyat qilish</a></div>`
+};
+const project = t => {
+  const th = [0, 1, 2, 3, 4].map(i => `<div class="ph${i ? "" : " cur"}" style="background: linear-gradient(135deg, hsl(${110 + i * 8} 40% ${24 + i * 5}%), hsl(${140 + i * 8} 45% ${36 + i * 4}%))"></div>`).join("");
+  const b = ppBlocks;
+  const panel = t
+    ? `<div class="panel pp">${b.head}${b.result}${b.chips}<div class="author" style="justify-content:space-between">${b.author}<div class="acts" style="grid-template-columns:auto auto">${b.acts.replace('<div class="acts">', "").replace("</div>", "")}</div></div><div class="hr"></div>${b.kv}${b.links}</div>`
+    : `<div class="panel pp">${b.head}${b.result}${b.chips}${b.kv}<div class="hr"></div>${b.author}${b.acts}${b.links}</div>`;
+  return `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="crumb">Lenta / Kompyuter koʻrishi / Paxta dalasida begona oʻt aniqlash</div><div class="split"><div>${ph(110, "lg", "1:48", 24)}<div class="thumbs">${th}</div></div>${panel}</div></div></div>`;
+};
+
+const profSide = (t, who) => {
+  const isDev = who === "dev";
+  const av = isDev ? `<div class="bigav">AR</div>` : `<div class="bigav" style="background: linear-gradient(135deg, #d6ebf8, #a9d4f0)">DK</div>`;
+  const name = isDev ? `<div><h2 class="pname">Aziz Rahimov</h2><p class="phead">Kompyuter koʻrishi va ML boʻyicha talaba</p></div>` : `<div><h2 class="pname">Dilnoza Karimova</h2><p class="phead">HR menejer, Nova Systems</p></div>`;
+  const badge = isDev ? `<div><span class="badge">Ishga ochiq</span></div>` : `<div><span class="badge blue">Tasdiqlangan kompaniya</span></div>`;
+  const facts = isDev ? `<ul class="facts"><li>Toshkent, Oʻzbekiston</li><li>TATU, Kompyuter injiniringi, 3-kurs</li><li>GitHub: aziz-rahimov</li><li>LinkedIn, shaxsiy sayt</li></ul>` : `<ul class="facts"><li>Toshkent, Oʻzbekiston</li><li>novasystems.uz</li></ul>`;
+  const stats = isDev ? `<div class="stats"><div><b>6</b><span>loyiha</span></div><div><b>727</b><span>yoqtirish</span></div></div>` : "";
+  const acts = `<div class="acts" style="grid-template-columns: 1fr 1fr"><button class="btn" type="button">Xabar yozish</button><button class="btn ghost" type="button">Ulashish</button></div>`;
+  const privacy = isDev ? `<p class="muted" style="margin:0;font-size:13px">Telefon va email ochiq koʻrsatilmaydi; bogʻlanish xabarlar orqali.</p>` : "";
+  if (t) return `<div class="panel phd">${av}${name}${badge}<div style="grid-column:2;display:grid;gap:10px">${facts}${stats}${privacy}</div>${acts}</div>`;
+  return `<div class="panel pside">${av}${name}${badge}${facts}${stats}${acts}${privacy}</div>`;
+};
+const profile = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${profSide(t, "dev")}<div><div class="tabs"><a class="on">Loyihalar (6)</a><a>Haqida</a></div><div class="grid" style="grid-template-columns: repeat(${t ? 2 : 3}, 1fr)">${(t ? AZIZ.slice(0, 4) : AZIZ).map(card).join("")}</div></div></div></div></div>`;
+const company = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${profSide(t, "co")}<div class="panel" style="display:grid;gap:10px"><h3 style="margin:0;font-size:18px">Kompaniya haqida</h3><p style="margin:0">Nova Systems logistika va qishloq xoʻjaligi uchun kompyuter koʻrishi yechimlarini ishlab chiqadi. Talabalar uchun yozgi amaliyot va junior oʻrinlar ochiq.</p><p class="muted" style="margin:0;font-size:14px">Kompaniya hisobi bitta odamga tegishli (Phase 1). Kompaniya sahifalari keyingi bosqichda.</p></div></div></div></div>`;
+
+const add = t => `<div class="${M(t)}">${nav("", t)}<div class="main">
+  <h2 class="h1">Loyiha qoʻshish</h2>
+  <div class="steps"><span class="done"><b>1</b> GitHub havolasi</span><i></i><span class="cur"><b>2</b> Maʼlumotlar va demo</span><i></i><span><b>3</b> ${t ? "Eʼlon qilish" : "Koʻrib chiqish va eʼlon qilish"}</span></div>
+  <div class="formgrid" style="margin-top:20px">
+  <div class="panel form">
+    <div class="ok"><span><b>GitHub ulandi: aziz-rahimov.</b> Siz bu repozitoriyning egasisiz, loyiha tasdiqlandi. Nom, tavsif va texnologiyalarni README asosida AI toʻldirdi; tekshirib chiqing.</span></div>
+    <div class="row2">
+      <div class="field"><label>Loyiha nomi <span class="req">*</span> <span class="ai">AI toʻldirdi</span></label><div class="input">Paxta dalasida begona oʻt aniqlash</div></div>
+      <div class="field"><label>AI qaysi tilda yozsin?</label><div class="input">Oʻzbekcha (lotin)</div></div>
+    </div>
+    <div class="field"><label>Qanday muammoni hal qiladi? <span class="req">*</span></label><div class="input focus">Fermerlar begona oʻtni qoʻlda qidiradi va gerbitsidni butun dalaga sepadi.</div><span class="help">Bir jumla. Bu jumla lenta va Telegram koʻrinishida chiqadi.</span></div>
+    <div class="field"><label>Qisqa tavsif <span class="req">*</span> <span class="ai">AI toʻldirdi</span></label><div class="input area">Dron suratlaridan begona oʻtlarni YOLO modeli bilan aniqlaydi va xaritada belgilaydi. Model 420 ta suratda sinovdan oʻtgan.</div></div>
+    <div class="row2">
+      <div class="field"><label>Natija</label><div class="input">91% aniqlik, 420 ta test surati</div><span class="help">Iloji boʻlsa raqam bilan.</span></div>
+      <div class="field"><label>Sizning rolingiz</label><div class="input">Modelni oʻqitish, maʼlumot yigʻish</div></div>
+    </div>
+    <div class="field"><label>Demo video havolasi</label><div class="input">youtube.com/watch?v=...</div><span class="help">YouTube yoki Loom. Video yoki kamida bitta rasm shart.</span></div>
+    <div class="field"><label>Rasmlar (6 tagacha)</label><div class="drop" style="grid-template-columns: repeat(${t ? 4 : 6}, 1fr)">${[0, 1, 2].map(i => `<div class="ph" style="background: linear-gradient(135deg, hsl(${110 + i * 12} 40% ${28 + i * 6}%), hsl(${140 + i * 10} 45% 44%))"></div>`).join("")}<div class="add">+</div></div></div>
+    <div class="row2">
+      <div class="field"><label>Texnologiyalar <span class="req">*</span> <span class="ai">AI toʻldirdi</span></label><div class="input"><span class="chip">PyTorch <span class="x">x</span></span><span class="chip">YOLO <span class="x">x</span></span><span class="chip">OpenCV <span class="x">x</span></span></div></div>
+      <div class="field"><label>Yoʻnalish <span class="req">*</span></label><div class="input">Kompyuter koʻrishi</div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>GitHub repozitoriy</label><div class="input">github.com/aziz-rahimov/cotton-weeds</div></div>
+      <div class="field"><label>Litsenziya</label><div class="input muted">MIT (GitHub'dan olindi)</div></div>
+    </div>
+    ${t ? "" : `<div class="footer-acts"><button class="btn ghost" type="button">Bekor qilish</button><button class="btn" type="button">Davom etish</button></div>`}
+  </div>
+  <div class="preview">
+    <div><p class="muted" style="margin:0 0 8px;font-size:13px">Lentada shunday koʻrinadi</p>${card(AZIZ[0])}</div>
+    <div><p class="muted" style="margin:0 0 8px;font-size:13px">Telegram'da ulashilganda</p><div class="tg"><span class="site">Project House</span><span class="t">Paxta dalasida begona oʻt aniqlash</span><span>Fermerlar begona oʻtni qoʻlda qidiradi va gerbitsidni butun dalaga sepadi.</span><div class="og"><span class="k">Paxta dalasida begona oʻt aniqlash</span><span class="p">PyTorch, YOLO, OpenCV. 91% aniqlik</span><span class="bot"><i></i>Aziz Rahimov</span></div></div></div>
+  </div>
+  ${t ? `<div class="footer-acts"><button class="btn ghost" type="button">Bekor qilish</button><button class="btn" type="button">Davom etish</button></div>` : ""}
+  </div></div></div>`;
+
+const messages = t => `<div class="${M(t)}">${nav("msg", t)}<div class="main"><div class="chat">
+  <div class="clist">
+    <div class="top"><h2 class="h1" style="font-size:20px">Xabarlar</h2><div class="search">Suhbatlarni qidirish</div></div>
+    <div class="ctabs"><a>Suhbatlar</a><a class="on">Soʻrovlar (2)</a></div>
+    <div class="items">
+      <div class="item on"><span class="av">DK</span><span><span class="nm">Dilnoza Karimova${t ? "" : ` <span class="badge blue">Kompaniya</span>`}</span><span class="pv">Paxta dalasi loyihangizni koʻrdim...</span></span><span class="tm">10:42</span></div>
+      <div class="item"><span class="av">SN</span><span><span class="nm">Sardor Nazarov</span><span class="pv">Salom! OCR loyihangiz boʻyicha savolim bor</span></span><span class="tm">Kecha</span></div>
+    </div>
+  </div>
+  <div class="conv">
+    <div class="chead"><span class="av">DK</span><span class="who">Dilnoza Karimova <small>HR menejer, Nova Systems. Tasdiqlangan kompaniya</small></span><button class="btn ghost sm" type="button" style="margin-left:auto">${t ? "Profil" : "Profilni koʻrish"}</button></div>
+    <div class="reqbar"><p><b>Bu yangi soʻrov.</b> Dilnoza sizga birinchi marta yozmoqda. Qabul qilsangiz, suhbat "Suhbatlar"ga oʻtadi va javob yoza olasiz.</p><div class="b"><button class="btn sm" type="button">Qabul qilish</button><button class="btn ghost sm" type="button">Eʼtiborsiz qoldirish</button><button class="btn danger sm" type="button">Shikoyat qilish</button></div></div>
+    <div class="msgs">
+      <div class="bub">Assalomu alaykum, Aziz! Paxta dalasida begona oʻt aniqlash loyihangizni koʻrdim. Nova Systems kompaniyasida kompyuter koʻrishi boʻyicha yozgi amaliyot oʻrni bor. Shu hafta qisqa suhbatlashsak boʻladimi?<small>10:42</small></div>
+      <div class="shared">${ph(110)}<span><b>Paxta dalasida begona oʻt aniqlash</b><br><span>91% aniqlik. PyTorch, YOLO</span></span></div>
+    </div>
+    <div class="composer locked"><div class="input">Javob yozish uchun soʻrovni qabul qiling</div><button class="btn" type="button" disabled style="opacity:.5">Yuborish</button></div>
+  </div>
+</div></div></div>`;
+
+const SCREENS = [
+  { id: "feed", h: "1. Lenta (feed)", d: "Newest first, filter by field (spec D7). Each card: demo, title, one-line problem, tech, author.", dt: "Two columns. Feed and Explore move from the top bar into tabs; the field filters scroll sideways; sort sits next to the heading.", url: "projecthouse.uz", html: feed },
+  { id: "project", h: "2. Loyiha sahifasi (project page)", d: "Everything a recruiter needs on the first screen, with a Report link (spec section 10).", dt: "Demo on top, full width. Under it: title, problem, result, tech, and the author with Message on one row, so they stay near the top. Details follow.", url: "projecthouse.uz/aziz-rahimov/paxta-begona-ot", html: project },
+  { id: "profile", h: "3. Profil (developer profile)", d: "Who the person is, open to work, Message and Share. Phone and email are never shown. No Follow button in Phase 1.", dt: "The side column becomes a header card across the top; projects in two columns.", url: "projecthouse.uz/aziz-rahimov", html: profile },
+  { id: "profile-company", h: "3b. Profil (company account)", d: "One person per company account in Phase 1 (spec D14); the verified badge is set by the admin.", dt: "Same header card as the developer profile, then About.", url: "projecthouse.uz/dilnoza-karimova", html: company },
+  { id: "add", h: "4. Loyiha qoʻshish (add project)", d: "Step 2 of 3 after the GitHub link: ownership confirmed, AI-filled fields marked, live preview of the feed card and Telegram link.", dt: "One column. The preview moves below the form, feed card and Telegram link side by side, then the buttons.", url: "projecthouse.uz/new", html: add },
+  { id: "messages", h: "5. Xabarlar (messages)", d: "A first message from a stranger lands in Requests (spec D9): accept, ignore or report; reply only after accepting.", dt: "Both panes stay, with a narrower list (280 px).", url: "projecthouse.uz/messages", html: messages }
+];
+
+/* ---------- phone screens ---------- */
+const I = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>',
+  compass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2 5-4 1 2-5z" stroke-linejoin="round"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-5 8-5s6.5 1 8 5" stroke-linecap="round"/></svg>',
+  sort: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M4 17l3 3 3-3M17 20V4M14 7l3-3 3 3"/></svg>'
+};
+const tabbar = on => `<div class="tabbar">${[["home", "Lenta"], ["compass", "Kashf etish"], ["plus", ""], ["chat", "Xabarlar"], ["user", "Profil"]].map(([k, l]) => k === "plus" ? `<span><span class="plus">${I.plus}</span></span>` : `<span class="${on === k ? "on" : ""}">${I[k]}${l}</span>`).join("")}</div>`;
+const topMain = () => `<div class="topbar"><span class="logo" style="flex:1"><b>P</b>Project House</span><span class="ic">${I.search}</span><span class="ic">${I.chat}<span class="dot">2</span></span></div>`;
+const topBack = (title, right) => `<div class="topbar"><span class="ic" style="margin-left:-12px">${I.back}</span><span class="tt">${title}</span>${right || ""}</div>`;
+
+const feedP = () => `<div class="m p">${topMain()}<div class="content">
+  <div class="subtabs"><a class="on">Lenta</a><a>Kashf etish</a></div>
+  <div class="hrow" style="align-items:center"><h2 class="h1">Yangi loyihalar</h2><span class="ic" style="border:1px solid var(--border)">${I.sort}</span></div>
+  <div class="filters">${FIELDS.map((f, i) => `<span class="chip${i ? "" : " on"}">${f}</span>`).join("")}</div>
+  ${FEED.slice(0, 2).map(card).join("")}
+</div>${tabbar("home")}</div>`;
+
+const projectP = () => `<div class="m p">${topBack("Loyiha", `<span class="ic">${I.share}</span>`)}
+  <div class="demo-edge">${ph(110, "lg", "1:48", 24)}</div>
+  <div class="content" style="padding-bottom:100px">
+    ${ppBlocks.head}${ppBlocks.result}${ppBlocks.chips}${ppBlocks.author}
+    <dl class="kv"><dt>Yoʻnalish</dt><dd>Kompyuter koʻrishi</dd><dt>Roli</dt><dd>Modelni oʻqitish, maʼlumot yigʻish</dd></dl>
+  </div>
+  <div class="actionbar"><button class="btn" type="button">Xabar yozish</button><button class="btn ghost" type="button">Saqlash</button></div>
+</div>`;
+
+const profileP = (who) => {
+  const dev = who === "dev";
+  return `<div class="m p">${topBack(dev ? "aziz-rahimov" : "dilnoza-karimova", `<span class="ic">${I.share}</span>`)}<div class="content">
+  <div style="display:flex;gap:14px;align-items:center">${dev ? `<div class="bigav">AR</div>` : `<div class="bigav" style="background: linear-gradient(135deg, #d6ebf8, #a9d4f0)">DK</div>`}<div><h2 class="pname">${dev ? "Aziz Rahimov" : "Dilnoza Karimova"}</h2><p class="phead" style="margin:0">${dev ? "Kompyuter koʻrishi va ML boʻyicha talaba" : "HR menejer, Nova Systems"}</p></div></div>
+  <div>${dev ? `<span class="badge">Ishga ochiq</span>` : `<span class="badge blue">Tasdiqlangan kompaniya</span>`}</div>
+  <ul class="facts">${dev ? "<li>Toshkent, Oʻzbekiston</li><li>TATU, Kompyuter injiniringi, 3-kurs</li><li>GitHub: aziz-rahimov</li>" : "<li>Toshkent, Oʻzbekiston</li><li>novasystems.uz</li>"}</ul>
+  ${dev ? `<div class="stats"><div><b>6</b><span>loyiha</span></div><div><b>727</b><span>yoqtirish</span></div></div>` : ""}
+  <div class="acts" style="grid-template-columns: 1fr auto"><button class="btn" type="button">Xabar yozish</button><button class="btn ghost" type="button">Ulashish</button></div>
+  ${dev ? `<div class="tabs" style="margin:0"><a class="on">Loyihalar (6)</a><a>Haqida</a></div>${card(AZIZ[0])}` : `<div class="panel" style="display:grid;gap:8px;padding:16px"><h3 style="margin:0;font-size:17px">Kompaniya haqida</h3><p style="margin:0">Nova Systems logistika va qishloq xoʻjaligi uchun kompyuter koʻrishi yechimlarini ishlab chiqadi. Talabalar uchun yozgi amaliyot va junior oʻrinlar ochiq.</p></div>`}
+</div>${tabbar(dev ? "" : "")}</div>`;
+};
+
+const addP = () => `<div class="m p">${topBack("Loyiha qoʻshish")}<div class="content" style="padding-bottom:100px">
+  <div style="display:grid;gap:6px"><span style="font-size:14px"><b>2-qadam (3 tadan):</b> Maʼlumotlar va demo</span><div class="progress"><i></i></div></div>
+  <div class="ok"><span><b>GitHub ulandi.</b> Repozitoriy egasi ekanligingiz tasdiqlandi. AI toʻldirgan maydonlarni tekshiring.</span></div>
+  <div class="field"><label>Loyiha nomi <span class="req">*</span> <span class="ai">AI toʻldirdi</span></label><div class="input">Paxta dalasida begona oʻt aniqlash</div></div>
+  <div class="field"><label>Qanday muammoni hal qiladi? <span class="req">*</span></label><div class="input focus">Fermerlar begona oʻtni qoʻlda qidiradi va gerbitsidni butun dalaga sepadi.</div><span class="help">Bir jumla. Lenta va Telegram koʻrinishida chiqadi.</span></div>
+  <div class="field"><label>Natija</label><div class="input">91% aniqlik, 420 ta test surati</div></div>
+</div>
+<div class="actionbar"><button class="btn" type="button">Davom etish</button><button class="btn ghost" type="button">Koʻrish</button></div></div>`;
+
+const msgListP = () => `<div class="m p"><div class="topbar"><span class="tt">Xabarlar</span><span class="ic">${I.search}</span></div>
+  <div class="ctabs" style="background:var(--card)"><a>Suhbatlar</a><a class="on">Soʻrovlar (2)</a></div>
+  <div class="items" style="background:var(--card)">
+    <div class="item"><span class="av">DK</span><span><span class="nm">Dilnoza Karimova <span class="badge blue">Kompaniya</span></span><span class="pv">Paxta dalasi loyihangizni koʻrdim...</span></span><span class="tm">10:42</span></div>
+    <div class="item"><span class="av">SN</span><span><span class="nm">Sardor Nazarov</span><span class="pv">Salom! OCR loyihangiz boʻyicha savolim bor</span></span><span class="tm">Kecha</span></div>
+  </div>
+  <p class="muted" style="margin:16px;font-size:13px">Notanish odamlarning birinchi xabarlari shu yerda turadi. Qabul qilganingizdan keyin suhbat "Suhbatlar"ga oʻtadi.</p>
+${tabbar("chat")}</div>`;
+
+const msgConvP = () => `<div class="m p">${topBack("Dilnoza Karimova", `<span class="ic">${I.user}</span>`)}
+  <div class="reqbar"><p><b>Bu yangi soʻrov.</b> Dilnoza (HR menejer, Nova Systems, tasdiqlangan kompaniya) sizga birinchi marta yozmoqda.</p><div class="b"><button class="btn sm" type="button">Qabul qilish</button><button class="btn ghost sm" type="button">Eʼtiborsiz qoldirish</button><button class="btn danger sm" type="button">Shikoyat</button></div></div>
+  <div class="msgs">
+    <div class="bub">Assalomu alaykum, Aziz! Paxta dalasida begona oʻt aniqlash loyihangizni koʻrdim. Nova Systems kompaniyasida kompyuter koʻrishi boʻyicha yozgi amaliyot oʻrni bor. Shu hafta qisqa suhbatlashsak boʻladimi?<small>10:42</small></div>
+    <div class="shared">${ph(110)}<span><b>Paxta dalasida begona oʻt aniqlash</b><br><span>91% aniqlik</span></span></div>
+  </div>
+  <div class="composer locked"><div class="input">Javob yozish uchun qabul qiling</div><button class="btn" type="button" disabled style="opacity:.5">Yuborish</button></div>
+</div>`;
+
+const PHONE = {
+  feed: [["Lenta", feedP]],
+  project: [["Loyiha sahifasi", projectP]],
+  profile: [["Dasturchi profili", () => profileP("dev")]],
+  "profile-company": [["Kompaniya profili", () => profileP("co")]],
+  add: [["2-qadam, birinchi ekran", addP]],
+  messages: [["Roʻyxat: Soʻrovlar", msgListP], ["Ochilgan soʻrov", msgConvP]]
+};
+const PDESC = {
+  feed: "One column. Bottom tab bar with five items; Add is the blue plus in the middle. Filters scroll sideways; sort is an icon.",
+  project: "Demo edge to edge, then title, problem, result, tech and the author. The tab bar is replaced by a fixed bar with Message and Save, so Message is always one tap away.",
+  profile: "Header stacked: photo and name, open to work, facts, stats, then Message and Share at full width. Projects in one column below.",
+  "profile-company": "Same header, then About.",
+  add: "One field per row, a progress bar for the 3 steps, and a fixed bar with Continue and Preview at the bottom.",
+  messages: "Two screens: the list (with the Requests tab) and the opened request with Accept, Ignore and Report."
+};
+
+function render(mode) {
+  const t = mode === "tablet", p = mode === "phone";
+  document.getElementById("screens").innerHTML = SCREENS.map(s => {
+    let body;
+    if (p) {
+      const list = PHONE[s.id];
+      const W = list.length * 390 + (list.length - 1) * 24;
+      body = `<div class="stage" data-w="${W}" style="max-width:${W}px"><div class="screen" style="width:${W}px"><div class="phones">${list.map(([cap, fn]) => `<div><p class="phone-cap">${cap}</p><div class="phone-frame">${fn()}</div></div>`).join("")}</div></div></div>`;
+    } else {
+      const W = t ? 768 : 1280;
+      body = `<div class="${t ? "tabwrap" : ""}"><div class="browser"><div class="chrome"><i></i><i></i><i></i><span>${s.url}</span></div><div class="stage" data-w="${W}"><div class="screen" style="width:${W}px">${s.html(t)}</div></div></div></div>`;
+    }
+    return `<section class="scr" id="s-${s.id}" aria-labelledby="h-${s.id}"><h2 id="h-${s.id}">${s.h}</h2><p>${p ? PDESC[s.id] : t ? s.dt : s.d}</p>${body}</section>`;
+  }).join("");
+  ["desktop", "tablet", "phone"].forEach(k => document.getElementById("b-" + k).setAttribute("aria-pressed", String(k === mode)));
+  fit();
+}
+function fit() {
+  document.querySelectorAll(".stage").forEach(st => {
+    const sc = st.querySelector(".screen"); const W = +st.dataset.w; const s = Math.min(1, st.clientWidth / W);
+    sc.style.transform = `scale(${s})`; st.style.height = Math.ceil(sc.offsetHeight * s) + "px";
+  });
+}
+let mode = "desktop";
+try { const saved = localStorage.getItem("ph-mode"); if (["desktop", "tablet", "phone"].includes(saved)) mode = saved; } catch (e) {}
+["desktop", "tablet", "phone"].forEach(k => document.getElementById("b-" + k).addEventListener("click", () => { mode = k; try { localStorage.setItem("ph-mode", k); } catch (e) {} render(mode); }));
+render(mode);
+window.addEventListener("resize", fit);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+</script>
