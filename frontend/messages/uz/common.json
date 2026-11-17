@@ -1,0 +1,26 @@
+{
+  "Nav": {
+    "feed": "Lenta",
+    "login": "Kirish",
+    "signup": "Roʻyxatdan oʻtish",
+    "settings": "Sozlamalar",
+    "logout": "Chiqish",
+    "language": "Til"
+  },
+  "Fields": {
+    "all": "Hammasi",
+    "ai-apps": "AI ilovalar",
+    "cv-ml": "Kompyuter koʻrishi",
+    "web": "Veb",
+    "mobile": "Mobil",
+    "devtools": "Dasturchilar uchun",
+    "hardware": "Apparat",
+    "data": "Maʼlumotlar"
+  },
+  "Errors": {
+    "unreachable": "Server bilan aloqa yoʻq. Birozdan soʻng qayta urinib koʻring.",
+    "server": "Serverda xatolik yuz berdi. Qayta urinib koʻring.",
+    "notFound": "Sahifa topilmadi.",
+    "retry": "Qayta urinish"
+  }
+}
