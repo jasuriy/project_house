@@ -2,3 +2,7 @@
 
 Each feature task adds one import line here.
 """
+
+from app.users import models as users_models
+
+__all__ = ["users_models"]
