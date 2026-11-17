@@ -46,7 +46,7 @@ def test_auth_tables_exist_and_downgrade_removes_only_them(alembic_cli, test_dat
 def test_migration_revision_id_and_parent(alembic_cli):
     result = alembic_cli("history")
     assert result.returncode == 0, result.stderr
-    assert "0002_projects -> 0002_auth (head)" in result.stdout
+    assert "0002_projects -> 0002_auth" in result.stdout
 
 
 async def _user(db_session, username="aziz"):

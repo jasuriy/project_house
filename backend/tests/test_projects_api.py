@@ -232,6 +232,23 @@ async def test_demo_detail_200_with_ordered_media_and_full_stack(client, db_sess
     assert "id" not in body and "owner_id" not in body
 
 
+async def test_detail_returns_live_url_or_null(client, db_session):
+    await add_projects(
+        db_session,
+        make_project(slug="with-link", live_url="https://app.example.com"),
+        make_project(slug="without-link"),
+    )
+    with_link = (await client.get("/api/v1/projects/demo/with-link")).json()
+    without_link = (await client.get("/api/v1/projects/demo/without-link")).json()
+    assert with_link["live_url"] == "https://app.example.com"
+    assert without_link["live_url"] is None
+
+
+async def test_card_does_not_carry_live_url(client, db_session):
+    await add_projects(db_session, make_project(live_url="https://app.example.com"))
+    assert "live_url" not in (await client.get("/api/v1/projects")).json()["items"][0]
+
+
 async def test_unknown_demo_slug_404_error_shape(client):
     r = await client.get("/api/v1/projects/demo/nope")
     assert r.status_code == 404

@@ -83,6 +83,7 @@ class ProjectDetail(BaseModel):
     field: FieldName
     tech_stack: list[str]
     github_url: str | None
+    live_url: str | None
     demo_video_url: str | None
     license: str | None
     role: str | None
@@ -104,6 +105,7 @@ class ProjectDetail(BaseModel):
             field=project.field,  # type: ignore[arg-type]
             tech_stack=project.tech_stack,
             github_url=project.github_url,
+            live_url=project.live_url,
             demo_video_url=project.demo_video_url,
             license=project.license,
             role=project.role,
