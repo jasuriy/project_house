@@ -137,6 +137,7 @@ not only storage. So the check of amended Article 27-1 on lex.uz, or a lawyer, i
 | Tech stack (tags) | Auto-fill from GitHub languages + README, editable | yes |
 | Field / category (CV, web, mobile, hardware, data, ...) | Author picks from a fixed list | yes |
 | GitHub repo link | Author | no (hardware / research projects may have none) |
+| Live site link (where the project can be opened and used) | Author | no; `http://` or `https://` only (Bek, 2026-11-17) |
 | License | Read from GitHub if present; "not specified" otherwise | auto |
 | Author's role (e.g. "built backend and model") | Author | no |
 

@@ -87,7 +87,7 @@ This closes Step 0's Ruling B: the dev default can never silently reach producti
 | `password_credentials` | Task B | `user_id` PK/FK; `password_hash` (argon2 via pwdlib) |
 | `sessions` | Task B | `user_id` FK; `token_hash` unique (SHA-256 of the cookie token); `expires_at`; `last_seen_at`; `user_agent` |
 | `email_tokens` | Task B | `user_id` FK; `purpose` verify\|reset; `token_hash`; `expires_at`; `used_at` |
-| `projects` | Task A | `owner_id` FK nullable; `is_demo` bool; `demo_author`, `demo_author_url`; `slug`; `title`; `one_line_problem`; `short_description`; `result`; `field`; `tech_stack text[]` (GIN index); `github_url`; `demo_video_url`; `license`; `role`; `published_at` |
+| `projects` | Task A | `owner_id` FK nullable; `is_demo` bool; `demo_author`, `demo_author_url`; `slug`; `title`; `one_line_problem`; `short_description`; `result`; `field`; `tech_stack text[]` (GIN index); `github_url`; `live_url` (nullable, CHECK `http(s)://` only); `demo_video_url`; `license`; `role`; `published_at` |
 | `project_media` | Task A | `project_id` FK on delete cascade; `kind` image\|video; `url`; `position`; `alt` |
 
 Integrity rules on `projects`:
