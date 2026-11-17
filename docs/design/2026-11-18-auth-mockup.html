@@ -96,6 +96,16 @@ svg { display: block; }
 .m .btn.sm { height: 34px; font-size: 14px; padding: 0 12px; }
 .m.p .btn.sm { height: 44px; }
 .m .btn.ghost.dim { color: var(--mute); }
+/* 10. profile edit */
+.settings .sub { margin: 4px 0 0; font-size: 15px; color: var(--mute); }
+.settings .sub a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.settings .group { display: grid; gap: 16px; }
+.input.area { height: auto; min-height: 104px; align-items: flex-start; padding: 10px 12px; line-height: 1.45; }
+.count { font-size: 13px; color: var(--mute); margin: 0; text-align: right; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+.check .box { flex: none; width: 18px; height: 18px; margin-top: 2px; border-radius: 4px; background: var(--primary); display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 700; }
+.check small { display: block; font-size: 13px; color: var(--mute); }
+.m.p .settings .actions .btn { width: 100%; }
 </style>
 
 <div class="wrap">
@@ -185,6 +195,15 @@ svg { display: block; }
     <div class="row">
       <div class="frame phone"><div class="m p" id="set-unverified"></div></div>
       <div class="frame phone"><div class="m p" id="set-error"></div></div>
+    </div>
+  </section>
+  <section class="scr">
+    <h2>10. Profilni tahrirlash (edit profile)</h2>
+    <p>Opened from "Profilni tahrirlash" on your profile and from Sozlamalar. Fields depend on the account type. Desktop: a developer, everything filled in. Phone left: the GitHub link is not a github.com address, so the error sits under that field after saving. Phone right: a company account (role, company name, About the company, website). After a successful save a green "Saqlandi" banner appears at the top.</p>
+    <div class="row"><div class="frame desk"><div class="m" id="edit-desk"></div></div></div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="edit-err"></div></div>
+      <div class="frame phone"><div class="m p" id="edit-company"></div></div>
     </div>
   </section>
 </div>
@@ -295,4 +314,30 @@ document.getElementById("onb-phone").innerHTML = onboarding(true, false);
 document.getElementById("set-desk").innerHTML = settings(false);
 document.getElementById("set-unverified").innerHTML = settings(true, { verified: false });
 document.getElementById("set-error").innerHTML = settings(true, { banner: "Bu GitHub hisobi boshqa hisobga ulangan." });
+const fld = (label, value, { req = false, help = "", error = "", ph = false } = {}) => `<div class="field"><label><span>${label}${req ? ` <span class="req" aria-hidden="true">*</span>` : ""}</span></label><div class="input${error ? " err" : ""}">${ph ? `<span class="ph">${value}</span>` : value}</div>${error ? `<p class="error">${error}</p>` : help ? `<p class="help">${help}</p>` : ""}</div>`;
+const editProfile = (phone, { company = false, githubError = false, saved = false } = {}) => `${navUser(phone)}<div class="main"><div class="settings">
+  <div><h1>Profilni tahrirlash</h1><p class="sub"><a href="#">Profilingizni koʻrish</a></p></div>
+  ${saved ? `<div class="banner ok">Saqlandi.</div>` : ""}
+  <div class="group"><h2>Asosiy</h2>
+    ${company ? fld("Ism", "Dilnoza Karimova", { req: true }) : fld("Ism", "Aziz Rahimov", { req: true, help: "Profilingiz va loyihalaringizda koʻrinadi." })}
+    ${company ? fld("Lavozim", "HR menejer", { help: "Kompaniyadagi vazifangiz." }) : fld("Sarlavha", "Kompyuter koʻrishi va ML boʻyicha talaba", { help: "Ismingiz ostida bir qatorda koʻrinadi." })}
+    ${company ? fld("Kompaniya nomi", "Nova Systems") : fld("Universitet yoki ish joyi", "TATU, Kompyuter injiniringi, 3-kurs")}
+    ${fld("Joylashuv", "Toshkent, Oʻzbekiston")}
+    ${company ? "" : `<label class="check"><span class="box">&#10003;</span><span>Ishga ochiqman<small>Profilingizda yashil "Ishga ochiq" belgisi koʻrinadi.</small></span></label>`}
+  </div>
+  <div class="hr"></div>
+  <div class="group"><h2>${company ? "Kompaniya haqida" : "Haqida"}</h2>
+    <div class="field"><div class="input area">${company ? "Nova Systems logistika va qishloq xoʻjaligi uchun kompyuter koʻrishi yechimlarini ishlab chiqadi." : "Kompyuter koʻrishi va mashinali oʻqitish bilan shugʻullanaman. Ochiq manbali loyihalarda qatnashaman."}</div><p class="count">${company ? "92" : "98"} / 1000</p></div>
+  </div>
+  <div class="hr"></div>
+  <div class="group"><h2>Havolalar</h2>
+    ${company ? fld("Kompaniya sayti", "https://novasystems.uz") : `${fld("GitHub", githubError ? "https://gitlab.com/aziz" : "https://github.com/aziz-rahimov", { error: githubError ? "GitHub havolasi https://github.com/nomingiz koʻrinishida boʻlsin." : "" })}
+    ${fld("LinkedIn", "https://www.linkedin.com/in/aziz-rahimov")}
+    ${fld("Shaxsiy sayt", "https://", { ph: true })}`}
+  </div>
+  <div class="actions"><a class="btn" href="#">Saqlash</a></div>
+</div></div>`;
+document.getElementById("edit-desk").innerHTML = editProfile(false);
+document.getElementById("edit-err").innerHTML = editProfile(true, { githubError: true });
+document.getElementById("edit-company").innerHTML = editProfile(true, { company: true, saved: true });
 </script>

@@ -21,6 +21,8 @@ export function TextField({
   labelAside,
   prefix,
   toggleLabels,
+  defaultValue,
+  maxLength,
 }: {
   name: string;
   label: string;
@@ -35,6 +37,8 @@ export function TextField({
   labelAside?: ReactNode;
   prefix?: string;
   toggleLabels?: { show: string; hide: string };
+  defaultValue?: string;
+  maxLength?: number;
 }) {
   const id = useId();
   const noteId = `${id}-note`;
@@ -70,6 +74,8 @@ export function TextField({
           autoComplete={autoComplete}
           placeholder={placeholder}
           required={required}
+          defaultValue={defaultValue}
+          maxLength={maxLength}
           aria-invalid={error ? true : undefined}
           aria-describedby={note ? noteId : undefined}
           className={`h-full w-0 min-w-0 flex-1 rounded-control bg-transparent text-ui text-fg placeholder:text-mute outline-none ${

@@ -58,6 +58,20 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
       {errorCode && <Banner tone="warn">{te(authErrorKey(errorCode), { provider: providerName })}</Banner>}
 
       <section>
+        <h2 className="mb-1 text-lead font-semibold text-fg">{t("profile")}</h2>
+        <div className="flex flex-wrap items-center gap-x-5">
+          <Link href="/settings/profile" className="inline-flex min-h-11 items-center text-ui font-semibold text-primary hover:underline md:min-h-0">
+            {t("editProfile")}
+          </Link>
+          <Link href={`/${user.username}`} className="inline-flex min-h-11 items-center text-ui text-primary hover:underline md:min-h-0">
+            {t("viewProfile")}
+          </Link>
+        </div>
+      </section>
+
+      <div className="h-px bg-border" />
+
+      <section>
         <h2 className="mb-1 text-lead font-semibold text-fg">{t("email")}</h2>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-ui text-fg">{user.email ?? t("noEmail")}</span>
