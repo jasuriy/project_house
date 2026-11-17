@@ -1,7 +1,12 @@
+import logging
+from http import HTTPStatus
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+logger = logging.getLogger(__name__)
 
 _HTTP_CODES = {
     400: "bad_request",
@@ -39,7 +44,25 @@ async def _handle_app_error(_: Request, exc: AppError) -> JSONResponse:
 
 async def _handle_http_exception(_: Request, exc: StarletteHTTPException) -> JSONResponse:
     code = _HTTP_CODES.get(exc.status_code, "http_error")
-    return _error_response(exc.status_code, code, str(exc.detail), exc.headers)
+    if isinstance(exc.detail, str):
+        message = exc.detail
+    else:
+        # Structured details are not part of our error shape and may carry internals.
+        message = _generic_message(exc.status_code)
+    return _error_response(exc.status_code, code, message, exc.headers)
+
+
+def _generic_message(status: int) -> str:
+    try:
+        return HTTPStatus(status).phrase
+    except ValueError:
+        return "Error"
+
+
+async def _handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
+    # Never put exception text in the response; the traceback goes to the server log only.
+    logger.error("Unhandled exception", exc_info=exc)
+    return _error_response(500, "internal_error", "Internal server error")
 
 
 async def _handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -56,3 +79,4 @@ def register_error_handlers(app: FastAPI) -> None:
     # Starlette's class, not FastAPI's subclass: the router raises Starlette's for unknown routes.
     app.add_exception_handler(StarletteHTTPException, _handle_http_exception)
     app.add_exception_handler(RequestValidationError, _handle_validation_error)
+    app.add_exception_handler(Exception, _handle_unexpected_error)
