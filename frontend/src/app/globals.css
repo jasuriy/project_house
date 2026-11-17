@@ -6,7 +6,8 @@
   --font-sans: var(--font-inter), "Segoe UI", system-ui, sans-serif;
 }
 
-/* Side padding 40 / 24 / 16 and content max width 1280 (design-guide section 4). */
+/* Side padding 40 / 24 / 16; content max width 1280, and 1600 on screens from 1536 px
+   (design-guide section 4; Bek, 2026-11-18: wide screens show more columns). */
 @utility page-width {
   margin-inline: auto;
   width: 100%;
@@ -17,6 +18,9 @@
   }
   @media (min-width: 64rem) {
     padding-inline: 2.5rem;
+  }
+  @media (min-width: 96rem) {
+    max-width: calc(1600px + 2 * 2.5rem);
   }
 }
 
