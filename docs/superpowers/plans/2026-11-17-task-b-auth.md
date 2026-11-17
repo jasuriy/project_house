@@ -47,16 +47,16 @@ No frontend pages in this task.
    - `POST /email/verify` `{token}` -> 204; single use; expired -> 400 `token_invalid`.
    - `POST /password/forgot` `{email}` -> 202 always (no account enumeration); sends reset email
      only if the account exists.
-   - `POST /password/reset` `{token, new_password}` -> 204; deletes all sessions of that user.
+   - `POST /password/reset` `{token, new_password}` -> 204; deletes all sessions and other
+     reset tokens of that user; marks the email identity verified; if it was unverified, deletes
+     the account's non-email identities (architecture section 6).
    - `GET /oauth/{provider}/start` -> redirect to the provider (Authlib Starlette client).
-   - `GET /oauth/{provider}/callback` -> find identity by (provider, provider_user_id): log in;
-     else if the request has a valid session: connect the identity to the current account;
-     else if any existing identity has the same normalized email: create nothing, redirect to
-     `public_base_url + "/login?error=account_exists&provider=<provider>"`; else create a new
-     developer account (username generated from the provider login / email local part,
-     sanitized to the username rules, numeric suffix on clash). Redirect to `public_base_url`
-     (new accounts: `public_base_url + "/onboarding"`). (Changed 2026-11-17, architecture
-     section 6: no linking by email match.)
+   - `GET /oauth/{provider}/callback` -> follows architecture section 6 "Account linking" exactly:
+     logged in = connect flow (`provider_in_use`, `provider_already_connected`,
+     `verify_email_first`, else connect); logged out = known identity logs in, same email ->
+     `/login?error=account_exists&provider=<p>`, else a new developer account (username from the
+     provider login / email local part, sanitized, numeric suffix on clash; redirect to
+     `public_base_url + "/onboarding"`). Provider emails are stored only when verified.
 8. **Passwords**: pwdlib argon2; minimum 10 characters (422 `weak_password` otherwise).
 9. **EmailSender** (`app/auth/email.py`): `Protocol` with `send(to: str, subject: str, body: str)`;
    `ConsoleEmailSender` logs subject and recipient and the link (dev/test only). Injected via a
