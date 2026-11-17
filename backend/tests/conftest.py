@@ -76,6 +76,13 @@ def test_database_url() -> str:
     asyncio.run(_create_database_if_missing(url))
     result = _run_alembic(url, "upgrade", "head")
     assert result.returncode == 0, f"alembic upgrade head failed:\n{result.stdout}\n{result.stderr}"
+    # Code that reads settings or builds the engine itself (seed loaders, helpers outside the
+    # get_session dependency) must hit the test database too, never the shared dev database.
+    # app.main is imported above, so settings may already be cached from the dev env: rebuild.
+    os.environ["DATABASE_URL"] = url
+    os.environ["APP_ENV"] = "test"
+    get_settings.cache_clear()
+    get_engine.cache_clear()
     return url
 
 
@@ -119,6 +126,9 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 
 @pytest.fixture
 async def client(engine: AsyncEngine) -> AsyncIterator[AsyncClient]:
+    """Client on the real app. Teardown clears ALL app.dependency_overrides, so a test sets its
+    own overrides (for example a capturing EmailSender) after requesting this fixture."""
+
     async def override_get_session() -> AsyncIterator[AsyncSession]:
         async with AsyncSession(engine, expire_on_commit=False) as session:
             yield session
