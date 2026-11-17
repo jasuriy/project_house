@@ -27,7 +27,8 @@ body {
   line-height: 1.5;
 }
 
-/* Visible keyboard focus everywhere (design-guide section 8). */
+/* Visible keyboard focus everywhere (design-guide sections 6 and 8): a primary border plus a
+   3 px accent-soft halo. The outline follows the element's own radius; the halo sits outside it. */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -35,7 +36,10 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline-offset: 0;
+  box-shadow: 0 0 0 5px var(--color-accent-soft);
+  /* The ring must not fade in from currentColor (Tailwind's transition-colors includes outline-color). */
+  transition: none;
 }
 
 /* Hover and press motion is feedback only and is off for people who ask for less motion. */

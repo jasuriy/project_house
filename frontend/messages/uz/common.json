@@ -5,7 +5,8 @@
     "signup": "Roʻyxatdan oʻtish",
     "settings": "Sozlamalar",
     "logout": "Chiqish",
-    "language": "Til"
+    "language": "Til",
+    "skip": "Asosiy mazmunga oʻtish"
   },
   "Fields": {
     "all": "Hammasi",

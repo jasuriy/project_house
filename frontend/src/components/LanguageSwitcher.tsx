@@ -41,10 +41,10 @@ export function LanguageSwitcher() {
             { locale: event.target.value },
           )
         }
-        className="h-10 cursor-pointer appearance-none rounded-control border border-border bg-card pr-2 pl-8 text-small text-fg transition-colors hover:bg-muted"
+        className="h-11 cursor-pointer appearance-none rounded-control border border-border bg-card pr-2 pl-8 text-small text-fg transition-colors hover:bg-muted md:h-10"
       >
         {routing.locales.map((code) => (
-          <option key={code} value={code} aria-label={NAMES[code]}>
+          <option key={code} value={code} lang={code} aria-label={NAMES[code]}>
             {code}
           </option>
         ))}

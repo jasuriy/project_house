@@ -62,6 +62,7 @@ describe("common namespace", () => {
         "Nav.logout",
         "Nav.settings",
         "Nav.signup",
+        "Nav.skip",
         "Errors.notFound",
         "Errors.retry",
         "Errors.server",
@@ -72,8 +73,25 @@ describe("common namespace", () => {
   });
 
   it("writes Uzbek with the modifier letters, never an ASCII apostrophe", () => {
-    for (const value of Object.values(flatten(load("uz", "common")))) {
-      expect(value as string).not.toContain("'");
+    for (const namespace of NAMESPACES) {
+      for (const value of Object.values(flatten(load("uz", namespace)))) {
+        expect(value as string).not.toContain("'");
+      }
     }
   });
+});
+
+describe("namespace files are merged with a shallow Object.assign", () => {
+  it.each(routing.locales)(
+    "%s: no top-level key appears in two namespace files",
+    (locale) => {
+      const seen = new Map<string, string>();
+      for (const namespace of NAMESPACES) {
+        for (const key of Object.keys(load(locale, namespace))) {
+          expect(seen.get(key), `${key} in ${namespace}`).toBeUndefined();
+          seen.set(key, namespace);
+        }
+      }
+    },
+  );
 });

@@ -1,5 +1,5 @@
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -26,13 +26,22 @@ export default async function LocaleLayout({
     notFound();
   }
   setRequestLocale(locale);
+  const t = await getTranslations("Nav");
 
   return (
     <html lang={locale} className={`${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
+          <a
+            href="#main"
+            className="sr-only z-50 rounded-control bg-primary text-ui font-semibold text-on-primary focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:inline-flex focus:min-h-11 focus:items-center focus:px-4"
+          >
+            {t("skip")}
+          </a>
           <SiteHeader />
-          {children}
+          <main id="main" tabIndex={-1} className="page-width flex-1 outline-none">
+            {children}
+          </main>
         </NextIntlClientProvider>
       </body>
     </html>

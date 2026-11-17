@@ -5,7 +5,8 @@
     "signup": "Sign up",
     "settings": "Settings",
     "logout": "Log out",
-    "language": "Language"
+    "language": "Language",
+    "skip": "Skip to main content"
   },
   "Fields": {
     "all": "All",
