@@ -8,9 +8,6 @@ from app.projects.models import Project
 from app.projects.schemas import FeedPage, ProjectCard
 from app.users import service as users_service
 
-DEFAULT_LIMIT = 24
-MAX_LIMIT = 60
-
 # Every query names what it loads: relationships are lazy="raise" (no lazy loads under asyncio).
 _LOAD = (selectinload(Project.media), joinedload(Project.owner))
 
@@ -19,8 +16,8 @@ async def list_feed(
     session: AsyncSession,
     *,
     field: str | None,
-    limit: int = DEFAULT_LIMIT,
-    cursor: str | None = None,
+    limit: int,
+    cursor: str | None,
 ) -> FeedPage:
     """Newest first by (published_at, id). Keyset paging: one extra row tells if a page follows."""
     stmt = (
@@ -34,7 +31,7 @@ async def list_feed(
     if cursor is not None:
         published_at, id_ = decode_cursor(cursor)
         stmt = stmt.where(tuple_(Project.published_at, Project.id) < tuple_(published_at, id_))
-    rows = list((await session.scalars(stmt)).unique())
+    rows = list(await session.scalars(stmt))
     page, has_more = rows[:limit], len(rows) > limit
     next_cursor = encode_cursor(page[-1].published_at, page[-1].id) if has_more else None
     return FeedPage(items=[ProjectCard.from_project(p) for p in page], next_cursor=next_cursor)

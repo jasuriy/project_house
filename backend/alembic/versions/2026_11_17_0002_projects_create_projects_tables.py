@@ -126,10 +126,12 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_project_media")),
     )
+    op.create_index(op.f("ix_project_media_project_id"), "project_media", ["project_id"])
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    op.drop_index(op.f("ix_project_media_project_id"), table_name="project_media")
     op.drop_table("project_media")
     op.drop_index(op.f("ix_projects_feed"), table_name="projects")
     op.drop_index(op.f("ix_projects_tech_stack"), table_name="projects", postgresql_using="gin")

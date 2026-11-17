@@ -73,7 +73,6 @@ class Project(Base):
     # (selectinload / joinedload) and a forgotten option fails loudly instead of silently.
     owner: Mapped[User | None] = relationship(lazy="raise")
     media: Mapped[list["ProjectMedia"]] = relationship(
-        back_populates="project",
         cascade="all, delete-orphan",
         order_by="ProjectMedia.position, ProjectMedia.id",
         lazy="raise",
@@ -90,7 +89,9 @@ class ProjectMedia(Base):
     __mapper_args__: ClassVar[dict[str, Any]] = {"eager_defaults": True}
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
     kind: Mapped[str] = mapped_column(Text)
     url: Mapped[str] = mapped_column(Text)
     position: Mapped[int] = mapped_column(Integer)
@@ -99,5 +100,3 @@ class ProjectMedia(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-
-    project: Mapped[Project] = relationship(back_populates="media", lazy="raise")

@@ -10,6 +10,9 @@ from app.projects.schemas import FeedPage, ProjectDetail
 
 router = APIRouter(tags=["projects"])
 
+DEFAULT_LIMIT = 24
+MAX_LIMIT = 60
+
 Session = Annotated[AsyncSession, Depends(get_session)]
 
 
@@ -17,7 +20,7 @@ Session = Annotated[AsyncSession, Depends(get_session)]
 async def list_projects(
     session: Session,
     field: FieldName | None = None,
-    limit: Annotated[int, Query(ge=1, le=service.MAX_LIMIT)] = service.DEFAULT_LIMIT,
+    limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     cursor: str | None = None,
 ) -> FeedPage:
     return await service.list_feed(session, field=field, limit=limit, cursor=cursor)

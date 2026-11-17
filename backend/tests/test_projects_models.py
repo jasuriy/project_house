@@ -88,3 +88,12 @@ async def test_media_cascades_with_project(db_session):
     await db_session.commit()
     remaining = await db_session.scalar(text("SELECT count(*) FROM project_media"))
     assert remaining == 0
+
+
+async def test_media_foreign_key_is_indexed(db_session):
+    indexes = set(
+        await db_session.scalars(
+            text("SELECT indexname FROM pg_indexes WHERE tablename = 'project_media'")
+        )
+    )
+    assert "ix_project_media_project_id" in indexes
