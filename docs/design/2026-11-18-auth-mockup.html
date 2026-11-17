@@ -43,6 +43,7 @@ section.scr { display: grid; gap: 10px; }
 .m .btn.block { width: 100%; height: 44px; }
 .m.p .btn { height: 44px; }
 .m .main { padding: 56px 40px 72px; display: grid; justify-items: center; }
+.settings .rowline .btn, .settings .rowline .badge { flex: none; }
 .m.p .main { padding: 20px 16px 32px; }
 
 .auth { width: 440px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; display: grid; gap: 20px; }
@@ -82,6 +83,19 @@ svg { display: block; }
 .banner.info { background: var(--accent-soft); color: var(--fg); }
 .m .btn.ghost.block { height: 44px; }
 .note-mute { font-size: 14px; color: var(--mute); margin: 0; }
+.settings { width: 640px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; display: grid; gap: 24px; }
+.m.p .settings { width: 100%; padding: 20px; gap: 20px; }
+.settings h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.015em; }
+.settings h2 { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
+.settings .hr { height: 1px; background: var(--border); }
+.rowline { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.rowline .who { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.rowline .who small { display: block; font-size: 13px; color: var(--mute); }
+.badge { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
+.badge.blue { background: var(--accent-soft); color: var(--primary); }
+.m .btn.sm { height: 34px; font-size: 14px; padding: 0 12px; }
+.m.p .btn.sm { height: 44px; }
+.m .btn.ghost.dim { color: var(--mute); }
 </style>
 
 <div class="wrap">
@@ -155,6 +169,22 @@ svg { display: block; }
     <div class="row">
       <div class="frame phone"><div class="m p" id="verify-bad"></div></div>
       <div class="frame phone"><div class="m p" id="verify-login"></div></div>
+    </div>
+  </section>
+  <section class="scr">
+    <h2>8. Xush kelibsiz (onboarding)</h2>
+    <p>After the first sign-up (email or Google/GitHub). Desktop: email sign-up (asks to confirm the email). Phone: a Google/GitHub sign-up (email already confirmed by the provider, no note).</p>
+    <div class="row"><div class="frame desk"><div class="m" id="onb-desk"></div></div></div>
+    <div class="row"><div class="frame phone"><div class="m p" id="onb-phone"></div></div></div>
+  </section>
+
+  <section class="scr">
+    <h2>9. Sozlamalar (settings)</h2>
+    <p>Email with its status and the connected Google/GitHub accounts. Desktop: confirmed email, Google connected, GitHub can be connected. Phone left: email not confirmed (connecting is blocked by the security rule, so the page says how to confirm, including the password-reset route). Phone right: coming back from GitHub when that GitHub account belongs to someone else.</p>
+    <div class="row"><div class="frame desk"><div class="m" id="set-desk"></div></div></div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="set-unverified"></div></div>
+      <div class="frame phone"><div class="m p" id="set-error"></div></div>
     </div>
   </section>
 </div>
@@ -237,4 +267,32 @@ document.getElementById("reset-expired").innerHTML = reset(true, "expired");
 document.getElementById("verify-desk").innerHTML = verify(false, "ok");
 document.getElementById("verify-bad").innerHTML = verify(true, "bad");
 document.getElementById("verify-login").innerHTML = login({ phone: true }).replace('<div class="providers">', '<div class="banner info">Emailni tasdiqlash uchun hisobingizga kiring. Keyin tasdiqlash avtomatik davom etadi.</div><div class="providers">');
+
+const onboarding = (phone, verify) => `${navUser(phone)}<div class="main"><div class="auth wide">
+  ${head("Xush kelibsiz, Aziz!", "Hisobingiz yaratildi. Endi loyihalarni koʻrishingiz mumkin.")}
+  ${verify ? `<div class="banner info">Emailingizga tasdiqlash havolasini yubordik. Uni oching: shunda Google yoki GitHub hisobingizni ham ulay olasiz.</div>` : ""}
+  <a class="btn block" href="#">Loyihalarni koʻrish</a>
+  <a class="btn ghost block" href="#">Sozlamalar</a>
+</div></div>`;
+
+const providerRow = (logo, name, state, phone) => `<div class="rowline"><span class="who">${logo}<span>${name}${state === "on" ? `<small>aziz@gmail.com</small>` : ""}</span></span>${
+  state === "on" ? `<span class="badge">Ulangan</span>` : state === "off" ? `<a class="btn ghost sm" href="#">Ulash</a>` : `<span class="btn ghost sm dim" aria-disabled="true">Ulash</span>`}</div>`;
+
+const settings = (phone, { verified = true, banner = "" } = {}) => `${navUser(phone)}<div class="main"><div class="settings">
+  <h1>Sozlamalar</h1>
+  ${banner ? `<div class="banner">${banner}</div>` : ""}
+  <div><h2>Email</h2><div class="rowline"><span class="who">aziz@example.com</span>${verified ? `<span class="badge">Tasdiqlangan</span>` : `<span class="badge blue">Tasdiqlanmagan</span>`}</div></div>
+  ${verified ? "" : `<div class="banner info">Google yoki GitHub ulash uchun avval emailingizni tasdiqlang: emaildagi havolani oching. Xat topilmasa, <a href="#" style="color:var(--primary);font-weight:600">parolni tiklang</a>: bu ham emailingizni tasdiqlaydi.</div>`}
+  <div class="hr"></div>
+  <div style="display:grid;gap:14px"><h2>Ulangan hisoblar</h2>
+    ${providerRow(G, "Google", verified ? "on" : "blocked", phone)}
+    ${providerRow(GH, "GitHub", verified ? "off" : "blocked", phone)}
+  </div>
+</div></div>`;
+
+document.getElementById("onb-desk").innerHTML = onboarding(false, true);
+document.getElementById("onb-phone").innerHTML = onboarding(true, false);
+document.getElementById("set-desk").innerHTML = settings(false);
+document.getElementById("set-unverified").innerHTML = settings(true, { verified: false });
+document.getElementById("set-error").innerHTML = settings(true, { banner: "Bu GitHub hisobi boshqa hisobga ulangan." });
 </script>
