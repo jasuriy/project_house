@@ -64,6 +64,7 @@ export function TextField({
         {prefix && <span className="pl-3 text-ui text-mute">{prefix}</span>}
         <input
           id={id}
+          data-field
           name={name}
           type={isPassword && visible ? "text" : type}
           autoComplete={autoComplete}
@@ -71,7 +72,7 @@ export function TextField({
           required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={note ? noteId : undefined}
-          className={`h-full w-0 min-w-0 flex-1 rounded-control bg-transparent text-ui text-fg placeholder:text-mute focus-visible:shadow-none focus-visible:outline-none ${
+          className={`h-full w-0 min-w-0 flex-1 rounded-control bg-transparent text-ui text-fg placeholder:text-mute outline-none ${
             prefix ? "pr-3" : "px-3"
           }`}
         />

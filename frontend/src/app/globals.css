@@ -35,7 +35,8 @@ body {
    3 px accent-soft halo. The outline follows the element's own radius; the halo sits outside it. */
 a:focus-visible,
 button:focus-visible,
-input:focus-visible,
+/* Inputs inside a TextField box are excluded: the box shows focus (primary border + 3 px halo). */
+input:not([data-field]):focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {

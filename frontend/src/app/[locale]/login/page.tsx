@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { Banner } from "@/components/auth/Banner";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { ProviderButtons } from "@/components/auth/ProviderButtons";
 import { Link, redirect } from "@/i18n/navigation";
@@ -41,10 +42,9 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/[l
 
   return (
     <AuthCard title={t("title")} sub={t("sub")}>
-      {errorCode && (
-        <p role="alert" className="rounded-media bg-warn-soft px-3.5 py-3 text-small text-warn-fg">
-          {te(authErrorKey(errorCode), { provider })}
-        </p>
+      {errorCode && <Banner tone="warn">{te(authErrorKey(errorCode), { provider })}</Banner>}
+      {!errorCode && one(query.next) === "/verify-email" && (
+        <Banner tone="info">{t("verifyNeedsLogin")}</Banner>
       )}
       <ProviderButtons
         providers={providers.ok ? providers.data.providers : []}
