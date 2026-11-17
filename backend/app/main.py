@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import register_error_handlers
 from app.health import router as health
+from app.projects import router as projects
 from app.users import router as users
 
 
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     register_error_handlers(app)
     app.include_router(health.router, prefix="/api")
     app.include_router(users.router, prefix="/api/v1")
+    app.include_router(projects.router, prefix="/api/v1")
     return app
 
 
