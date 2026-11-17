@@ -1,0 +1,12 @@
+{
+  "Home": {
+    "title": "Project House",
+    "subtitle": "Ishingizni ko'rsating. E'tiborga tushing.",
+    "backendStatus": "Backend holati:"
+  },
+  "Status": {
+    "ok": "Ishlayapti",
+    "degraded": "Ma'lumotlar bazasi ishlamayapti",
+    "unreachable": "Backend bilan aloqa yo'q"
+  }
+}

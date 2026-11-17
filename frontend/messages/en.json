@@ -1,0 +1,12 @@
+{
+  "Home": {
+    "title": "Project House",
+    "subtitle": "Show your work. Get noticed.",
+    "backendStatus": "Backend status:"
+  },
+  "Status": {
+    "ok": "OK",
+    "degraded": "Database unreachable",
+    "unreachable": "Backend unreachable"
+  }
+}
