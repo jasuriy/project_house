@@ -21,7 +21,9 @@ class SignupRequest(BaseModel):
     email: Annotated[Text, AfterValidator(check_email)]
     password: Text
     username: Text
-    display_name: Annotated[Text, StringConstraints(strip_whitespace=True, min_length=1)]
+    display_name: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1), AfterValidator(_reject_nul)
+    ]
     account_type: Text
 
 
