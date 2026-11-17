@@ -30,6 +30,17 @@ _DB_NAME = re.compile(r"[A-Za-z0-9_]+")
 UNSET_DB_URL = "postgresql+asyncpg://unset:unset@127.0.0.1:1/test_database_url_not_set"
 
 
+def db_name_guard_error(url: str) -> str | None:
+    """Why `url` may not be used as the test database, or None. Tests truncate every table."""
+    name = make_url(url).database or ""
+    if _DB_NAME.fullmatch(name) and "test" in name:
+        return None
+    return (
+        f"TEST_DATABASE_URL database {name!r} must be [A-Za-z0-9_]+ and contain 'test': "
+        "tests truncate every table"
+    )
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Before any test runs, point every settings/engine user at the test database.
 
@@ -38,7 +49,10 @@ def pytest_configure(config: pytest.Config) -> None:
     app.main is imported above, so settings may already be cached from the dev env: rebuild.
     Creating and migrating the database stays lazy (test_database_url fixture).
     """
-    os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or UNSET_DB_URL
+    test_url = os.environ.get("TEST_DATABASE_URL")
+    if test_url and (error := db_name_guard_error(test_url)):
+        raise pytest.UsageError(error)
+    os.environ["DATABASE_URL"] = test_url or UNSET_DB_URL
     os.environ["APP_ENV"] = "test"
     get_settings.cache_clear()
     get_engine.cache_clear()
@@ -47,12 +61,8 @@ def pytest_configure(config: pytest.Config) -> None:
 async def _create_database_if_missing(url: str) -> None:
     parsed = make_url(url)
     name = parsed.database or ""
-    if not _DB_NAME.fullmatch(name) or "test" not in name:
-        pytest.fail(
-            f"TEST_DATABASE_URL database {name!r} must be [A-Za-z0-9_]+ and contain 'test': "
-            "tests truncate every table",
-            pytrace=False,
-        )
+    if error := db_name_guard_error(url):
+        pytest.fail(error, pytrace=False)
     conn = await asyncpg.connect(
         host=parsed.host,
         port=parsed.port,

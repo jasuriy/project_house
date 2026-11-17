@@ -36,3 +36,13 @@ async def test_fresh_settings_restores_test_url(test_database_url, fresh_setting
     assert get_settings().database_url == os.environ["TEST_DATABASE_URL"]
     assert get_engine().url.database == make_url(test_database_url).database
     await dispose_engine()
+
+
+def test_test_db_name_guard_rejects_dev_database():
+    """pytest_configure refuses to start when TEST_DATABASE_URL names a non-test database."""
+    from tests.conftest import db_name_guard_error
+
+    base = "postgresql+asyncpg://projecthouse:projecthouse_dev@127.0.0.1:55432/"
+    assert db_name_guard_error(base + "projecthouse") is not None
+    assert db_name_guard_error(base + "projecthouse_test; DROP") is not None
+    assert db_name_guard_error(base + "projecthouse_test_auth") is None
