@@ -62,6 +62,10 @@ def project_values(entry: dict[str, Any]) -> dict[str, Any]:
         "field": entry["field"],
         "tech_stack": list(entry["tech_stack"]),
         "github_url": entry["repo_url"],
+        # The seed's `link` is the live site; when it is only the repository again, there is none.
+        "live_url": None
+        if entry["link"].rstrip("/") == entry["repo_url"].rstrip("/")
+        else entry["link"],
         "demo_video_url": entry["demo_video_url"],
         "license": entry["license"],
         "role": None,

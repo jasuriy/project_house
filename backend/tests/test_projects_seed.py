@@ -47,6 +47,7 @@ def entry(**overrides) -> dict:
         "title": "Some Tool",
         "repo_url": "https://github.com/someone/some-tool",
         "original_author": "someone",
+        "link": "https://some-tool.example.com",
         "demo_video_url": None,
         "image_urls": [],
         "one_line_problem": "Problem.",
@@ -142,6 +143,20 @@ def test_entry_mapping():
     assert values["result"] == "A claim."
     assert values["license"] is None
     assert values["tech_stack"] == ["Go"]
+    assert values["live_url"] == "https://some-tool.example.com"
+
+
+@pytest.mark.parametrize("link", ["https://github.com/o/r", "https://github.com/o/r/"])
+def test_live_url_is_null_when_the_link_is_the_repository(link):
+    values = seed_demo.project_values(entry(repo_url="https://github.com/o/r", link=link))
+    assert values["live_url"] is None
+
+
+def test_live_url_is_null_when_the_repository_has_a_trailing_slash():
+    values = seed_demo.project_values(
+        entry(repo_url="https://github.com/o/r/", link="https://github.com/o/r")
+    )
+    assert values["live_url"] is None
 
 
 def test_media_rows_put_the_video_first_then_images_in_order():
@@ -231,6 +246,21 @@ async def test_delete_demo_removes_demo_rows_and_media_but_keeps_real_projects(d
 
     assert await count(db_session, Project) == 1
     assert await count(db_session, ProjectMedia) == 0
+
+
+async def test_real_seed_gives_27_projects_with_a_live_url_and_stays_27_on_reload(db_session):
+    entries = seed_entries()
+    live = select(func.count()).where(Project.live_url.is_not(None))
+
+    await seed_demo.upsert_demo(db_session, entries)
+    assert await db_session.scalar(live) == 27
+    await seed_demo.upsert_demo(db_session, entries)
+    assert await db_session.scalar(live) == 27
+
+    null_titles = set(
+        await db_session.scalars(select(Project.title).where(Project.live_url.is_(None)))
+    )
+    assert null_titles == {"GSY GitHub App", "VHS"}
 
 
 # ---- CLI (subprocess, real entry point) ----------------------------------------------------
