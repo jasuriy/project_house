@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/verify-e
   if (!hasLocale(routing.locales, locale)) return {};
   const t = await getTranslations({ locale, namespace: "Verify" });
   // The URL carries a token: never send it to other sites in the Referer header.
-  return { title: `${t("okTitle")} - Project House`, referrer: "no-referrer" };
+  return { title: `${t("pageTitle")} - Project House`, referrer: "no-referrer" };
 }
 
 /** Emailni tasdiqlash (auth mockup screen 7). */
@@ -29,7 +29,12 @@ export default async function VerifyEmailPage({
 
   return (
     <AuthCard>
-      <VerifyEmail token={token} loggedIn={user !== null} email={user?.email ?? null} />
+      <VerifyEmail
+        token={token}
+        loggedIn={user !== null}
+        email={user?.email ?? null}
+        alreadyVerified={user?.email_verified ?? false}
+      />
     </AuthCard>
   );
 }

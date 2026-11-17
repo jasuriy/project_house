@@ -5,7 +5,7 @@ are drawn and built directly, the advisor comparison is the gate).
 
 | Screenshot pair | Result |
 |---|---|
-| `design-forgot-desktop.png` vs `ours-forgot-1280.png` | same card, title, sub line, Email field, button, footer |
+| `design-forgot-desktop.png` vs `ours-forgot-1280.png` | same card, title, sub line, Email field with the "siz@example.com" placeholder, button, footer |
 | `design-forgot-sent-phone.png` vs `ours-forgot-sent-390.png` | green banner, filled email, "Qayta yuborish" |
 | `design-reset-desktop.png` vs `ours-reset-1280.png` | same; focused field shows one box with the primary border and 3 px halo, eye inside |
 | `design-reset-done-phone.png` vs `ours-reset-done-390.png` | green banner, "Kirish" button |
@@ -20,7 +20,9 @@ Flows checked in the browser (test database): forgot shows the same message and 
 "Havola eskirgan", the new password logs in; verify while logged in confirms and shows the email; the
 same link again fails; logged out, the link goes to the login page with the blue note and, after
 logging in, confirms by itself (`email_verified: true`); no token shows "havola topilmadi". After a
-successful confirm the address is `/verify-email` with no token.
+successful confirm the address is `/verify-email` with no token. Switching language on the reset page,
+the verify page and the login detour never brings the token back into the address bar; the reset form
+keeps working (token from sessionStorage) and a confirmed page stays confirmed after the switch.
 
 Known differences (accepted):
 - Typed test values differ from the drawing's sample text.
@@ -31,4 +33,6 @@ Known differences (accepted):
 Found and fixed while comparing: the site-wide focus ring was drawn on the input inside the field box
 (the eye sat outside the ring); inputs in a field box now leave focus to the box. After a successful
 confirm, router.refresh() put the token back into the address bar; the page now navigates to the clean
-address instead.
+address instead. The forgot email field lacked the drawn placeholder (added). Switching language after
+a successful confirm showed "the link did not work" (the page re-rendered without a token); a logged-in
+user whose email is verified now sees the confirmed screen.

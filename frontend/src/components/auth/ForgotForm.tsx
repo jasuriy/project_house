@@ -11,6 +11,7 @@ import { TextField } from "./TextField";
 export function ForgotForm() {
   const t = useTranslations("Forgot");
   const te = useTranslations("AuthErrors");
+  const tl = useTranslations("Login");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,15 @@ export function ForgotForm() {
   return (
     <form onSubmit={submit} className="grid gap-5">
       {sent && <Banner tone="ok">{t("sent")}</Banner>}
-      <TextField name="email" type="email" label={t("email")} autoComplete="username" required requiredMark={false} />
+      <TextField
+        name="email"
+        type="email"
+        label={t("email")}
+        autoComplete="username"
+        placeholder={tl("emailPlaceholder")}
+        required
+        requiredMark={false}
+      />
       {error && (
         <p role="alert" className="text-small text-danger">
           {error}

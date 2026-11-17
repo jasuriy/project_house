@@ -23,10 +23,13 @@ export function VerifyEmail({
   token: fromUrl,
   loggedIn,
   email,
+  alreadyVerified,
 }: {
   token: string | null;
   loggedIn: boolean;
   email: string | null;
+  /** The logged-in user's email is verified already (reopened page, or a re-render after confirming). */
+  alreadyVerified: boolean;
 }) {
   const t = useTranslations("Verify");
   const router = useRouter();
@@ -56,7 +59,10 @@ export function VerifyEmail({
     });
   }, [token, loggedIn, router]);
 
-  const state = token === null && result === "checking" ? "missing" : result;
+  // No token: a logged-in user whose email is verified sees the confirmed screen (for example after
+  // a language switch re-renders the page); anyone else gets the "link not found" message.
+  const state =
+    token === null && result === "checking" ? (alreadyVerified ? "ok" : "missing") : result;
 
   if (state === "checking") {
     return <p role="status" className="text-center text-ui text-mute">{t("checking")}</p>;
