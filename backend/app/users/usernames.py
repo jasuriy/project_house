@@ -26,6 +26,10 @@ RESERVED_USERNAMES = frozenset(
         "search",
         "about",
         "help",
+        "forgot-password",
+        "reset-password",
+        "verify-email",
+        "onboarding",
     ]
 )
 
