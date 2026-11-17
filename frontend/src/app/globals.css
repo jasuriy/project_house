@@ -47,6 +47,18 @@ summary:focus-visible {
   transition: none;
 }
 
+/* A link or button that fills an overflow-hidden box (feed card, video poster) would have its ring
+   clipped, and an inset ring is painted over by the positioned cover. The box draws the same ring
+   instead: overflow clips a box's children, never its own outline. */
+[data-focus-ring]:has(> :focus-visible) {
+  outline: 2px solid var(--color-primary);
+  box-shadow: 0 0 0 5px var(--color-accent-soft);
+}
+[data-focus-ring] > :focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 /* Hover and press motion is feedback only and is off for people who ask for less motion. */
 @media (prefers-reduced-motion: reduce) {
   *,

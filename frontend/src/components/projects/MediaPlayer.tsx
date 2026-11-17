@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { coverImage, embedFor } from "@/lib/media";
+import { safeExternalUrl } from "@/lib/safe-url";
 import type { MediaItem } from "@/lib/types";
 
 /**
@@ -18,7 +19,7 @@ export function MediaPlayer({ media, title }: { media: MediaItem[]; title: strin
 
   return (
     <div>
-      <div className="relative aspect-video overflow-hidden rounded-media bg-muted">
+      <div data-focus-ring className="relative aspect-video overflow-hidden rounded-media bg-muted">
         {current && (
           <Stage
             item={current}
@@ -150,9 +151,11 @@ function Stage({
       />
     );
   }
+  const href = safeExternalUrl(embed.src);
+  if (!href) return null;
   return (
     <a
-      href={embed.src}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className="absolute inset-0 grid place-items-center text-ui font-semibold text-primary"

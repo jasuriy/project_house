@@ -10,7 +10,7 @@ export function ProjectCard({ card }: { card: Card }) {
   const cover = coverImage(card.cover);
 
   return (
-    <article className="grid content-start overflow-hidden rounded-card border border-border bg-card">
+    <article data-focus-ring className="grid content-start overflow-hidden rounded-card border border-border bg-card">
       <Link href={card.path} className="group grid content-start rounded-card">
         <CoverImage src={cover.src} alt={card.title} isVideo={cover.isVideo} videoLabel={t("video")} />
         <div className="grid gap-2 px-3.5 pt-3 pb-3.5">

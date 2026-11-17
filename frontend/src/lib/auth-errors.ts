@@ -12,10 +12,11 @@ const FIELD_OF: Record<string, AuthField> = {
 
 /** Which input a backend error belongs to; anything else is a form-level message. */
 export function authErrorField(code: string): AuthField {
-  return FIELD_OF[code] ?? "form";
+  return Object.hasOwn(FIELD_OF, code) ? FIELD_OF[code] : "form";
 }
 
-const KNOWN = new Set([
+/** Every backend or redirect code the account screens have a message for. */
+export const AUTH_ERROR_CODES = [
   "invalid_credentials",
   "email_taken",
   "username_taken",
@@ -30,7 +31,9 @@ const KNOWN = new Set([
   "provider_in_use",
   "provider_already_connected",
   "verify_email_first",
-]);
+] as const;
+
+const KNOWN = new Set<string>(AUTH_ERROR_CODES);
 
 /** The message key for a code; codes we do not know get the generic message. */
 export function authErrorKey(code: string): string {

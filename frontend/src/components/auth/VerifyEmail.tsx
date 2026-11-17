@@ -4,11 +4,12 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { clientPost } from "@/lib/client-api";
+import { verifyOutcome } from "@/lib/verify-outcome";
 import { Banner } from "./Banner";
 import { forgetToken, useLinkToken } from "./takeToken";
 
 const KEY = "ph_verify_token";
-type Result = "checking" | "ok" | "bad";
+type Result = "checking" | "ok" | "bad" | "retry";
 
 const PRIMARY =
   "inline-flex h-11 w-full items-center justify-center rounded-control bg-primary text-ui font-semibold text-on-primary hover:opacity-90";
@@ -35,7 +36,28 @@ export function VerifyEmail({
   const router = useRouter();
   const token = useLinkToken(KEY, fromUrl);
   const [result, setResult] = useState<Result>("checking");
+  const te = useTranslations("Errors");
   const started = useRef(false);
+
+  function send(value: string) {
+    void clientPost("/api/v1/auth/email/verify", { token: value }).then((response) => {
+      const outcome = verifyOutcome(response);
+      if (outcome === "confirmed") {
+        forgetToken(KEY);
+        setResult("ok");
+        // Not router.refresh(): it restores the address Next remembers, token included.
+        router.replace("/verify-email");
+      } else if (outcome === "login") {
+        router.replace("/login?next=/verify-email");
+      } else if (outcome === "invalid") {
+        forgetToken(KEY);
+        setResult("bad");
+      } else {
+        // Network, 5xx, 429...: keep the token so the user can try again.
+        setResult("retry");
+      }
+    });
+  }
 
   useEffect(() => {
     if (!token || started.current) return; // undefined: not rendered yet; null: no link
@@ -44,19 +66,9 @@ export function VerifyEmail({
       router.replace("/login?next=/verify-email");
       return;
     }
-    void clientPost("/api/v1/auth/email/verify", { token }).then((response) => {
-      if (response.ok) {
-        forgetToken(KEY);
-        setResult("ok");
-        // Not router.refresh(): it restores the address Next remembers, token included.
-        router.replace("/verify-email");
-      } else if (response.status === 401) {
-        router.replace("/login?next=/verify-email");
-      } else {
-        forgetToken(KEY);
-        setResult("bad");
-      }
-    });
+    send(token);
+    // send() only closes over stable values (router, setResult); it runs once per page view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, loggedIn, router]);
 
   // No token: a logged-in user whose email is verified sees the confirmed screen (for example after
@@ -78,6 +90,23 @@ export function VerifyEmail({
         <Link href="/settings" className={SECONDARY}>
           {t("settings")}
         </Link>
+      </>
+    );
+  }
+  if (state === "retry") {
+    return (
+      <>
+        <Banner tone="warn">{te("unreachable")}</Banner>
+        <button
+          type="button"
+          onClick={() => {
+            setResult("checking");
+            if (token) send(token);
+          }}
+          className={PRIMARY}
+        >
+          {te("retry")}
+        </button>
       </>
     );
   }

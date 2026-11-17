@@ -1,25 +1,32 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { usePathname, useRouter } from "@/i18n/navigation";
 
 const noSubscribe = () => () => {};
+
+/** sessionStorage keys of the emailed-link tokens; logout clears them. */
+export const LINK_TOKEN_KEYS = ["ph_reset_token", "ph_verify_token"] as const;
 
 function read(key: string): string | null {
   try {
     return window.sessionStorage.getItem(key);
   } catch {
-    return null; // storage blocked (private mode)
+    return null; // storage blocked
   }
 }
 
 /**
- * The token of an emailed link. `fromUrl` is the `?token=` the server read from the address; it is
- * removed from the address bar (so it is not left in history, screenshots or a Referer) and kept in
- * sessionStorage under `key`, so a reload or a detour through the login page does not lose it.
- * Returns undefined until the browser has rendered (sessionStorage is unknown on the server),
- * then the token or null.
+ * The token of an emailed link. `fromUrl` is the `?token=` the server read from the address. It is
+ * kept in sessionStorage under `key` (so a reload, a language switch or the login detour does not
+ * lose it) and removed from the address through the router: a raw history.replaceState left the
+ * token in the router's own copy of the URL, and the next router action (a language switch) put it
+ * back into the address bar and the server request. Returns undefined until the browser has
+ * rendered (sessionStorage is unknown on the server), then the token or null.
  */
 export function useLinkToken(key: string, fromUrl: string | null): string | null | undefined {
+  const router = useRouter();
+  const pathname = usePathname();
   const stored = useSyncExternalStore(noSubscribe, () => read(key), () => undefined);
 
   useEffect(() => {
@@ -29,13 +36,10 @@ export function useLinkToken(key: string, fromUrl: string | null): string | null
     } catch {
       // Storage blocked: the token still works for this page view.
     }
-    const url = new URL(window.location.href);
-    url.searchParams.delete("token");
-    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
-  }, [key, fromUrl]);
+    router.replace(pathname, { scroll: false });
+  }, [key, fromUrl, pathname, router]);
 
-  if (fromUrl) return fromUrl;
-  return stored;
+  return fromUrl ?? stored;
 }
 
 export function forgetToken(key: string): void {
