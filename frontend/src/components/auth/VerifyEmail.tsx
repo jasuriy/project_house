@@ -45,7 +45,7 @@ export function VerifyEmail({
       if (outcome === "confirmed") {
         forgetToken(KEY);
         setResult("ok");
-        // Not router.refresh(): it restores the address Next remembers, token included.
+        // Re-renders the page on the server so the header and the stored user state are current.
         router.replace("/verify-email");
       } else if (outcome === "login") {
         router.replace("/login?next=/verify-email");
