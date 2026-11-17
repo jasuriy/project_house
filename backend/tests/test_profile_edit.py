@@ -81,8 +81,13 @@ async def test_patch_rejects_nul_in_text(auth_client):
         ("github", "https://gitlab.com/aziz", "invalid_github_link"),
         ("github", "https://github.com/aziz/repo", "invalid_github_link"),
         ("github", "javascript:alert(1)", "invalid_github_link"),
+        ("github", "https://github.com/" + "a" * 40, "invalid_github_link"),
+        ("github", "https://github.com:8443/aziz", "invalid_github_link"),
+        ("github", "https://github.com/aziz?tab=repos", "invalid_github_link"),
+        ("github", "https://github.com/..", "invalid_github_link"),
         ("linkedin", "https://www.linkedin.com/in/aziz", None),
         ("linkedin", "https://linkedin.evil.com/x", "invalid_linkedin_link"),
+        ("linkedin", "https://linkedin.com/in/" + "b" * 200, "invalid_linkedin_link"),
         ("website", "https://aziz.dev", None),
         ("website", "http://aziz.dev", "invalid_website_link"),
         ("website", "https://" + "a" * 193, "invalid_website_link"),
@@ -130,10 +135,27 @@ async def test_developer_cannot_set_company_name(auth_client):
     assert (r.status_code, _code(r)) == (422, "field_not_allowed")
 
 
-async def test_patch_cannot_change_username(auth_client):
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"username": "other"},
+        {"account_type": "company"},
+        {"is_verified_company": True},
+        {"avatar_url": "https://x/a.png"},
+        {"links": {"telegram": "https://t.me/x"}},
+    ],
+)
+async def test_patch_cannot_change_fixed_fields(auth_client, body):
     await _signup(auth_client)
-    r = await _patch(auth_client, {"username": "other"})
+    r = await _patch(auth_client, body)
     assert (r.status_code, _code(r)) == (422, "validation_error")
+
+
+async def test_open_to_work_null_changes_nothing(auth_client):
+    await _signup(auth_client)
+    await _patch(auth_client, {"open_to_work": True})
+    r = await _patch(auth_client, {"open_to_work": None})
+    assert (r.status_code, r.json()["open_to_work"]) == (200, True)
 
 
 async def test_first_failure_writes_nothing(auth_client):

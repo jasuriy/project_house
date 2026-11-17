@@ -1,5 +1,6 @@
 """Editing one's own profile (PATCH /auth/me): the rules of the profile-page design."""
 
+import re
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -18,7 +19,8 @@ TEXT_LIMITS = {
     "company_name": 80,
     "about": 1000,
 }
-WEBSITE_MAX = 200
+LINK_MAX = 200  # every link, whole URL
+GITHUB_NAME = re.compile(r"[A-Za-z0-9-]{1,39}")  # GitHub's own username rule
 DEVELOPER_ONLY = {"university_or_employer", "open_to_work", "links.github", "links.linkedin"}
 COMPANY_ONLY = {"company_name"}
 
@@ -38,18 +40,28 @@ def _text(field: str, value: str | None) -> str | None:
 
 
 def _link_ok(key: str, url: str) -> bool:
+    if len(url) > LINK_MAX:
+        return False
     try:
         parts = urlsplit(url)
+        port = parts.port
     except ValueError:
         return False
     if parts.scheme != "https" or not parts.hostname or parts.username or parts.password:
         return False
     if key == "github":
-        segments = [s for s in parts.path.split("/") if s]
-        return parts.hostname == "github.com" and len(segments) == 1
+        # Exactly https://github.com/<name>: no port, query or fragment.
+        name = parts.path.strip("/")
+        return (
+            parts.hostname == "github.com"
+            and port is None
+            and not parts.query
+            and not parts.fragment
+            and GITHUB_NAME.fullmatch(name) is not None
+        )
     if key == "linkedin":
         return parts.hostname in ("linkedin.com", "www.linkedin.com")
-    return len(url) <= WEBSITE_MAX
+    return True
 
 
 def _check_account_type(user: User, sent: set[str]) -> None:
@@ -61,6 +73,8 @@ def _check_account_type(user: User, sent: set[str]) -> None:
 async def update_profile(session: AsyncSession, user: User, changes: ProfileUpdate) -> User:
     """Check every sent field, then write them all and commit; any failure writes nothing."""
     sent = changes.model_dump(exclude_unset=True)
+    if sent.get("open_to_work", False) is None:
+        del sent["open_to_work"]  # null is not a yes/no answer: leave it as it is
     links_sent: dict[str, Any] = sent.pop("links", None) or {}
     _check_account_type(user, set(sent) | {f"links.{key}" for key in links_sent})
 

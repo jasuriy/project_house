@@ -9,8 +9,8 @@ import { clientPatch } from "@/lib/client-api";
 import { type ProfileField, profileErrorField, profileErrorKey } from "@/lib/profile-errors";
 import type { Account } from "@/lib/types";
 
-// The backend limits (app/users/profile.py); inputs stop there, so in practice only links can fail.
-const MAX = { display_name: 60, headline: 120, location: 80, university_or_employer: 120, company_name: 80, about: 1000, website: 200 };
+// The backend limits (app/users/profile.py); inputs stop there, so in practice only link format can fail.
+const MAX = { display_name: 60, headline: 120, location: 80, university_or_employer: 120, company_name: 80, about: 1000, link: 200 };
 const TEXT = ["display_name", "headline", "location", "university_or_employer", "company_name", "about"] as const;
 const LINKS = ["github", "linkedin", "website"] as const;
 const SAVE =
@@ -129,6 +129,7 @@ export function ProfileForm({ account }: { account: Account }) {
             name="about"
             aria-labelledby="profile-about"
             aria-invalid={fieldError("about") ? true : undefined}
+            aria-describedby={fieldError("about") ? "profile-about-error" : undefined}
             defaultValue={saved.about}
             maxLength={MAX.about}
             rows={4}
@@ -136,7 +137,11 @@ export function ProfileForm({ account }: { account: Account }) {
             className="block min-h-26 w-full resize-y rounded-control bg-transparent px-3 py-2.5 text-ui leading-[1.45] text-fg outline-none"
           />
         </div>
-        {fieldError("about") && <p className="text-meta text-danger">{fieldError("about")}</p>}
+        {fieldError("about") && (
+          <p id="profile-about-error" className="text-meta text-danger">
+            {fieldError("about")}
+          </p>
+        )}
         <p className="text-right text-meta text-mute tabular-nums">
           {aboutLength} / {MAX.about}
         </p>
@@ -148,8 +153,8 @@ export function ProfileForm({ account }: { account: Account }) {
         <h2 className="text-lead font-semibold text-fg">{t("links")}</h2>
         {isDeveloper && (
           <>
-            <TextField name="link_github" label={t("github")} placeholder="https://github.com/" defaultValue={saved.github} error={fieldError("github")} />
-            <TextField name="link_linkedin" label={t("linkedin")} placeholder="https://www.linkedin.com/in/" defaultValue={saved.linkedin} error={fieldError("linkedin")} />
+            <TextField name="link_github" label={t("github")} placeholder="https://github.com/" defaultValue={saved.github} maxLength={MAX.link} error={fieldError("github")} />
+            <TextField name="link_linkedin" label={t("linkedin")} placeholder="https://www.linkedin.com/in/" defaultValue={saved.linkedin} maxLength={MAX.link} error={fieldError("linkedin")} />
           </>
         )}
         <TextField
@@ -157,7 +162,7 @@ export function ProfileForm({ account }: { account: Account }) {
           label={isDeveloper ? t("website") : t("companyWebsite")}
           placeholder="https://"
           defaultValue={saved.website}
-          maxLength={MAX.website}
+          maxLength={MAX.link}
           error={fieldError("website")}
           autoComplete="url"
         />

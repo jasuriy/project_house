@@ -58,17 +58,17 @@ export function ProfileCard({ profile, isOwner }: { profile: Profile; isOwner: b
       )}
       {(facts.length > 0 || links.length > 0) && (
         <ul className={`grid gap-1.5 text-small text-mute md:max-lg:flex md:max-lg:flex-wrap md:max-lg:gap-x-4 md:max-lg:gap-y-1 ${second}`}>
-          {facts.map((fact) => (
-            <li key={fact} className="break-words">
+          {facts.map((fact, i) => (
+            <li key={i} className="min-w-0 [overflow-wrap:anywhere]">
               {fact}
             </li>
           ))}
           {links.map((link) => (
-            <li key={link.key}>
+            <li key={link.key} className="min-w-0">
               <a
                 href={link.href}
                 {...EXTERNAL}
-                className="inline-flex min-h-11 items-center text-primary hover:underline md:min-h-0"
+                className="inline-flex min-h-11 max-w-full items-center text-primary [overflow-wrap:anywhere] hover:underline md:min-h-0"
               >
                 {link.key === "github" ? `GitHub: ${link.label}` : link.label}
               </a>
