@@ -44,11 +44,11 @@ export async function SiteHeader() {
   const t = await getTranslations("Nav");
 
   return (
-    <header className="border-b border-border bg-card">
-      <div className="page-width flex h-16 items-center gap-4 md:gap-7">
+    <header className="h-16 border-b border-border bg-card">
+      <div className="page-width flex h-full items-center gap-4 md:gap-7">
         <Link
           href="/"
-          className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control text-lead font-bold tracking-tight text-fg"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control text-lead font-bold tracking-[-0.01em] text-fg"
         >
           <span
             aria-hidden

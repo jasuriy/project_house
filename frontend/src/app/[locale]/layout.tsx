@@ -39,7 +39,7 @@ export default async function LocaleLayout({
             {t("skip")}
           </a>
           <SiteHeader />
-          <main id="main" tabIndex={-1} className="page-width flex-1 outline-none">
+          <main id="main" tabIndex={-1} className="page-width flex-1 pt-5 pb-7 outline-none lg:pt-7 lg:pb-9">
             {children}
           </main>
         </NextIntlClientProvider>
