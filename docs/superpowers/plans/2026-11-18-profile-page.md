@@ -69,7 +69,7 @@
   - `test_patch_updates_given_fields_only`: send `{"headline":"CV student"}` -> 200, headline set, `location` unchanged.
   - `test_patch_trims_and_clears`: `{"headline":"   "}` -> headline `None`; `{"location":"  Tashkent "}` -> `"Tashkent"`.
   - `test_patch_rejects_blank_display_name` (`"  "`) -> 422 `invalid_display_name`.
-  - `test_patch_length_limits` parametrized: headline 121, location 81, university_or_employer 121, about 1001, display_name 61 -> matching `invalid_*`; exactly at the limit -> 200.
+  - `test_patch_length_limits` parametrized: headline 121, location 81, university_or_employer 121, about 1001, display_name 61 -> matching `invalid_*`; one row exactly at a limit (headline 120) -> 200.
   - `test_patch_links` parametrized: github `https://github.com/aziz` ok; github `http://github.com/aziz`, `https://gitlab.com/aziz`, `javascript:alert(1)` -> `invalid_github_link`; linkedin `https://www.linkedin.com/in/aziz` ok, `https://linkedin.evil.com/x` -> `invalid_linkedin_link`; website `https://aziz.dev` ok, `http://aziz.dev` and a 201-char https URL -> `invalid_website_link`.
   - `test_patch_empty_link_removes_key`: set github, then `{"links":{"github":""}}` -> `"github" not in links`, other keys kept.
   - `test_company_cannot_set_developer_fields` parametrized over `open_to_work`, `university_or_employer`, `links.github`, `links.linkedin` -> 422 `field_not_allowed`, profile unchanged. Mirror: developer sending `company_name` -> `field_not_allowed`.
@@ -99,7 +99,7 @@
   - `test_cli_rejects_delete_flag`: `main(["--delete"])` raises `SystemExit` with code 2 (argparse).
   - API: `test_owned_sample_card_shows_the_owner`: card `author == {"kind":"user","name":<display_name>,"url":"/<username>"}`, path `/<username>/<slug>`; `GET /api/v1/users/<username>/projects/<slug>` -> 200; `GET /api/v1/projects/demo/<slug>` -> 404.
 - [ ] **Step 2: Run** `.venv/Scripts/python -m pytest tests/test_projects_seed.py tests/test_projects_api.py -q` -> new tests FAIL.
-- [ ] **Step 3: Implement**; update `docs/architecture.md` section 7: samples may be owned by an account (Bek, 2026-11-18, development data, deleted by Bek with the delete button from step 2); loader `--owner`; no `--delete`.
+- [ ] **Step 3: Implement.** The owner is wiped by the update branch, not the insert: `project_values()` sets `owner_id: None` and the upsert copies it onto existing rows, so without `--owner` leave `owner_id` out of the values applied to existing rows (check the Review Focus 5 test fails on today's code first). Update `docs/architecture.md` section 7: samples may be owned by an account (Bek, 2026-11-18, development data, deleted by Bek with the delete button from step 2); loader `--owner`; no `--delete`.
 - [ ] **Step 4: Run** the backend gate -> pass.
 - [ ] **Step 5: Commit** `feat(backend): samples can be owned by an account; drop --delete`
 
@@ -114,11 +114,11 @@
 - Consumes: Task 1 routes; `ProjectCard`, `ShareButton({label, copiedLabel})`, `safeExternalUrl`.
 - `profileLinks` keeps only keys `github`, `linkedin`, `website`, drops values `safeExternalUrl` rejects; label for github is the path name (`github.com/aziz` -> `aziz`), for linkedin "LinkedIn", for website the host.
 
-- [ ] **Step 1: Write the failing test** `profile-links.test.ts`, one row per class: github URL -> label `aziz`; linkedin -> `LinkedIn`; website `https://aziz.dev/x` -> `aziz.dev`; `javascript:alert(1)` -> dropped; unknown key `telegram` -> dropped; non-string value -> dropped.
+- [ ] **Step 1: Write the failing test** `profile-links.test.ts`, one row per class (plus `isUsername(name)`: `aziz` true, `robots.txt` false): github URL -> label `aziz`; linkedin -> `LinkedIn`; website `https://aziz.dev/x` -> `aziz.dev`; `javascript:alert(1)` -> dropped; unknown key `telegram` -> dropped; non-string value -> dropped.
 - [ ] **Step 2: Run** `cd frontend && npm test -- profile-links` -> FAIL.
-- [ ] **Step 3: Implement** the page per mockup 3 (developer: side card + tabs + 3-column grid) and 3b (company: side card without a stats row + About panel, then projects if any), header card on tablet/phone, initials avatar (first letters of up to two words of `display_name`), Share always, "Edit profile" (link to `/settings/profile`) when the viewer is the owner (`getCurrentUser()?.username === username`), privacy line for developers, empty state, `notFound()` on 404, tab title `Name (@username) - Project House`. Grid page size 24 like the feed.
+- [ ] **Step 3: Implement** the page per mockup 3 (developer: side card + tabs + 3-column grid) and 3b (company: side card without a stats row + About panel, then projects if any), header card on tablet/phone, initials avatar (first letters of up to two words of `display_name`), Share always, "Edit profile" (link to `/settings/profile`) when the viewer is the owner (`getCurrentUser()?.username === username`), privacy line for developers, empty state, `notFound()` without an API call when the name fails `^[a-z0-9_-]{3,30}$` (`isUsername` in `profile.ts`; `/robots.txt` and probes hit this route), the name encoded into the API path as `projects.ts` does, `notFound()` on 404, long names wrap (`break-words`, signup has no name cap), tab title `Name (@username) - Project House`. Grid page size 24 like the feed.
 - [ ] **Step 4: Run** `npm run lint`, `npm test`, `npm run build` -> clean / pass / compiled.
-- [ ] **Step 5: Visual gate** (backend with the demo seed loaded with `--owner` for a test account): screenshots 1440, 768, 390 of a developer profile with projects, a company profile, an empty profile, saved in `docs/design/screenshots/profile/` next to mockup captures; `MATCH.md` lists known differences; advisor compares; `curl -I` existing profile 200, unknown 404.
+- [ ] **Step 5: Visual gate** (backend with the demo seed loaded with `--owner` for a test account): screenshots 1440, 768, 390 of a developer profile with projects, a company profile, an empty profile, saved in `docs/design/screenshots/profile/` next to mockup captures; `MATCH.md` lists known differences (Share alone where the mockup pairs it with Message); advisor compares; `curl -I` existing profile 200, unknown 404.
 - [ ] **Step 6: Commit** `feat(frontend): the profile page, matched to the mockup`
 
 ### Task 5: Edit-profile form `/settings/profile`
