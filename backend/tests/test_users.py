@@ -139,3 +139,23 @@ async def test_get_user_endpoint_404_shape(client):
     r = await client.get("/api/v1/users/nobody")
     assert r.status_code == 404
     assert r.json() == {"error": {"code": "user_not_found", "message": "User not found"}}
+
+
+class _FakeDriverError(Exception):
+    def __init__(self, constraint_name):
+        super().__init__("fake")
+        cause = Exception("driver")
+        cause.constraint_name = constraint_name
+        self.__cause__ = cause
+
+
+@pytest.mark.parametrize("constraint", ["ck_users_username_format", None])
+async def test_create_user_reraises_other_integrity_errors(db_session, monkeypatch, constraint):
+    async def failing_flush(*_, **__):
+        raise IntegrityError("INSERT", {}, _FakeDriverError(constraint))
+
+    monkeypatch.setattr(db_session, "flush", failing_flush)
+    with pytest.raises(IntegrityError):
+        await service.create_user(
+            db_session, username="aziz", display_name="A", account_type="developer"
+        )
