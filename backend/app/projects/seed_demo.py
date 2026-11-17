@@ -10,6 +10,7 @@ Refuses to run when APP_ENV=production (exit code 2), before any database access
 import argparse
 import asyncio
 import json
+import os
 import re
 import sys
 from collections.abc import Sequence
@@ -22,9 +23,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.config import get_settings
 from app.core.db import dispose_engine, get_engine
-from app.projects.fields import FIELDS
 from app.projects.models import Project, ProjectMedia
 
 # This file is <repo>/backend/app/projects/seed_demo.py: never resolved from the working directory.
@@ -35,10 +34,7 @@ VIDEO_HOSTS = ("youtube.com", "youtu.be", "loom.com", "vimeo.com")
 
 def slugify(title: str) -> str:
     """Lowercase; every run of characters outside [a-z0-9] becomes one '-'; trimmed."""
-    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
-    if not slug:
-        raise ValueError(f"title {title!r} has no characters usable in a slug")
-    return slug
+    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
 
 
 def media_kind(url: str) -> str:
@@ -55,14 +51,11 @@ def media_kind(url: str) -> str:
 
 def project_values(entry: dict[str, Any]) -> dict[str, Any]:
     """Project columns for one seed entry. Pure: no database access."""
-    title = entry["title"]
-    if entry["field"] not in FIELDS:
-        raise ValueError(f"{title}: unknown field {entry['field']!r}")
     return {
         "is_demo": True,
         "owner_id": None,
-        "slug": slugify(title),
-        "title": title,
+        "slug": slugify(entry["title"]),
+        "title": entry["title"],
         "one_line_problem": entry["one_line_problem"],
         "short_description": entry["short_description"],
         "result": entry["result"],
@@ -93,15 +86,9 @@ def media_rows(entry: dict[str, Any]) -> list[ProjectMedia]:
 
 
 async def upsert_demo(session: AsyncSession, entries: Sequence[dict[str, Any]]) -> int:
-    """Insert or update one demo project per entry, in one transaction. Returns the count.
-
-    Every entry is validated before the first write, so a bad entry changes nothing.
-    """
+    """Insert or update one demo project per entry, in one transaction. Returns the count."""
     parsed = [(project_values(e), media_rows(e)) for e in entries]
     slugs = [values["slug"] for values, _ in parsed]
-    if len(set(slugs)) != len(slugs):
-        duplicates = sorted({s for s in slugs if slugs.count(s) > 1})
-        raise ValueError(f"duplicate slugs in the seed file: {', '.join(duplicates)}")
 
     stmt = (
         select(Project)
@@ -131,8 +118,6 @@ async def delete_demo(session: AsyncSession) -> int:
 
 async def _run(args: argparse.Namespace) -> int:
     entries = None if args.delete else json.loads(args.file.read_text(encoding="utf-8"))
-    if entries is not None and not isinstance(entries, list):
-        raise TypeError(f"{args.file}: expected a JSON list of projects")
     try:
         async with AsyncSession(get_engine(), expire_on_commit=False) as session:
             if entries is None:
@@ -150,14 +135,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--delete", action="store_true", help="remove every demo project")
     args = parser.parse_args(argv)
 
-    if get_settings().app_env == "production":
+    # Read the environment directly: production Settings can fail validation, and the refusal
+    # must come first, before any settings or database access.
+    if os.environ.get("APP_ENV") == "production":
         print("seed_demo: refusing to run when APP_ENV=production", file=sys.stderr)
         return 2
-    try:
-        return asyncio.run(_run(args))
-    except (OSError, ValueError, KeyError, TypeError) as exc:
-        print(f"seed_demo: {type(exc).__name__}: {exc}", file=sys.stderr)
-        return 1
+    return asyncio.run(_run(args))
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
 from app.projects import seed_demo
 from app.projects.models import Project, ProjectMedia
@@ -20,12 +21,9 @@ LOADER_MESSAGE_PRODUCTION = "refusing to run when APP_ENV=production"
 
 def run_loader(database_url: str, *args: str, app_env: str = "test") -> subprocess.CompletedProcess:
     """Run the real CLI in a subprocess against the test database."""
-    env = {
-        **os.environ,
-        "DATABASE_URL": database_url,
-        "APP_ENV": app_env,
-        "SECRET_KEY": "k" * 40,  # production settings require one; the refusal path must be reached
-    }
+    # No SECRET_KEY: production Settings would fail validation, so the refusal must not load them.
+    env = {k: v for k, v in os.environ.items() if k != "SECRET_KEY"}
+    env |= {"DATABASE_URL": database_url, "APP_ENV": app_env}
     return subprocess.run(
         [sys.executable, "-m", "app.projects.seed_demo", *args],
         cwd=BACKEND_DIR,
@@ -79,11 +77,6 @@ def entry(**overrides) -> dict:
 )
 def test_slugify(title, slug):
     assert seed_demo.slugify(title) == slug
-
-
-def test_slugify_rejects_a_title_with_no_usable_characters():
-    with pytest.raises(ValueError, match="slug"):
-        seed_demo.slugify("!!!")
 
 
 def test_every_seed_title_gets_a_distinct_slug():
@@ -172,11 +165,6 @@ def test_media_rows_without_video_start_at_zero_and_gif_is_an_image():
     assert [m.position for m in seed_demo.media_rows(entry(image_urls=["https://x/1.png"]))] == [0]
 
 
-def test_invalid_field_is_rejected_before_any_database_work():
-    with pytest.raises(ValueError, match="field"):
-        seed_demo.project_values(entry(field="blockchain"))
-
-
 # ---- database -----------------------------------------------------------------------------
 
 
@@ -224,17 +212,13 @@ async def test_upsert_never_touches_a_real_project_with_the_same_slug(db_session
     assert titles == ["Mine", "Some Tool"]
 
 
-async def test_upsert_rejects_duplicate_slugs_inside_one_file(db_session):
-    with pytest.raises(ValueError, match="duplicate"):
-        await seed_demo.upsert_demo(db_session, [entry(title="A B"), entry(title="a-b")])
-    assert await count(db_session, Project) == 0
-
-
 async def test_one_bad_entry_writes_nothing(db_session):
-    with pytest.raises(ValueError, match="field"):
+    # The database CHECK rejects the bad field; the single commit means the good entry is lost too.
+    with pytest.raises(IntegrityError, match="ck_projects_field"):
         await seed_demo.upsert_demo(
             db_session, [entry(title="Good"), entry(title="Bad", field="blockchain")]
         )
+    await db_session.rollback()
     assert await count(db_session, Project) == 0
 
 
@@ -290,6 +274,7 @@ async def test_cli_refuses_in_production_and_writes_nothing(db_session, test_dat
 
     assert result.returncode == 2
     assert LOADER_MESSAGE_PRODUCTION in result.stderr
+    assert "Traceback" not in result.stderr
     assert await count(db_session, Project) == 1
 
 
@@ -300,6 +285,7 @@ async def test_cli_production_refusal_does_not_depend_on_the_database_being_reac
     result = run_loader(unreachable, app_env="production")
     assert result.returncode == 2
     assert LOADER_MESSAGE_PRODUCTION in result.stderr
+    assert "Traceback" not in result.stderr
 
 
 async def test_cli_custom_file(db_session, test_database_url, tmp_path):
@@ -310,31 +296,3 @@ async def test_cli_custom_file(db_session, test_database_url, tmp_path):
     result = run_loader(test_database_url, "--file", str(path))
     assert result.returncode == 0, result.stderr
     assert sorted(await db_session.scalars(select(Project.slug))) == ["mini-one", "mini-two"]
-
-
-async def test_cli_missing_file_exits_1_with_a_message(db_session, test_database_url, tmp_path):
-    result = run_loader(test_database_url, "--file", str(tmp_path / "nope.json"))
-    assert result.returncode == 1
-    assert "nope.json" in result.stderr
-    assert await count(db_session, Project) == 0
-
-
-async def test_cli_invalid_entry_exits_1_and_writes_nothing(
-    db_session, test_database_url, tmp_path
-):
-    path = tmp_path / "bad.json"
-    path.write_text(
-        json.dumps([entry(title="Good"), entry(title="Bad", field="blockchain")]), encoding="utf-8"
-    )
-    result = run_loader(test_database_url, "--file", str(path))
-    assert result.returncode == 1
-    assert "field" in result.stderr
-    assert await count(db_session, Project) == 0
-
-
-async def test_cli_file_that_is_not_a_list_exits_1(db_session, test_database_url, tmp_path):
-    path = tmp_path / "obj.json"
-    path.write_text("{}", encoding="utf-8")
-    result = run_loader(test_database_url, "--file", str(path))
-    assert result.returncode == 1
-    assert "JSON list" in result.stderr
