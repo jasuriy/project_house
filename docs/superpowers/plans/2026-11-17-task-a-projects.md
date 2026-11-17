@@ -19,7 +19,9 @@ Store the 29 demo projects in PostgreSQL and serve the feed and project pages th
    `CHECK` on `field` and on media `kind`.
 2. **Field list** `FIELDS = ("ai-apps", "cv-ml", "web", "mobile", "devtools", "hardware", "data")`
    in `app/projects/fields.py` (display names are the frontend's job).
-3. **Migration** adding both tables (down_revision = the foundation head).
+3. **Migration** adding both tables: revision id `0002_projects` (exactly this; never `0002`),
+   `down_revision = "0001"`. If Task B merges first, the orchestrator re-points `down_revision` to
+   `0002_auth` at merge time; do not anticipate it.
 4. **Service** (`service.py`):
    - `list_feed(session, *, field: str | None, limit: int, cursor: str | None) -> FeedPage`
      newest first by `(published_at, id)`, keyset via `core.pagination`; `limit` 1..60, default 24.

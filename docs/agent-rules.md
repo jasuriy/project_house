@@ -23,7 +23,9 @@ them in review; a breach is a finding, not a style note.
 7. Follow the layering in architecture section 2: router (HTTP only) -> service (rules, queries)
    -> models. No generic repository layer. No abstraction without a concrete second use.
 8. Every schema change is an Alembic migration with a working `downgrade`. Never edit a migration
-   that is already on another branch's base; add a new one.
+   that is already on another branch's base; add a new one. Use exactly the revision id your task
+   file gives (parallel branches must never share an id: Alembic only warns on a duplicate id and
+   silently drops one of the migrations).
 9. API follows architecture section 5: `/api/v1`, one error shape, keyset pagination.
 10. Type hints on every function. `ruff check` and `ruff format --check` clean.
 11. Never log, print or return passwords, tokens, session ids or OAuth secrets.

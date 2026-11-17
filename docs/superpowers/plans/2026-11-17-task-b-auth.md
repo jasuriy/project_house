@@ -22,7 +22,9 @@ No frontend pages in this task.
    `github_client_id`, `github_client_secret` (empty default = provider disabled, its routes return
    404 `provider_disabled`), `session_days: int = 30`.
 3. **Models + migration**: `auth_identities`, `password_credentials`, `sessions`, `email_tokens`
-   exactly as architecture section 4 (down_revision = the foundation head).
+   exactly as architecture section 4: revision id `0002_auth` (exactly this; never `0002`),
+   `down_revision = "0001"`. If Task A merges first, the orchestrator re-points `down_revision` to
+   `0002_projects` at merge time; do not anticipate it.
 4. **Session mechanics** (`sessions.py` or `service.py`): token = `secrets.token_urlsafe(32)`;
    DB stores SHA-256 hex; cookie `ph_session` HttpOnly, SameSite=Lax, Path=/, Secure when
    `app_env == "production"`, Max-Age = `session_days`. Expired sessions rejected and deleted.
