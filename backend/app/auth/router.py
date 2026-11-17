@@ -201,9 +201,13 @@ async def oauth_callback(
         return RedirectResponse(
             _public_url(f"/login?error=account_exists&provider={provider}"), status_code=302
         )
+    if result.kind in ("provider_in_use", "provider_already_connected"):
+        return RedirectResponse(
+            _public_url(f"/settings?error={result.kind}&provider={provider}"), status_code=302
+        )
     response = RedirectResponse(
         _public_url("/onboarding" if result.kind == "new_account" else ""), status_code=302
     )
-    if result.session_token:  # "connected" keeps the session the browser already has
+    if result.session_token:  # connect outcomes keep the session the browser already has
         _set_session_cookie(response, result.session_token)
     return response

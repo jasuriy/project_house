@@ -55,11 +55,9 @@ def upgrade() -> None:
         sa.UniqueConstraint(
             "provider", "provider_user_id", name="uq_auth_identities_provider_provider_user_id"
         ),
+        sa.UniqueConstraint("user_id", "provider", name="uq_auth_identities_user_id_provider"),
     )
     op.create_index(op.f("ix_auth_identities_email"), "auth_identities", ["email"], unique=False)
-    op.create_index(
-        op.f("ix_auth_identities_user_id"), "auth_identities", ["user_id"], unique=False
-    )
     op.create_table(
         "email_tokens",
         sa.Column("id", sa.BigInteger(), sa.Identity(always=False), nullable=False),
@@ -153,7 +151,6 @@ def downgrade() -> None:
     op.drop_table("password_credentials")
     op.drop_index(op.f("ix_email_tokens_user_id"), table_name="email_tokens")
     op.drop_table("email_tokens")
-    op.drop_index(op.f("ix_auth_identities_user_id"), table_name="auth_identities")
     op.drop_index(op.f("ix_auth_identities_email"), table_name="auth_identities")
     op.drop_table("auth_identities")
     # ### end Alembic commands ###

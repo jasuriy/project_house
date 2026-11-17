@@ -50,12 +50,14 @@ class AuthIdentity(Base):
         UniqueConstraint(
             "provider", "provider_user_id", name="uq_auth_identities_provider_provider_user_id"
         ),
+        # One identity per provider per user; its index also serves lookups by user_id.
+        UniqueConstraint("user_id", "provider", name="uq_auth_identities_user_id_provider"),
         CheckConstraint(_in_list("provider", PROVIDERS), name="provider"),
     )
     __mapper_args__: ClassVar[dict[str, Any]] = _MAPPER_ARGS
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    user_id: Mapped[int] = _user_fk()
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
     provider: Mapped[str] = mapped_column(Text)
     provider_user_id: Mapped[str] = mapped_column(Text)
     email: Mapped[str | None] = mapped_column(Text, index=True)

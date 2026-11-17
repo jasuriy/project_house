@@ -129,3 +129,16 @@ async def test_deleting_user_cascades_to_auth_rows(db_session):
     for table in AUTH_TABLES:
         count = await db_session.scalar(text(f"SELECT count(*) FROM {table}"))
         assert count == 0, table
+
+
+async def test_a_user_has_at_most_one_identity_per_provider(db_session):
+    user = await _user(db_session)
+    db_session.add(
+        AuthIdentity(user_id=user.id, provider="github", provider_user_id="1", email_verified=True)
+    )
+    await db_session.flush()
+    db_session.add(
+        AuthIdentity(user_id=user.id, provider="github", provider_user_id="2", email_verified=True)
+    )
+    with pytest.raises(IntegrityError, match="uq_auth_identities_user_id_provider"):
+        await db_session.flush()

@@ -1,7 +1,6 @@
 """Google and GitHub login. Authlib's real client runs (state check, token exchange, ID token
 validation); only its HTTP transport is replaced by an in-process stub, so no network is used."""
 
-import hashlib
 import time
 from collections.abc import Iterator
 from urllib.parse import parse_qs, urlsplit
@@ -259,21 +258,23 @@ async def test_second_login_with_same_identity_logs_in_the_same_user(auth_client
     assert len(await session_rows(db_session)) == 2
 
 
-async def test_logging_in_with_a_known_identity_replaces_the_session_the_request_carried(
+async def test_logged_out_login_with_a_known_identity_ignores_a_stale_session_cookie(
     auth_client, stub, db_session
 ):
-    """Session fixation defence on rule 1. (A callback with a NEW identity while logged in
-    connects it and keeps the session: see the linking tests.)"""
-    await _login_via(auth_client, stub, "github")  # octocat exists
-    auth_client.cookies.clear()
-    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
-    carried = auth_client.cookies.get("ph_session")
+    """Logged out means no VALID session: an unknown cookie is not carried over, and the
+    login issues a fresh token. (With a valid session the connect rules apply instead.)"""
     await _login_via(auth_client, stub, "github")
-    assert auth_client.cookies.get("ph_session") != carried
+    first = auth_client.cookies.get("ph_session")
+    auth_client.cookies.clear()
+    auth_client.cookies.set("ph_session", "stale-token")
+    _, params = await _start(auth_client, stub, "github")
+    response = await _callback(auth_client, "github", params)
+    assert response.headers["location"] == PUBLIC
+    issued = set_cookie_header(response, "ph_session").split(";")[0].split("=", 1)[1]
+    assert issued not in ("stale-token", first)
+    auth_client.cookies.clear()
+    auth_client.cookies.set("ph_session", issued)
     assert (await auth_client.get(f"{BASE}/me")).json()["username"] == "octocat"
-    rows = await session_rows(db_session)
-    assert len(rows) == 2  # octocat's first session and the new one; the carried one is gone
-    assert hashlib.sha256(carried.encode()).hexdigest() not in {r.token_hash for r in rows}
 
 
 # --- callback: linking rules (architecture section 6: log in first to link) ------------------------------------------------------------------
@@ -606,3 +607,91 @@ async def test_discovery_and_jwks_are_fetched_once_across_logins(auth_client, st
     jwks = "GET https://www.googleapis.com/oauth2/v3/certs"
     assert stub.requests.count(discovery) == 1
     assert stub.requests.count(jwks) == 1
+
+
+# --- callback while logged in: the connect flow owns the request ------------------------------
+
+SETTINGS = f"{PUBLIC}/settings?error="
+
+
+async def _two_accounts(client, stub, db_session):
+    """octocat (GitHub id 42, through OAuth) and bek (email); returns bek's session token with
+    the client logged in as bek."""
+    await _login_via(client, stub, "github")
+    client.cookies.clear()
+    assert (await client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    return client.cookies.get("ph_session")
+
+
+async def test_connecting_an_identity_owned_by_another_user_changes_nothing(
+    auth_client, stub, db_session
+):
+    token = await _two_accounts(auth_client, stub, db_session)
+    users, identities = await _count(db_session, User), await _count(db_session, AuthIdentity)
+    sessions_before = {r.token_hash for r in await session_rows(db_session)}
+
+    response = await _login_via(auth_client, stub, "github")  # GitHub id 42 belongs to octocat
+    assert response.status_code == 302
+    assert response.headers["location"] == f"{SETTINGS}provider_in_use&provider=github"
+    assert "ph_session" not in response.headers.get("set-cookie", "")
+    assert auth_client.cookies.get("ph_session") == token
+    assert (await auth_client.get(f"{BASE}/me")).json()["username"] == "bek"
+    assert await _count(db_session, User) == users
+    assert await _count(db_session, AuthIdentity) == identities
+    assert {r.token_hash for r in await session_rows(db_session)} == sessions_before
+    owner = await db_session.scalar(select(AuthIdentity).where(AuthIdentity.provider == "github"))
+    octocat = await db_session.scalar(select(User).where(User.username == "octocat"))
+    assert owner.user_id == octocat.id
+
+
+async def test_connecting_an_identity_the_user_already_has_changes_nothing(
+    auth_client, stub, db_session
+):
+    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    await _login_via(auth_client, stub, "github")  # connect
+    token = auth_client.cookies.get("ph_session")
+    sessions_before = {r.token_hash for r in await session_rows(db_session)}
+
+    response = await _login_via(auth_client, stub, "github")  # the same GitHub account again
+    assert response.status_code == 302
+    assert response.headers["location"] == PUBLIC
+    assert "ph_session" not in response.headers.get("set-cookie", "")
+    assert auth_client.cookies.get("ph_session") == token
+    assert await _count(db_session, User) == 1
+    assert await _count(db_session, AuthIdentity) == 2  # email + github
+    assert {r.token_hash for r in await session_rows(db_session)} == sessions_before
+
+
+async def test_a_second_account_of_the_same_provider_is_refused(auth_client, stub, db_session):
+    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    await _login_via(auth_client, stub, "github")  # connects GitHub id 42
+    token = auth_client.cookies.get("ph_session")
+    stub.github_user["id"] = 43  # the same person signs in to a different GitHub account
+
+    response = await _login_via(auth_client, stub, "github")
+    assert response.status_code == 302
+    assert response.headers["location"] == f"{SETTINGS}provider_already_connected&provider=github"
+    assert "ph_session" not in response.headers.get("set-cookie", "")
+    assert auth_client.cookies.get("ph_session") == token
+    assert await _count(db_session, AuthIdentity) == 2
+    ids = {i.provider_user_id for i in await db_session.scalars(select(AuthIdentity))}
+    assert ids == {"bek@example.com", "42"}
+
+
+async def test_connecting_a_different_provider_still_works_after_one_is_connected(
+    auth_client, stub, db_session
+):
+    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    await _login_via(auth_client, stub, "github")
+    response = await _login_via(auth_client, stub, "google")
+    assert response.headers["location"] == PUBLIC
+    me = (await auth_client.get(f"{BASE}/me")).json()
+    assert me["providers"] == ["email", "github", "google"]
+
+
+async def test_logged_out_a_known_identity_still_logs_in(auth_client, stub, db_session):
+    await _login_via(auth_client, stub, "github")
+    auth_client.cookies.clear()
+    response = await _login_via(auth_client, stub, "github")
+    assert response.headers["location"] == PUBLIC
+    assert (await auth_client.get(f"{BASE}/me")).json()["username"] == "octocat"

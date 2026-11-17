@@ -342,7 +342,15 @@ class OAuthProfile:
 class OAuthOutcome:
     """What the callback did. `session_token` is set only when a new session was issued."""
 
-    kind: Literal["logged_in", "connected", "new_account", "account_exists"]
+    kind: Literal[
+        "logged_in",
+        "new_account",
+        "account_exists",
+        "connected",
+        "unchanged",
+        "provider_in_use",
+        "provider_already_connected",
+    ]
     session_token: str | None = None
 
 
@@ -369,13 +377,20 @@ async def oauth_login(
 ) -> OAuthOutcome:
     """Handle a provider callback (architecture section 6: "log in first, then connect").
 
-    1. A known (provider, provider_user_id) logs in as its user, with a fresh session.
-    2. Else, if the request carries a valid session, the identity is connected to THAT user,
-       who stays signed in on the same session.
-    3. Else, if any identity (any provider) already holds the same email, nothing is created,
-       linked or revoked: matching on email alone would let someone who registered another
-       person's address take over that person's first provider login.
-    4. Else a new developer account is created.
+    While the request carries a valid session for user U (the connect flow), it owns the request:
+    - the identity already belongs to U: nothing changes;
+    - it belongs to another user: nothing changes (never switch accounts, never touch U's
+      session), outcome `provider_in_use`;
+    - U already has an identity of this provider (another provider account): nothing changes,
+      outcome `provider_already_connected`;
+    - else the identity (provider email and its verified flag as reported) is connected to U,
+      who stays signed in on the same session.
+    Logged out:
+    1. a known (provider, provider_user_id) logs in as its user, with a fresh session;
+    2. else if any identity (any provider) already holds the same email, nothing is created,
+       linked or revoked (`account_exists`): matching on email alone would let someone who
+       registered another person's address take over that person's first provider login;
+    3. else a new developer account is created.
     The provider's `email_verified` flag is only stored with the email; it never decides linking.
     """
     identity = await db.scalar(
@@ -384,40 +399,52 @@ async def oauth_login(
             AuthIdentity.provider_user_id == profile.provider_user_id,
         )
     )
+    session = await resolve_session(db, old_token) if old_token else None
+    email = normalize_email(profile.email) if profile.email else None
+
+    if session:
+        if identity:
+            return OAuthOutcome(
+                "unchanged" if identity.user_id == session.user_id else "provider_in_use"
+            )
+        has_provider = await db.scalar(
+            select(AuthIdentity.id)
+            .where(AuthIdentity.user_id == session.user_id, AuthIdentity.provider == provider)
+            .limit(1)
+        )
+        if has_provider:
+            return OAuthOutcome("provider_already_connected")
+        db.add(_new_identity(session.user_id, provider, profile, email))
+        await db.commit()
+        return OAuthOutcome("connected")
+
     if identity:
         return await _signed_in(db, identity.user_id, user_agent, old_token, "logged_in")
-
-    email = normalize_email(profile.email) if profile.email else None
-    verified = profile.email_verified and email is not None
-    session = await resolve_session(db, old_token) if old_token else None
-    if session:
-        user_id, outcome = session.user_id, "connected"
-    elif email and await db.scalar(
+    if email and await db.scalar(
         select(AuthIdentity.id).where(AuthIdentity.email == email).limit(1)
     ):
         return OAuthOutcome("account_exists")
-    else:
-        username = await _free_username(db, profile.username_hint)
-        new_user = await users_service.create_user(
-            db,
-            username=username,
-            display_name=profile.display_name or profile.username_hint or username,
-            account_type="developer",
-        )
-        user_id, outcome = new_user.id, "new_account"
-    db.add(
-        AuthIdentity(
-            user_id=user_id,
-            provider=provider,
-            provider_user_id=profile.provider_user_id,
-            email=email,
-            email_verified=verified,
-        )
+    username = await _free_username(db, profile.username_hint)
+    new_user = await users_service.create_user(
+        db,
+        username=username,
+        display_name=profile.display_name or profile.username_hint or username,
+        account_type="developer",
     )
-    if outcome == "connected":
-        await db.commit()
-        return OAuthOutcome("connected")
-    return await _signed_in(db, user_id, user_agent, old_token, outcome)
+    db.add(_new_identity(new_user.id, provider, profile, email))
+    return await _signed_in(db, new_user.id, user_agent, old_token, "new_account")
+
+
+def _new_identity(
+    user_id: int, provider: str, profile: OAuthProfile, email: str | None
+) -> AuthIdentity:
+    return AuthIdentity(
+        user_id=user_id,
+        provider=provider,
+        provider_user_id=profile.provider_user_id,
+        email=email,
+        email_verified=profile.email_verified and email is not None,
+    )
 
 
 async def _signed_in(
