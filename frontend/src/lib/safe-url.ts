@@ -17,7 +17,8 @@ const BASE = "http://x";
  * rejected, and so is anything that does not start with "/" or that resolves to "//...".
  */
 export function safeNextPath(next: string | null | undefined): string {
-  if (!next || !next.startsWith("/")) return "/";
+  // Query values reach here from untyped places (URLSearchParams, JSON), so check the type.
+  if (typeof next !== "string" || !next.startsWith("/")) return "/";
   let url: URL;
   try {
     url = new URL(next, BASE);

@@ -64,6 +64,13 @@ describe("safeNextPath", () => {
     expect(safeNextPath(undefined)).toBe("/");
   });
 
+  it.each([42, {}, ["/settings"], true])(
+    "sends the non-string %j to / instead of throwing",
+    (value) => {
+      expect(safeNextPath(value as unknown as string)).toBe("/");
+    },
+  );
+
   it.each(["/settings", "/demo/x?y=1#z", "/", "/a/b?c=d"])(
     "keeps %s",
     (next) => {
