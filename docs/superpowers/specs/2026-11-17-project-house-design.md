@@ -77,6 +77,7 @@ Starting market: Uzbekistan. Interface languages: **Uzbek, Russian, English**.
 | D14 | **Company account = one person** in Phase 1. |
 | D15 | **Login for everyone: Google, email, or GitHub.** |
 | D16 | **Seed content:** Bek's ~30 friends sign up and add their own projects. No placeholder or "claim profile" feature. |
+| D17 | **No language in URLs** (next-intl `localePrefix: 'never'`, decided 2026-11-17). One link per page, e.g. `<domain>/<username>/<project>`. Interface language comes from the visitor's saved choice (cookie) or browser, with a language switcher. Usernames and project slugs may not contain dots and may not equal `uz`, `ru`, `en` or start with reserved prefixes (`api`, `_next`, `_vercel`). Implemented at the start of Step 1. |
 
 ## 6. Approaches considered
 

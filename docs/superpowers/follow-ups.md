@@ -3,13 +3,12 @@
 Source: final whole-branch review of Step 0 (PR #1, 2026-11-17). Items here are deliberately
 deferred; each names the step that must handle it.
 
-## Open decision (Bek) - blocks Step 1, not Step 0
+## Decided (Bek, 2026-11-17): no language in URLs - implement at the start of Step 1
 
-**URL scheme for shared links.** The Step 0 plan puts the language in every URL (`/uz/...`).
-Spec D2 makes the main output a shareable `<domain>/<username>/<project>` link. Options in
-next-intl 4.14 (`localePrefix`): `always` (current), `as-needed` (no prefix for the default
-locale `uz`, prefix for `ru`/`en`), `never` (language from cookie only, one URL per page).
-Related facts:
+**URL scheme for shared links: `localePrefix: 'never'`** (spec D17). Step 0 shipped `always`
+(`/uz/...`); Step 1 switches `frontend/src/i18n/routing.ts` to `never`, updates the routing test,
+and adds a visible language switcher. Options that were considered: `always`, `as-needed`,
+`never`. Related facts:
 - The proxy matcher skips any path containing a dot, so usernames/slugs with a dot would bypass
   locale routing. Either forbid dots in usernames and slugs, or change the matcher.
 - Usernames must not collide with locale codes (`uz`, `ru`, `en`) or reserved prefixes (`api`,
@@ -43,6 +42,7 @@ and bump eslint (deprecation warning in CI).
 - Drop `env_file: .env` from the backend service (it receives unused `POSTGRES_*`).
 - CI hardening: `timeout-minutes` per job, `concurrency` with `cancel-in-progress`.
 
-## Repository setting (Bek)
+## Repository setting
 
-Branch protection on `main` requiring the `backend`, `frontend` and `docker` checks.
+Branch protection on `main` requiring the `backend`, `frontend` and `docker` checks: approved by
+Bek 2026-11-17, enabled right after PR #1 is merged.
