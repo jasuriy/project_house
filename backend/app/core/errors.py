@@ -30,16 +30,21 @@ class AppError(Exception):
         self.message = message
 
 
-def _error_response(
+def error_response(
     status: int, code: str, message: str, headers: dict[str, str] | None = None
 ) -> JSONResponse:
+    """The one error shape as a response.
+
+    Middleware must return this, not raise AppError: user middleware runs outside the exception
+    handlers, so an AppError raised there becomes a 500 internal_error.
+    """
     return JSONResponse(
         {"error": {"code": code, "message": message}}, status_code=status, headers=headers
     )
 
 
 async def _handle_app_error(_: Request, exc: AppError) -> JSONResponse:
-    return _error_response(exc.status, exc.code, exc.message)
+    return error_response(exc.status, exc.code, exc.message)
 
 
 async def _handle_http_exception(_: Request, exc: StarletteHTTPException) -> JSONResponse:
@@ -49,7 +54,7 @@ async def _handle_http_exception(_: Request, exc: StarletteHTTPException) -> JSO
     else:
         # Structured details are not part of our error shape and may carry internals.
         message = _generic_message(exc.status_code)
-    return _error_response(exc.status_code, code, message, exc.headers)
+    return error_response(exc.status_code, code, message, exc.headers)
 
 
 def _generic_message(status: int) -> str:
@@ -62,7 +67,7 @@ def _generic_message(status: int) -> str:
 async def _handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
     # Never put exception text in the response; the traceback goes to the server log only.
     logger.error("Unhandled exception", exc_info=exc)
-    return _error_response(500, "internal_error", "Internal server error")
+    return error_response(500, "internal_error", "Internal server error")
 
 
 async def _handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -71,7 +76,7 @@ async def _handle_validation_error(_: Request, exc: RequestValidationError) -> J
     failures = [
         f"{'.'.join(str(part) for part in err['loc'])}: {err['msg']}" for err in exc.errors()
     ]
-    return _error_response(422, "validation_error", "; ".join(failures))
+    return error_response(422, "validation_error", "; ".join(failures))
 
 
 def register_error_handlers(app: FastAPI) -> None:

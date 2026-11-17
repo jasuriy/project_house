@@ -97,3 +97,28 @@ async def test_non_string_http_detail_gets_generic_message(error_client):
 async def test_string_http_detail_is_kept(error_client):
     r = await error_client.get("/_t/str-detail")
     assert r.json() == {"error": {"code": "conflict", "message": "Custom message"}}
+
+
+async def test_middleware_can_return_the_error_shape():
+    """AppError raised in middleware would become a 500; middleware returns error_response."""
+    from collections.abc import Awaitable, Callable
+
+    from starlette.requests import Request
+    from starlette.responses import Response
+
+    from app.core.errors import error_response
+
+    app = create_app()
+
+    @app.middleware("http")
+    async def block(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        if request.url.path == "/_t/blocked":
+            return error_response(403, "bad_origin", "Origin not allowed")
+        return await call_next(request)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/_t/blocked")
+    assert response.status_code == 403
+    assert response.json() == {"error": {"code": "bad_origin", "message": "Origin not allowed"}}
