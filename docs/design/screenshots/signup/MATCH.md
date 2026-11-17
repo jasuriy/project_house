@@ -11,6 +11,7 @@ Compared by screenshots and computed styles; checked by the advisor.
 | `ours-signup-1440.png` | the same card centred on a wider screen |
 
 Known differences (accepted):
+- The header's right-hand group sits about 8 px further left: the "Kirish" link has a 44 px touch area (same as on login and every page).
 - Typed test values differ from the drawing's sample text (`aziz.new@example.com`, `login-check`).
 - The drawing's desktop frame sits 8 px further right in its screenshot (screenshot framing, not layout).
 - After a successful sign-up the browser goes to the feed until the onboarding page exists (then `/onboarding?verify=1`).

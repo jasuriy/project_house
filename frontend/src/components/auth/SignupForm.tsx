@@ -67,7 +67,7 @@ export function SignupForm() {
           ))}
         </div>
       </fieldset>
-      <TextField name="email" type="email" label={t("email")} autoComplete="email" required error={errors.email} />
+      <TextField name="email" type="email" label={t("email")} autoComplete="username" required error={errors.email} />
       <TextField
         name="password"
         type="password"
@@ -81,7 +81,7 @@ export function SignupForm() {
       <TextField
         name="username"
         label={t("username")}
-        autoComplete="username"
+        autoComplete="off"
         required
         prefix="projecthouse.uz/"
         help={t("usernameHelp")}

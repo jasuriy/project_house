@@ -41,7 +41,7 @@ export function LoginForm({ next }: { next: string | null }) {
         name="email"
         type="email"
         label={t("email")}
-        autoComplete="email"
+        autoComplete="username"
         placeholder={t("emailPlaceholder")}
         required
         requiredMark={false}
