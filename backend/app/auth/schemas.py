@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, StringConstraints
+from pydantic import AfterValidator, BaseModel
 
 from app.auth.email import check_email
 from app.users.schemas import UserPublic
@@ -13,36 +13,43 @@ def _reject_nul(value: str) -> str:
     return value
 
 
+def _stripped_non_blank(value: str) -> str:
+    # A validator, not StringConstraints: stacked on NoNulStr, pydantic applies the constraints
+    # to the wrapped type in an order where min_length does not see the stripped value.
+    value = value.strip()
+    if not value:
+        raise ValueError("must not be blank")
+    return value
+
+
 # Every string a client sends to the auth routes.
-Text = Annotated[str, AfterValidator(_reject_nul)]
+NoNulStr = Annotated[str, AfterValidator(_reject_nul)]
 
 
 class SignupRequest(BaseModel):
-    email: Annotated[Text, AfterValidator(check_email)]
-    password: Text
-    username: Text
-    display_name: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=1), AfterValidator(_reject_nul)
-    ]
-    account_type: Text
+    email: Annotated[NoNulStr, AfterValidator(check_email)]
+    password: NoNulStr
+    username: NoNulStr
+    display_name: Annotated[NoNulStr, AfterValidator(_stripped_non_blank)]
+    account_type: NoNulStr
 
 
 class LoginRequest(BaseModel):
-    email: Text
-    password: Text
+    email: NoNulStr
+    password: NoNulStr
 
 
 class TokenRequest(BaseModel):
-    token: Text
+    token: NoNulStr
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: Text
+    email: NoNulStr
 
 
 class ResetPasswordRequest(BaseModel):
-    token: Text
-    new_password: Text
+    token: NoNulStr
+    new_password: NoNulStr
 
 
 class AccountResponse(UserPublic):
