@@ -26,6 +26,22 @@ from app.main import app
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 _DB_NAME = re.compile(r"[A-Za-z0-9_]+")
+# Port 1 refuses connections: without TEST_DATABASE_URL nothing can reach a real database.
+UNSET_DB_URL = "postgresql+asyncpg://unset:unset@127.0.0.1:1/test_database_url_not_set"
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Before any test runs, point every settings/engine user at the test database.
+
+    Code that reads settings or builds the engine itself (seed loaders, helpers outside the
+    get_session dependency) must never reach the shared dev database, whatever the test order.
+    app.main is imported above, so settings may already be cached from the dev env: rebuild.
+    Creating and migrating the database stays lazy (test_database_url fixture).
+    """
+    os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or UNSET_DB_URL
+    os.environ["APP_ENV"] = "test"
+    get_settings.cache_clear()
+    get_engine.cache_clear()
 
 
 async def _create_database_if_missing(url: str) -> None:
@@ -76,13 +92,6 @@ def test_database_url() -> str:
     asyncio.run(_create_database_if_missing(url))
     result = _run_alembic(url, "upgrade", "head")
     assert result.returncode == 0, f"alembic upgrade head failed:\n{result.stdout}\n{result.stderr}"
-    # Code that reads settings or builds the engine itself (seed loaders, helpers outside the
-    # get_session dependency) must hit the test database too, never the shared dev database.
-    # app.main is imported above, so settings may already be cached from the dev env: rebuild.
-    os.environ["DATABASE_URL"] = url
-    os.environ["APP_ENV"] = "test"
-    get_settings.cache_clear()
-    get_engine.cache_clear()
     return url
 
 
