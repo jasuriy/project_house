@@ -41,7 +41,17 @@ async def test_live_url_accepts_null_http_and_https(db_session, url):
     assert row.live_url == url
 
 
-@pytest.mark.parametrize("url", ["javascript:alert(1)", "ftp://example.com", "example.com"])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "javascript:alert(1)",
+        "ftp://example.com",
+        "example.com",
+        "javascript:alert(1)//https://x",  # scheme not at the start: guards the ^ anchor
+        "https:evil.com",  # no "//": guards the slashes
+        " https://x",  # leading space: guards the ^ anchor
+    ],
+)
 async def test_live_url_other_schemes_are_rejected(db_session, url):
     db_session.add(make_project(live_url=url))
     with pytest.raises(IntegrityError, match="ck_projects_live_url"):

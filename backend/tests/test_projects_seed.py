@@ -295,6 +295,16 @@ async def test_cli_loads_the_feed_end_to_end(client, test_database_url):
     assert detail.json()["media"][0]["kind"] == "video"
 
 
+async def test_detail_of_the_loaded_seed_has_the_link_and_null_for_a_repository_link(
+    client, test_database_url
+):
+    assert run_loader(test_database_url).returncode == 0
+    linked = (await client.get("/api/v1/projects/demo/screenpipe")).json()
+    repository_only = (await client.get("/api/v1/projects/demo/vhs")).json()
+    assert linked["live_url"] == "https://screenpipe.com"
+    assert repository_only["live_url"] is None
+
+
 @pytest.mark.parametrize("args", [(), ("--delete",)])
 async def test_cli_refuses_in_production_and_writes_nothing(db_session, test_database_url, args):
     await seed_demo.upsert_demo(db_session, [entry(title="Keep Me")])
