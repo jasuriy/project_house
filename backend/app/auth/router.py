@@ -114,8 +114,7 @@ async def login(
 @router.post("/logout", status_code=204)
 async def logout(db: DbSession, token: SessionToken = None) -> Response:
     if token:
-        await service.delete_session(db, token)
-        await db.commit()
+        await service.logout(db, token)
     response = Response(status_code=204)
     _clear_session_cookie(response)
     return response

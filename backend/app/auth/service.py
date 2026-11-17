@@ -1,7 +1,9 @@
 """Auth rules and queries: passwords, sessions, signup and login. No HTTP here.
 
-Functions flush; the caller commits, except `resolve_session`, which commits its own
-housekeeping (expired-row deletion, `last_seen_at`).
+The public entry points (signup, login, logout, oauth_login, verify_email,
+request_password_reset, reset_password, resolve_session) commit their own unit of work. The
+helpers they call (start_session, delete_session, delete_user_sessions, token issuing) only
+flush, so one entry point stays one transaction.
 """
 
 import asyncio
@@ -81,7 +83,7 @@ async def start_session(
             token_hash=hash_token(token),
             expires_at=now + timedelta(days=get_settings().session_days),
             last_seen_at=now,
-            user_agent=user_agent[:512] if user_agent else None,
+            user_agent=user_agent,
         )
     )
     await db.flush()
@@ -90,6 +92,11 @@ async def start_session(
 
 async def delete_session(db: AsyncSession, token: str) -> None:
     await db.execute(delete(AuthSession).where(AuthSession.token_hash == hash_token(token)))
+
+
+async def logout(db: AsyncSession, token: str) -> None:
+    await delete_session(db, token)
+    await db.commit()
 
 
 async def delete_user_sessions(db: AsyncSession, user_id: int) -> None:
@@ -249,10 +256,6 @@ async def account_summary(db: AsyncSession, user_id: int) -> tuple[str | None, b
 # --- email verification and password reset ----------------------------------------------------
 
 
-def _token_invalid() -> AppError:
-    return AppError(400, "token_invalid", "This link is invalid or has expired")
-
-
 async def _consume_token(db: AsyncSession, token: str, purpose: str) -> int:
     """Mark a matching, unused, unexpired token of `purpose` as used and return its user id.
 
@@ -271,7 +274,7 @@ async def _consume_token(db: AsyncSession, token: str, purpose: str) -> int:
         .returning(EmailToken.user_id)
     )
     if user_id is None:
-        raise _token_invalid()
+        raise AppError(400, "token_invalid", "This link is invalid or has expired")
     return user_id
 
 
