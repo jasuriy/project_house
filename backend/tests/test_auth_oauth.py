@@ -412,7 +412,8 @@ async def test_pre_account_hijack_does_not_hand_the_victim_the_attackers_session
     auth_client, stub, email_sender, db_session
 ):
     """The attacker signs up with the victim's address and keeps the password; the victim
-    verifies it from the unsolicited mail, then signs in with Google in a fresh browser."""
+    follows the unsolicited verify link in a fresh browser (refused since N1b), then signs in
+    with Google."""
     attacker = await auth_client.post(
         f"{BASE}/signup", json=signup_body(email="victim@example.com", username="attacker")
     )
@@ -420,7 +421,7 @@ async def test_pre_account_hijack_does_not_hand_the_victim_the_attackers_session
     verify_token = email_sender.last_token()
     auth_client.cookies.clear()  # the victim's browser
     verify = await auth_client.post(f"{BASE}/email/verify", json={"token": verify_token})
-    assert verify.status_code == 204
+    assert verify.status_code == 401  # the victim has no session of the account (N1b)
 
     stub.google["email"] = "victim@example.com"
     response = await _login_via(auth_client, stub, "google")
@@ -831,3 +832,60 @@ async def test_a_provider_email_containing_nul_is_dropped_not_stripped(
     assert response.headers["location"] == f"{PUBLIC}/onboarding"
     identity = await db_session.scalar(select(AuthIdentity))
     assert (identity.email, identity.email_verified) == (None, False)
+
+
+@pytest.mark.parametrize("victim_has_own_account", [False, True])
+async def test_n1b_a_victim_clicking_the_verify_link_cannot_verify_the_attackers_account(
+    auth_client, stub, email_sender, db_session, victim_has_own_account
+):
+    """Reviewer probe N1b. Attacker signs up with victim@example.com; the victim clicks the
+    unsolicited link; the attacker (still logged in) connects their GitHub; the victim resets the
+    password. The attacker's GitHub login must not reach the account."""
+    assert (
+        await auth_client.post(
+            f"{BASE}/signup", json=signup_body(email="victim@example.com", username="attacker")
+        )
+    ).status_code == 201
+    verify_token = email_sender.last_token()
+    attacker_session = auth_client.cookies.get("ph_session")
+
+    auth_client.cookies.clear()  # the victim's browser
+    if victim_has_own_account:
+        own = await auth_client.post(
+            f"{BASE}/signup",
+            json=signup_body(email="real@example.com", username="real-victim"),
+        )
+        assert own.status_code == 201
+    click = await auth_client.post(f"{BASE}/email/verify", json={"token": verify_token})
+    assert click.status_code == (400 if victim_has_own_account else 401)
+    squatted = await db_session.scalar(
+        select(AuthIdentity).where(AuthIdentity.provider_user_id == "victim@example.com")
+    )
+    assert squatted.email_verified is False
+
+    auth_client.cookies.clear()  # back to the attacker
+    auth_client.cookies.set("ph_session", attacker_session)
+    refused = await _login_via(auth_client, stub, "github")
+    assert refused.headers["location"] == f"{SETTINGS}verify_email_first&provider=github"
+    assert await _count(db_session, AuthIdentity) == (2 if victim_has_own_account else 1)
+
+    auth_client.cookies.clear()  # the victim resets the password
+    forgot = await auth_client.post(f"{BASE}/password/forgot", json={"email": "victim@example.com"})
+    assert forgot.status_code == 202
+    reset = await auth_client.post(
+        f"{BASE}/password/reset",
+        json={"token": email_sender.last_token(), "new_password": "the victims new passphrase"},
+    )
+    assert reset.status_code == 204
+
+    attacker_github = await _login_via(auth_client, stub, "github")
+    assert attacker_github.headers["location"] == f"{PUBLIC}/onboarding"  # a new account
+    assert (await auth_client.get(f"{BASE}/me")).json()["username"] == "octocat"
+    squatted_user = await db_session.scalar(select(User).where(User.username == "attacker"))
+    providers = {
+        i.provider
+        for i in await db_session.scalars(
+            select(AuthIdentity).where(AuthIdentity.user_id == squatted_user.id)
+        )
+    }
+    assert providers == {"email"}

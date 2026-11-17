@@ -257,30 +257,37 @@ async def account_summary(db: AsyncSession, user_id: int) -> tuple[str | None, b
 # --- email verification and password reset ----------------------------------------------------
 
 
-async def _consume_token(db: AsyncSession, token: str, purpose: str) -> int:
+async def _consume_token(
+    db: AsyncSession, token: str, purpose: str, only_user_id: int | None = None
+) -> int:
     """Mark a matching, unused, unexpired token of `purpose` as used and return its user id.
 
-    One atomic UPDATE, so two concurrent requests cannot both consume the same token. Raises
-    AppError(400, "token_invalid") for an unknown, used, expired or wrong-purpose token."""
+    One atomic UPDATE, so two concurrent requests cannot both consume the same token. With
+    `only_user_id`, a token of any other user does not match and stays unused. Raises
+    AppError(400, "token_invalid") for an unknown, used, expired, wrong-purpose or (with
+    `only_user_id`) foreign token."""
     now = datetime.now(UTC)
+    conditions = [
+        EmailToken.token_hash == hash_token(token),
+        EmailToken.purpose == purpose,
+        EmailToken.used_at.is_(None),
+        EmailToken.expires_at > now,
+    ]
+    if only_user_id is not None:
+        conditions.append(EmailToken.user_id == only_user_id)
     user_id = await db.scalar(
-        update(EmailToken)
-        .where(
-            EmailToken.token_hash == hash_token(token),
-            EmailToken.purpose == purpose,
-            EmailToken.used_at.is_(None),
-            EmailToken.expires_at > now,
-        )
-        .values(used_at=now)
-        .returning(EmailToken.user_id)
+        update(EmailToken).where(*conditions).values(used_at=now).returning(EmailToken.user_id)
     )
     if user_id is None:
         raise AppError(400, "token_invalid", "This link is invalid or has expired")
     return user_id
 
 
-async def verify_email(db: AsyncSession, token: str) -> None:
-    user_id = await _consume_token(db, token, "verify")
+async def verify_email(db: AsyncSession, token: str, session_user_id: int) -> None:
+    """Verify the signed-in user's email. Clicking the mailed link proves mailbox ownership, not
+    that the clicker created the account, so the token only counts for the account's own session
+    (architecture section 6); anyone else's token stays unused."""
+    user_id = await _consume_token(db, token, "verify", only_user_id=session_user_id)
     await db.execute(
         update(AuthIdentity)
         .where(AuthIdentity.user_id == user_id, AuthIdentity.provider == "email")

@@ -126,8 +126,11 @@ async def me(db: DbSession, user: Annotated[User, Depends(current_user)]) -> Acc
 
 
 @router.post("/email/verify", status_code=204)
-async def verify_email(body: TokenRequest, db: DbSession) -> None:
-    await service.verify_email(db, body.token)
+async def verify_email(
+    body: TokenRequest, db: DbSession, user: Annotated[User, Depends(current_user)]
+) -> None:
+    # Authenticated first (401), then the token is looked up for this user only.
+    await service.verify_email(db, body.token, user.id)
 
 
 @router.post("/password/forgot", status_code=202)

@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
 
-from app.auth.models import AuthIdentity, EmailToken
+from app.auth.models import AuthIdentity, AuthSession, EmailToken
 from app.users.models import User
 from tests.auth_helpers import (
     PASSWORD,
@@ -68,6 +68,7 @@ async def test_expired_verify_token_is_400_and_does_not_verify(
 
 
 async def test_unknown_verify_token_is_400(auth_client):
+    await _signup(auth_client)
     response = await auth_client.post(f"{BASE}/email/verify", json={"token": "nope"})
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "token_invalid"
@@ -221,6 +222,7 @@ async def test_a_reset_does_not_void_the_verify_token(auth_client, email_sender)
         f"{BASE}/password/reset",
         json={"token": email_sender.last_token(), "new_password": NEW_PASSWORD},
     )
+    assert (await _login(auth_client, NEW_PASSWORD)).status_code == 200  # the reset ended sessions
     response = await auth_client.post(f"{BASE}/email/verify", json={"token": verify_token})
     assert response.status_code == 204
 
@@ -232,6 +234,7 @@ async def test_forgot_with_a_nul_byte_is_422(auth_client):
 
 
 async def test_token_and_new_password_with_a_nul_byte_are_422(auth_client):
+    await _signup(auth_client)  # verify needs a session; validation runs after it
     verify = await auth_client.post(f"{BASE}/email/verify", json={"token": "ab\x00cd"})
     assert verify.status_code == 422
     for body in (
@@ -316,3 +319,90 @@ async def test_reset_does_not_touch_another_users_identities(auth_client, email_
     by_user = {(i.user_id, i.provider): i.email_verified for i in rows}
     assert len(by_user) == 4  # bek: email, github, google; two: email
     assert sum(1 for (_, prov) in by_user if prov == "github") == 1
+
+
+# --- verification needs the account's own session (N1b) ---------------------------------------
+
+
+def _forget_session(client) -> str:
+    """Drop the client's session cookie (a browser with no login); return its value."""
+    token = client.cookies.get("ph_session")
+    client.cookies.clear()
+    return token
+
+
+def _restore_session(client, token: str) -> None:
+    client.cookies.clear()
+    client.cookies.set("ph_session", token)
+
+
+async def _email_verified(db_session) -> bool:
+    identity = await db_session.scalar(
+        select(AuthIdentity)
+        .where(AuthIdentity.provider == "email")
+        .execution_options(populate_existing=True)
+    )
+    return identity.email_verified
+
+
+async def test_verify_without_a_session_is_401_and_the_token_stays_usable(
+    auth_client, email_sender, db_session
+):
+    await _signup(auth_client)
+    token = email_sender.last_token()
+    session = _forget_session(auth_client)
+
+    denied = await auth_client.post(f"{BASE}/email/verify", json={"token": token})
+    assert denied.status_code == 401
+    assert denied.json()["error"]["code"] == "not_authenticated"
+    assert await _email_verified(db_session) is False
+
+    _restore_session(auth_client, session)
+    ok = await auth_client.post(f"{BASE}/email/verify", json={"token": token})
+    assert ok.status_code == 204
+    assert await _email_verified(db_session) is True
+
+
+async def test_verify_with_an_unknown_session_cookie_is_401(auth_client, email_sender, db_session):
+    await _signup(auth_client)
+    token = email_sender.last_token()
+    session = _forget_session(auth_client)
+    auth_client.cookies.set("ph_session", "not-a-real-token")
+    denied = await auth_client.post(f"{BASE}/email/verify", json={"token": token})
+    assert denied.status_code == 401
+    _restore_session(auth_client, session)
+    assert (
+        await auth_client.post(f"{BASE}/email/verify", json={"token": token})
+    ).status_code == 204
+
+
+async def test_verify_with_another_users_session_is_400_and_the_token_stays_usable(
+    auth_client, email_sender, db_session
+):
+    await _signup(auth_client)
+    token = email_sender.last_token()
+    owner_session = _forget_session(auth_client)
+    other = await _signup(auth_client, email="two@example.com", username="two")
+    assert other.status_code == 201
+
+    denied = await auth_client.post(f"{BASE}/email/verify", json={"token": token})
+    assert denied.status_code == 400
+    assert denied.json()["error"]["code"] == "token_invalid"
+    assert await _email_verified(db_session) is False  # bek's email: the first (only) email row
+
+    _restore_session(auth_client, owner_session)
+    assert (
+        await auth_client.post(f"{BASE}/email/verify", json={"token": token})
+    ).status_code == 204
+    assert await _email_verified(db_session) is True
+
+
+async def test_verify_with_an_expired_session_is_401(auth_client, email_sender, db_session):
+    await _signup(auth_client)
+    token = email_sender.last_token()
+    await db_session.execute(
+        update(AuthSession).values(expires_at=datetime.now(UTC) - timedelta(seconds=1))
+    )
+    await db_session.commit()
+    denied = await auth_client.post(f"{BASE}/email/verify", json={"token": token})
+    assert denied.status_code == 401
