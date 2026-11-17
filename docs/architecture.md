@@ -97,8 +97,9 @@ Integrity rules on `projects`:
   keyset cursor cannot order NULLs, so a NULL row would silently drop out of the feed.
 - `project_media.project_id` is indexed: the feed loads media with `WHERE project_id IN (...)` and
   the cascade delete looks rows up by it.
-- `owner_id` has no ON DELETE action yet (deleting a user with projects is blocked). `SET NULL` is
-  impossible under the CHECK above; CASCADE vs keep-blocking is decided when account deletion is built.
+- `owner_id` has no ON DELETE action yet (deleting a user with projects is blocked). Decided
+  (Bek, 2026-11-17): deleting an account deletes its projects, so the account-deletion task adds a
+  migration changing this FK to ON DELETE CASCADE. (`SET NULL` is impossible under the CHECK above.)
 
 Reserved usernames (code constant, extended as routes appear): `uz ru en api _next _vercel demo
 new messages settings login logout signup admin explore feed search about help`.
