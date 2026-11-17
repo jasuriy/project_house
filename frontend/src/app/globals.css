@@ -6,7 +6,8 @@
   --font-sans: var(--font-inter), "Segoe UI", system-ui, sans-serif;
 }
 
-/* Side padding 40 / 24 / 16 and content max width 1280 (design-guide section 4). */
+/* Side padding 40 / 24 / 16; content max width 1280, and 1600 on screens from 1536 px
+   (design-guide section 4; Bek, 2026-11-18: wide screens show more columns). */
 @utility page-width {
   margin-inline: auto;
   width: 100%;
@@ -17,6 +18,9 @@
   }
   @media (min-width: 64rem) {
     padding-inline: 2.5rem;
+  }
+  @media (min-width: 96rem) {
+    max-width: calc(1600px + 2 * 2.5rem);
   }
 }
 
@@ -31,7 +35,8 @@ body {
    3 px accent-soft halo. The outline follows the element's own radius; the halo sits outside it. */
 a:focus-visible,
 button:focus-visible,
-input:focus-visible,
+/* Inputs inside a TextField box are excluded: the box shows focus (primary border + 3 px halo). */
+input:not([data-field]):focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
@@ -40,6 +45,18 @@ summary:focus-visible {
   box-shadow: 0 0 0 5px var(--color-accent-soft);
   /* The ring must not fade in from currentColor (Tailwind's transition-colors includes outline-color). */
   transition: none;
+}
+
+/* A link or button that fills an overflow-hidden box (feed card, video poster) would have its ring
+   clipped, and an inset ring is painted over by the positioned cover. The box draws the same ring
+   instead: overflow clips a box's children, never its own outline. */
+[data-focus-ring]:has(> :focus-visible) {
+  outline: 2px solid var(--color-primary);
+  box-shadow: 0 0 0 5px var(--color-accent-soft);
+}
+[data-focus-ring] > :focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 /* Hover and press motion is feedback only and is off for people who ask for less motion. */

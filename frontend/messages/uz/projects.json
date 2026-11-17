@@ -1,1 +1,35 @@
-{}
+{
+  "Feed": {
+    "title": "Yangi loyihalar",
+    "sub": "Eng yangilari birinchi. Yoʻnalish boʻyicha saralang.",
+    "sort": "Saralash: eng yangi",
+    "filters": "Yoʻnalish",
+    "empty": "Bu yoʻnalishda hali loyiha yoʻq.",
+    "loadMore": "Yana koʻrsatish",
+    "loading": "Yuklanmoqda",
+    "demo": "Namuna",
+    "video": "Video"
+  },
+  "Project": {
+    "breadcrumb": "Joylashuv",
+    "result": "Natija",
+    "field": "Yoʻnalish",
+    "role": "Roli",
+    "license": "Litsenziya",
+    "licenseNone": "Koʻrsatilmagan",
+    "published": "Joylandi",
+    "github": "GitHub",
+    "live": "Sinab koʻrish",
+    "video": "Demo video",
+    "share": "Ulashish",
+    "copied": "Nusxalandi",
+    "about": "Loyiha haqida",
+    "media": "Loyiha media",
+    "showMedia": "{n}-mediani koʻrsatish",
+    "openMedia": "Mediani ochish",
+    "sample": "Namuna",
+    "sampleNotice": "Bu namuna loyiha. Asl muallifi: {name}.",
+    "details": "Tafsilotlar",
+    "play": "Videoni ijro etish"
+  }
+}

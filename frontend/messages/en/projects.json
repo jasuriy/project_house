@@ -1,1 +1,35 @@
-{}
+{
+  "Feed": {
+    "title": "New projects",
+    "sub": "Newest first. Filter by field.",
+    "sort": "Sort: newest",
+    "filters": "Field",
+    "empty": "No projects in this field yet.",
+    "loadMore": "Show more",
+    "loading": "Loading",
+    "demo": "Sample",
+    "video": "Video"
+  },
+  "Project": {
+    "breadcrumb": "Breadcrumb",
+    "result": "Result",
+    "field": "Field",
+    "role": "Role",
+    "license": "License",
+    "licenseNone": "Not specified",
+    "published": "Published",
+    "github": "GitHub",
+    "live": "Try it",
+    "video": "Demo video",
+    "share": "Share",
+    "copied": "Copied",
+    "about": "About the project",
+    "media": "Project media",
+    "showMedia": "Show media {n}",
+    "openMedia": "Open the media",
+    "sample": "Sample",
+    "sampleNotice": "This is a sample project. Original author: {name}.",
+    "details": "Details",
+    "play": "Play the video"
+  }
+}

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { clientPost } from "@/lib/client-api";
+import { forgetToken, LINK_TOKEN_KEYS } from "@/components/auth/takeToken";
 
 /** Ends the session through the same-origin API, then re-renders the page as a visitor. */
 export function LogoutButton() {
@@ -17,8 +18,13 @@ export function LogoutButton() {
     setPending(true);
     setError(null);
     const result = await clientPost("/api/v1/auth/logout");
-    if (result.ok) router.refresh();
-    else setError(result.status === 0 ? errors("unreachable") : errors("server"));
+    if (result.ok) {
+      // An emailed-link token left in this tab must not survive into the next account.
+      LINK_TOKEN_KEYS.forEach(forgetToken);
+      router.refresh();
+    } else {
+      setError(result.status === 0 ? errors("unreachable") : errors("server"));
+    }
     setPending(false);
   }
 

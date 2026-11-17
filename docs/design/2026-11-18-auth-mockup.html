@@ -1,0 +1,298 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project House login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Login and signup screens, drawn 2026-11-18 in the approved system (palette 2, Inter, Minimalism):
+   same tokens, header, radii and type scale as 2026-11-17-screens-mockup.html. */
+:root {
+  --page: #f3f4f6; --page-ink: #1b1f27; --page-mute: #5c6370; --page-line: #d8dbe1;
+  --bg: #f0f9ff; --card: #ffffff; --fg: #0c4a6e; --mute: #475569; --border: #d6ebf8; --muted: #e7eff5;
+  --primary: #0369a1; --accent-soft: #e0f0fa; --ok: #166534; --ok-soft: #dcfce7; --deco: #0ea5e9;
+  --warn-fg: #3b2a00; --warn-soft: #fff7e6; --danger: #b91c1c;
+  --font: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--page-ink); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1360px; margin: 0 auto; padding: 40px 24px 64px; display: grid; gap: 40px; }
+.intro h1 { margin: 0; font-size: 30px; letter-spacing: -0.015em; }
+.intro p { margin: 6px 0 0; color: var(--page-mute); max-width: 80ch; }
+section.scr { display: grid; gap: 10px; }
+.scr h2 { margin: 0; font-size: 20px; }
+.scr > p { margin: 0; color: var(--page-mute); }
+.frame { border: 1px solid var(--page-line); border-radius: 12px; overflow: hidden; background: var(--card); }
+.frame.desk { width: 1280px; }
+.frame.phone { width: 390px; }
+.row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+
+/* ---------- the product (same values as the approved mockup) ---------- */
+.m { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+.m .nav { height: 64px; display: flex; align-items: center; gap: 28px; padding: 0 40px; background: var(--card); border-bottom: 1px solid var(--border); }
+.m.p .nav { padding: 0 16px; gap: 12px; }
+.m .logo { font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 9px; letter-spacing: -0.01em; }
+.m .logo b { width: 24px; height: 24px; border-radius: 6px; background: var(--deco); display: grid; place-items: center; color: #fff; font-size: 12px; }
+.m .nav a { font-size: 15px; color: var(--mute); text-decoration: none; }
+.m .nav a.btn { color: #fff; }
+.m .right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.m .lang { height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg); background: var(--card); }
+.m .btn { height: 40px; padding: 0 16px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 600 15px var(--font); border: 0; background: var(--primary); color: #fff; white-space: nowrap; text-decoration: none; }
+.m .btn.ghost { background: var(--card); color: var(--fg); border: 1px solid var(--border); }
+.m .btn.block { width: 100%; height: 44px; }
+.m.p .btn { height: 44px; }
+.m .main { padding: 56px 40px 72px; display: grid; justify-items: center; }
+.settings .rowline .btn, .settings .rowline .badge { flex: none; }
+.m.p .main { padding: 20px 16px 32px; }
+
+.auth { width: 440px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; display: grid; gap: 20px; }
+.auth.wide { width: 520px; }
+.m.p .auth, .m.p .auth.wide { width: 100%; padding: 20px; }
+.auth h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.015em; }
+.auth .sub { margin: 4px 0 0; font-size: 15px; color: var(--mute); }
+.providers { display: grid; gap: 10px; }
+.or { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--mute); }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.field { display: grid; gap: 6px; }
+.field label, .field .lbl { font-size: 14px; font-weight: 600; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.field label a { font-weight: 400; font-size: 14px; color: var(--primary); text-decoration: none; }
+.input { height: 42px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 0 12px; display: flex; align-items: center; font-size: 15px; color: var(--fg); gap: 8px; }
+.m.p .input { height: 44px; }
+.input.focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--accent-soft); }
+.input.err { border-color: var(--danger); }
+.input .ph { color: var(--mute); }
+.input .eye { margin-left: auto; color: var(--mute); display: grid; place-items: center; width: 28px; height: 28px; }
+.input .pre { color: var(--mute); margin-right: -8px; }
+.help { font-size: 13px; color: var(--mute); margin: 0; }
+.error { font-size: 13px; color: var(--danger); margin: 0; }
+.formerr { font-size: 14px; color: var(--danger); margin: 0; }
+.banner { border-radius: 10px; background: var(--warn-soft); color: var(--warn-fg); padding: 12px 14px; font-size: 14px; }
+.foot { font-size: 14px; color: var(--mute); text-align: center; margin: 0; }
+.foot a { color: var(--primary); text-decoration: none; font-weight: 600; }
+.types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.type { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; }
+.type strong { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.type span { font-size: 13px; color: var(--mute); }
+.type.on { border-color: var(--primary); background: var(--accent-soft); }
+.radio { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--mute); display: inline-block; flex: none; }
+.type.on .radio { border: 5px solid var(--primary); }
+.req { color: var(--danger); }
+svg { display: block; }
+.banner.ok { background: var(--ok-soft); color: var(--ok); }
+.banner.info { background: var(--accent-soft); color: var(--fg); }
+.m .btn.ghost.block { height: 44px; }
+.note-mute { font-size: 14px; color: var(--mute); margin: 0; }
+.settings { width: 640px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; display: grid; gap: 24px; }
+.m.p .settings { width: 100%; padding: 20px; gap: 20px; }
+.settings h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.015em; }
+.settings h2 { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
+.settings .hr { height: 1px; background: var(--border); }
+.rowline { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.rowline .who { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.rowline .who small { display: block; font-size: 13px; color: var(--mute); }
+.badge { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
+.badge.blue { background: var(--accent-soft); color: var(--primary); }
+.m .btn.sm { height: 34px; font-size: 14px; padding: 0 12px; }
+.m.p .btn.sm { height: 44px; }
+.m .btn.ghost.dim { color: var(--mute); }
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>Login, signup and account screens</h1>
+    <p>Drawn in the approved system: palette 2, Inter, the same header, radii and type scale as the five main screens. Desktop first (1280), phone last (390). Google and GitHub buttons appear only when those logins are switched on. Uzbek interface text is a first draft.</p>
+  </header>
+
+  <section class="scr">
+    <h2>1. Kirish (log in)</h2>
+    <p>One centred card. The quick path first (Google, GitHub), then email and password. "Parolni unutdingizmi?" sits on the password label. The sign-up link is at the bottom, because phones reach sign up only from here.</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="login-desk"></div></div>
+    </div>
+  </section>
+
+  <section class="scr">
+    <h2>2. Kirish: error states</h2>
+    <p>Left: wrong email or password (one message above the button, the same for both cases). Right: arriving from Google when an account with that email exists (the yellow banner from the design guide, with what to do next).</p>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="login-err-1"></div></div>
+      <div class="frame phone"><div class="m p" id="login-err-2"></div></div>
+    </div>
+  </section>
+
+  <section class="scr">
+    <h2>3. Roʻyxatdan oʻtish (sign up)</h2>
+    <p>Account type first (two large choices), then email, password, username (shows the profile address it creates) and name. Errors appear under their field; here the username is already taken.</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="signup-desk"></div></div>
+    </div>
+  </section>
+
+  <section class="scr">
+    <h2>4. Phone</h2>
+    <p>The same cards full width with 16 px page padding; every input and button is 44 px tall.</p>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="login-phone"></div></div>
+      <div class="frame phone"><div class="m p" id="signup-phone"></div></div>
+    </div>
+  </section>
+  <section class="scr">
+    <h2>5. Parolni tiklash (forgot password)</h2>
+    <p>Desktop: the form. Phone: after sending. The message is the same whether or not the email has an account, so nobody can learn which emails are registered.</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="forgot-desk"></div></div>
+    </div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="forgot-sent"></div></div>
+    </div>
+  </section>
+
+  <section class="scr">
+    <h2>6. Yangi parol (reset password)</h2>
+    <p>Opened from the emailed link (the link is removed from the address bar). Desktop: the form. Phone: success (all devices are logged out, so the next step is logging in) and an expired link (the next step is a new link).</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="reset-desk"></div></div>
+    </div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="reset-done"></div></div>
+      <div class="frame phone"><div class="m p" id="reset-expired"></div></div>
+    </div>
+  </section>
+
+  <section class="scr">
+    <h2>7. Emailni tasdiqlash (verify email)</h2>
+    <p>The link works only while logged in to that account (security rule). Desktop: confirmed. Phone: expired or opened in another account; and the login page when the visitor is not logged in, with a blue note saying why.</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="verify-desk"></div></div>
+    </div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="verify-bad"></div></div>
+      <div class="frame phone"><div class="m p" id="verify-login"></div></div>
+    </div>
+  </section>
+  <section class="scr">
+    <h2>8. Xush kelibsiz (onboarding)</h2>
+    <p>After the first sign-up (email or Google/GitHub). Desktop: email sign-up (asks to confirm the email). Phone: a Google/GitHub sign-up (email already confirmed by the provider, no note).</p>
+    <div class="row"><div class="frame desk"><div class="m" id="onb-desk"></div></div></div>
+    <div class="row"><div class="frame phone"><div class="m p" id="onb-phone"></div></div></div>
+  </section>
+
+  <section class="scr">
+    <h2>9. Sozlamalar (settings)</h2>
+    <p>Email with its status and the connected Google/GitHub accounts. Desktop: confirmed email, Google connected, GitHub can be connected. Phone left: email not confirmed (connecting is blocked by the security rule, so the page says how to confirm, including the password-reset route). Phone right: coming back from GitHub when that GitHub account belongs to someone else.</p>
+    <div class="row"><div class="frame desk"><div class="m" id="set-desk"></div></div></div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="set-unverified"></div></div>
+      <div class="frame phone"><div class="m p" id="set-error"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const G = `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>`;
+const GH = `<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="#0c4a6e" d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.67.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.96 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.08-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0z"/></svg>`;
+const EYE = `<span class="eye"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>`;
+const GLOBE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>`;
+
+const nav = (phone, page) => phone
+  ? `<div class="nav"><span class="logo"><b>P</b>Project House</span><div class="right"><span class="lang">${GLOBE}uz</span>${page === "login" ? "" : `<a href="#">Kirish</a>`}</div></div>`
+  : `<div class="nav"><span class="logo"><b>P</b>Project House</span><a href="#">Lenta</a><div class="right"><span class="lang">${GLOBE}uz</span><a href="#" style="${page === "login" ? "color:var(--fg);font-weight:600" : ""}">Kirish</a><a class="btn" href="#">Roʻyxatdan oʻtish</a></div></div>`;
+
+const providers = `<div class="providers"><a class="btn ghost block" href="#">${G}Google bilan kirish</a><a class="btn ghost block" href="#">${GH}GitHub bilan kirish</a></div><div class="or">yoki email bilan</div>`;
+
+const login = ({ phone = false, error = "", banner = "", focus = false } = {}) => `${nav(phone, "login")}<div class="main"><div class="auth">
+  <div><h1>Kirish</h1><p class="sub">Project House hisobingizga kiring.</p></div>
+  ${banner ? `<div class="banner">${banner}</div>` : ""}
+  ${providers}
+  <div class="field"><label>Email</label><div class="input${focus ? " focus" : ""}"><span>${focus ? "aziz@example.com" : "<span class=ph>siz@example.com</span>"}</span></div></div>
+  <div class="field"><label>Parol <a href="#">Parolni unutdingizmi?</a></label><div class="input">${phone || error ? "••••••••••••" : "<span class=ph>Parolingiz</span>"}${EYE}</div></div>
+  ${error ? `<p class="formerr" role="alert">${error}</p>` : ""}
+  <a class="btn block" href="#">Kirish</a>
+  <p class="foot">Hisobingiz yoʻqmi? <a href="#">Roʻyxatdan oʻting</a></p>
+</div></div>`;
+
+const signup = ({ phone = false } = {}) => `${nav(phone, "signup")}<div class="main"><div class="auth wide">
+  <div><h1>Roʻyxatdan oʻtish</h1><p class="sub">Loyihalaringizni koʻrsating yoki iqtidorli dasturchilarni toping.</p></div>
+  ${providers.replaceAll("bilan kirish", "bilan davom etish")}
+  <div class="field"><span class="lbl">Hisob turi</span><div class="types">
+    <div class="type on"><strong><span class="radio"></span>Dasturchi</strong><span>Loyihalarimni joylayman</span></div>
+    <div class="type"><strong><span class="radio"></span>Kompaniya</strong><span>Dasturchilarni qidiraman</span></div>
+  </div></div>
+  <div class="field"><label><span>Email <span class="req" aria-hidden="true">*</span></span></label><div class="input">aziz@example.com</div></div>
+  <div class="field"><label><span>Parol <span class="req" aria-hidden="true">*</span></span></label><div class="input">••••••••••••${EYE}</div><p class="help">Kamida 10 ta belgi.</p></div>
+  <div class="field"><label><span>Foydalanuvchi nomi <span class="req" aria-hidden="true">*</span></span></label><div class="input err"><span class="pre">projecthouse.uz/</span>aziz</div><p class="error">Bu nom band. Boshqasini tanlang.</p></div>
+  <div class="field"><label><span>Ism <span class="req" aria-hidden="true">*</span></span></label><div class="input">Aziz Rahimov</div><p class="help">Profilingiz va loyihalaringizda koʻrinadi.</p></div>
+  <a class="btn block" href="#">Roʻyxatdan oʻtish</a>
+  <p class="foot">Hisobingiz bormi? <a href="#">Kirish</a></p>
+</div></div>`;
+
+document.getElementById("login-desk").innerHTML = login({ focus: true });
+document.getElementById("login-err-1").innerHTML = login({ phone: true, error: "Email yoki parol notoʻgʻri." });
+document.getElementById("login-err-2").innerHTML = login({ phone: true, banner: "Bu email bilan hisob bor. Avval kiring, keyin Google hisobingizni Sozlamalarda ulang." });
+document.getElementById("signup-desk").innerHTML = signup();
+document.getElementById("login-phone").innerHTML = login({ phone: true });
+document.getElementById("signup-phone").innerHTML = signup({ phone: true });
+
+const navUser = (phone) => phone
+  ? `<div class="nav"><span class="logo"><b>P</b>Project House</span><div class="right"><span class="lang">${GLOBE}uz</span><a href="#">Chiqish</a></div></div>`
+  : `<div class="nav"><span class="logo"><b>P</b>Project House</span><a href="#">Lenta</a><div class="right"><span class="lang">${GLOBE}uz</span><span style="font-weight:600">Aziz Rahimov</span><a href="#">Sozlamalar</a><a href="#">Chiqish</a></div></div>`;
+const card = (phone, inner, user = false) => `${user ? navUser(phone) : nav(phone, "")}<div class="main"><div class="auth">${inner}</div></div>`;
+const head = (title, sub) => `<div><h1>${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ""}</div>`;
+const backToLogin = `<p class="foot">Parolingiz esingizga tushdimi? <a href="#">Kirish</a></p>`;
+
+const forgot = (phone, sent) => card(phone, `${head("Parolni tiklash", "Emailingizni kiriting, parolni yangilash havolasini yuboramiz.")}
+  ${sent ? `<div class="banner ok">Agar bu email bilan hisob boʻlsa, unga havola yubordik. Havola 1 soat amal qiladi.</div>` : ""}
+  <div class="field"><label>Email</label><div class="input">${sent ? "aziz@example.com" : "<span class=ph>siz@example.com</span>"}</div></div>
+  <a class="btn block" href="#">${sent ? "Qayta yuborish" : "Havola yuborish"}</a>
+  ${backToLogin}`);
+
+const reset = (phone, state) => card(phone, state === "done"
+  ? `${head("Parol yangilandi", "")}<div class="banner ok">Parolingiz yangilandi. Xavfsizlik uchun barcha qurilmalardan chiqarildingiz.</div><a class="btn block" href="#">Kirish</a>`
+  : state === "expired"
+  ? `${head("Havola eskirgan", "")}<div class="banner">Bu havola eskirgan yoki allaqachon ishlatilgan. Havola 1 soat amal qiladi.</div><a class="btn block" href="#">Yangi havola olish</a>${backToLogin}`
+  : `${head("Yangi parol", "Hisobingiz uchun yangi parol oʻylab toping.")}
+     <div class="field"><label>Yangi parol</label><div class="input focus">••••••••••••${EYE}</div><p class="help">Kamida 10 ta belgi.</p></div>
+     <a class="btn block" href="#">Parolni saqlash</a>${backToLogin}`);
+
+const verify = (phone, state) => card(phone, state === "ok"
+  ? `${head("Email tasdiqlandi", "")}<div class="banner ok">aziz@example.com manzili tasdiqlandi. Endi Google yoki GitHub hisobingizni Sozlamalarda ulashingiz mumkin.</div><a class="btn block" href="#">Lentaga oʻtish</a><a class="btn ghost block" href="#">Sozlamalar</a>`
+  : `${head("Havola ishlamadi", "")}<div class="banner">Havola eskirgan yoki boshqa hisob uchun. Emailni tasdiqlagan hisobingizga kiring va havolani qaytadan oching.</div><a class="btn block" href="#">Kirish</a>`, state === "ok");
+
+document.getElementById("forgot-desk").innerHTML = forgot(false, false);
+document.getElementById("forgot-sent").innerHTML = forgot(true, true);
+document.getElementById("reset-desk").innerHTML = reset(false, "form");
+document.getElementById("reset-done").innerHTML = reset(true, "done");
+document.getElementById("reset-expired").innerHTML = reset(true, "expired");
+document.getElementById("verify-desk").innerHTML = verify(false, "ok");
+document.getElementById("verify-bad").innerHTML = verify(true, "bad");
+document.getElementById("verify-login").innerHTML = login({ phone: true }).replace('<div class="providers">', '<div class="banner info">Emailni tasdiqlash uchun hisobingizga kiring. Keyin tasdiqlash avtomatik davom etadi.</div><div class="providers">');
+
+const onboarding = (phone, verify) => `${navUser(phone)}<div class="main"><div class="auth wide">
+  ${head("Xush kelibsiz, Aziz!", "Hisobingiz yaratildi. Endi loyihalarni koʻrishingiz mumkin.")}
+  ${verify ? `<div class="banner info">Emailingizga tasdiqlash havolasini yubordik. Uni oching: shunda Google yoki GitHub hisobingizni ham ulay olasiz.</div>` : ""}
+  <a class="btn block" href="#">Loyihalarni koʻrish</a>
+  <a class="btn ghost block" href="#">Sozlamalar</a>
+</div></div>`;
+
+const providerRow = (logo, name, state, phone) => `<div class="rowline"><span class="who">${logo}<span>${name}${state === "on" ? `<small>aziz@gmail.com</small>` : ""}</span></span>${
+  state === "on" ? `<span class="badge">Ulangan</span>` : state === "off" ? `<a class="btn ghost sm" href="#">Ulash</a>` : `<span class="btn ghost sm dim" aria-disabled="true">Ulash</span>`}</div>`;
+
+const settings = (phone, { verified = true, banner = "" } = {}) => `${navUser(phone)}<div class="main"><div class="settings">
+  <h1>Sozlamalar</h1>
+  ${banner ? `<div class="banner">${banner}</div>` : ""}
+  <div><h2>Email</h2><div class="rowline"><span class="who">aziz@example.com</span>${verified ? `<span class="badge">Tasdiqlangan</span>` : `<span class="badge blue">Tasdiqlanmagan</span>`}</div></div>
+  ${verified ? "" : `<div class="banner info">Google yoki GitHub ulash uchun avval emailingizni tasdiqlang: emaildagi havolani oching. Xat topilmasa, <a href="#" style="color:var(--primary);font-weight:600">parolni tiklang</a>: bu ham emailingizni tasdiqlaydi.</div>`}
+  <div class="hr"></div>
+  <div style="display:grid;gap:14px"><h2>Ulangan hisoblar</h2>
+    ${providerRow(G, "Google", verified ? "on" : "blocked", phone)}
+    ${providerRow(GH, "GitHub", verified ? "off" : "blocked", phone)}
+  </div>
+</div></div>`;
+
+document.getElementById("onb-desk").innerHTML = onboarding(false, true);
+document.getElementById("onb-phone").innerHTML = onboarding(true, false);
+document.getElementById("set-desk").innerHTML = settings(false);
+document.getElementById("set-unverified").innerHTML = settings(true, { verified: false });
+document.getElementById("set-error").innerHTML = settings(true, { banner: "Bu GitHub hisobi boshqa hisobga ulangan." });
+</script>

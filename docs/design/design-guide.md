@@ -93,14 +93,16 @@ Running text stays under about 75 characters per line.
 
 - Spacing uses the 4 px step (Tailwind default). The mockups used some in-between values
   (6, 10, 14, 18, 22 px); implementation rounds to the nearest 4 px multiple.
-- Page side padding: desktop 40, tablet 24, phone 16. Content max width 1280.
+- Page side padding: desktop 40, tablet 24, phone 16. Content max width 1280; on screens from
+  1536 px the content may grow to 1600 (Bek, 2026-11-18: wide monitors were leaving ~310 px empty
+  on each side).
 - Breakpoints: phone < 768, tablet 768-1023, desktop >= 1024 (`md` = 48rem, `lg` = 64rem).
   A tablet held sideways uses the desktop layout.
 
 | Screen | Desktop (>= 1024) | Tablet (768) | Phone (< 768) |
 |---|---|---|---|
 | Top navigation | logo, Lenta, Kashf etish, search, Xabarlar (count), "Loyiha qoʻshish", avatar | logo, search, Xabarlar, "+ Qoʻshish", avatar; Lenta / Kashf etish become tabs on the feed | logo, search icon, messages icon; bottom tab bar (5 items) |
-| Feed | 4 columns, gap 20 | 2 columns | 1 column |
+| Feed | 4 columns, gap 20; from 1536 px 5 columns, gap 24 (cards keep their ~300 px width) | 2 columns | 1 column |
 | Project page | demo column 768 + evaluation panel | demo full width, panel below; author + Message on one row | demo edge to edge; fixed bottom bar with Message + Save |
 | Profile | side column 320 + projects (3 columns) | header card + projects (2 columns) | stacked header, projects 1 column |
 | Add project | form + sticky preview column 380 | form, preview below (2 columns) | one field per row; fixed bottom bar |
