@@ -31,5 +31,5 @@ Known differences (intended):
 Checks: no horizontal scroll at 1440/768/390; owner view shows Edit profile and the header name links to `/aziz-rahimov`; projects loaded with load more (24 -> 29) survive About -> Projects; `/aziz-rahimov` 200, `/nobody-here` 404,
 `/robots.txt` 404 (no API call); owned sample `/aziz-rahimov/apache-superset` 200 with the author
 linking to the profile, `/demo/apache-superset` 404; feed shows no "Sample" badge for owned samples.
-Long data (`ours-long-links-390.png` / `-1440.png`): a 39-character GitHub name, a long website host and a
-long location wrap inside the card; page width stays 390 at 390 px, links end inside the card at 390 and 1440.
+Long data (`ours-long-links-390.png` / `-768.png` / `-1440.png`): a 39-character GitHub name, a long website host and a
+long location wrap inside the card; page width stays 390 at 390 px, links and facts end inside the card at 390, 768 and 1440.
