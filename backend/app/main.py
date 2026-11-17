@@ -3,7 +3,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
+from app.auth import router as auth
+from app.auth.csrf import OriginCheckMiddleware
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import register_error_handlers
@@ -20,9 +23,22 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Project House", lifespan=lifespan)
+    settings = get_settings()
+    # The last middleware added is the outermost: CORS, then the Origin check (rejects before any
+    # cookie is read), then the OAuth-state session, then the routes.
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.secret_key,
+        session_cookie="ph_oauth",
+        max_age=600,
+        path="/api/v1/auth/oauth",
+        same_site="lax",
+        https_only=settings.app_env == "production",
+    )
+    app.add_middleware(OriginCheckMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=get_settings().cors_origins,
+        allow_origins=settings.cors_origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -30,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router, prefix="/api")
     app.include_router(users.router, prefix="/api/v1")
     app.include_router(projects.router, prefix="/api/v1")
+    app.include_router(auth.router, prefix="/api/v1")
     return app
 
 
