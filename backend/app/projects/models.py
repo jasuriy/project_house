@@ -27,6 +27,8 @@ class Project(Base):
     __table_args__ = (
         CheckConstraint("owner_id IS NOT NULL OR is_demo", name="owner_or_demo"),
         CheckConstraint("field IN (" + ", ".join(f"'{f}'" for f in FIELDS) + ")", name="field"),
+        # The frontend renders live_url as a link: only http(s), never a javascript: URL.
+        CheckConstraint("live_url IS NULL OR live_url ~* '^https?://'", name="live_url"),
         # Real projects: one slug per owner. Demo rows have no owner: one slug among demo rows.
         Index(
             "uq_projects_owner_id_slug",
@@ -57,6 +59,7 @@ class Project(Base):
         ARRAY(Text), default=list, server_default=text("'{}'::text[]")
     )
     github_url: Mapped[str | None] = mapped_column(Text)
+    live_url: Mapped[str | None] = mapped_column(Text)
     demo_video_url: Mapped[str | None] = mapped_column(Text)
     license: Mapped[str | None] = mapped_column(Text)
     role: Mapped[str | None] = mapped_column(Text)

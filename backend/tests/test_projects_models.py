@@ -34,6 +34,30 @@ async def test_unknown_field_is_rejected(db_session):
         await db_session.commit()
 
 
+@pytest.mark.parametrize("url", [None, "http://example.com", "https://example.com/app"])
+async def test_live_url_accepts_null_http_and_https(db_session, url):
+    await add_projects(db_session, make_project(live_url=url))
+    row = (await db_session.scalars(select(Project))).one()
+    assert row.live_url == url
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "javascript:alert(1)",
+        "ftp://example.com",
+        "example.com",
+        "javascript:alert(1)//https://x",  # scheme not at the start: guards the ^ anchor
+        "https:evil.com",  # no "//": guards the slashes
+        " https://x",  # leading space: guards the ^ anchor
+    ],
+)
+async def test_live_url_other_schemes_are_rejected(db_session, url):
+    db_session.add(make_project(live_url=url))
+    with pytest.raises(IntegrityError, match="ck_projects_live_url"):
+        await db_session.commit()
+
+
 async def test_unknown_media_kind_is_rejected(db_session):
     db_session.add(make_project(media=[media("audio", "u", 0)]))
     with pytest.raises(IntegrityError, match="ck_project_media_kind"):
