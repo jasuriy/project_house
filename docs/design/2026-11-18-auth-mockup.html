@@ -78,11 +78,15 @@ section.scr { display: grid; gap: 10px; }
 .type.on .radio { border: 5px solid var(--primary); }
 .req { color: var(--danger); }
 svg { display: block; }
+.banner.ok { background: var(--ok-soft); color: var(--ok); }
+.banner.info { background: var(--accent-soft); color: var(--fg); }
+.m .btn.ghost.block { height: 44px; }
+.note-mute { font-size: 14px; color: var(--mute); margin: 0; }
 </style>
 
 <div class="wrap">
   <header class="intro">
-    <h1>Login and signup screens</h1>
+    <h1>Login, signup and account screens</h1>
     <p>Drawn in the approved system: palette 2, Inter, the same header, radii and type scale as the five main screens. Desktop first (1280), phone last (390). Google and GitHub buttons appear only when those logins are switched on. Uzbek interface text is a first draft.</p>
   </header>
 
@@ -117,6 +121,40 @@ svg { display: block; }
     <div class="row">
       <div class="frame phone"><div class="m p" id="login-phone"></div></div>
       <div class="frame phone"><div class="m p" id="signup-phone"></div></div>
+    </div>
+  </section>
+  <section class="scr">
+    <h2>5. Parolni tiklash (forgot password)</h2>
+    <p>Desktop: the form. Phone: after sending. The message is the same whether or not the email has an account, so nobody can learn which emails are registered.</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="forgot-desk"></div></div>
+    </div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="forgot-sent"></div></div>
+    </div>
+  </section>
+
+  <section class="scr">
+    <h2>6. Yangi parol (reset password)</h2>
+    <p>Opened from the emailed link (the link is removed from the address bar). Desktop: the form. Phone: success (all devices are logged out, so the next step is logging in) and an expired link (the next step is a new link).</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="reset-desk"></div></div>
+    </div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="reset-done"></div></div>
+      <div class="frame phone"><div class="m p" id="reset-expired"></div></div>
+    </div>
+  </section>
+
+  <section class="scr">
+    <h2>7. Emailni tasdiqlash (verify email)</h2>
+    <p>The link works only while logged in to that account (security rule). Desktop: confirmed. Phone: expired or opened in another account; and the login page when the visitor is not logged in, with a blue note saying why.</p>
+    <div class="row">
+      <div class="frame desk"><div class="m" id="verify-desk"></div></div>
+    </div>
+    <div class="row">
+      <div class="frame phone"><div class="m p" id="verify-bad"></div></div>
+      <div class="frame phone"><div class="m p" id="verify-login"></div></div>
     </div>
   </section>
 </div>
@@ -165,4 +203,38 @@ document.getElementById("login-err-2").innerHTML = login({ phone: true, banner: 
 document.getElementById("signup-desk").innerHTML = signup();
 document.getElementById("login-phone").innerHTML = login({ phone: true });
 document.getElementById("signup-phone").innerHTML = signup({ phone: true });
+
+const navUser = (phone) => phone
+  ? `<div class="nav"><span class="logo"><b>P</b>Project House</span><div class="right"><span class="lang">${GLOBE}uz</span><a href="#">Chiqish</a></div></div>`
+  : `<div class="nav"><span class="logo"><b>P</b>Project House</span><a href="#">Lenta</a><div class="right"><span class="lang">${GLOBE}uz</span><span style="font-weight:600">Aziz Rahimov</span><a href="#">Sozlamalar</a><a href="#">Chiqish</a></div></div>`;
+const card = (phone, inner, user = false) => `${user ? navUser(phone) : nav(phone, "")}<div class="main"><div class="auth">${inner}</div></div>`;
+const head = (title, sub) => `<div><h1>${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ""}</div>`;
+const backToLogin = `<p class="foot">Parolingiz esingizga tushdimi? <a href="#">Kirish</a></p>`;
+
+const forgot = (phone, sent) => card(phone, `${head("Parolni tiklash", "Emailingizni kiriting, parolni yangilash havolasini yuboramiz.")}
+  ${sent ? `<div class="banner ok">Agar bu email bilan hisob boʻlsa, unga havola yubordik. Havola 1 soat amal qiladi.</div>` : ""}
+  <div class="field"><label>Email</label><div class="input">${sent ? "aziz@example.com" : "<span class=ph>siz@example.com</span>"}</div></div>
+  <a class="btn block" href="#">${sent ? "Qayta yuborish" : "Havola yuborish"}</a>
+  ${backToLogin}`);
+
+const reset = (phone, state) => card(phone, state === "done"
+  ? `${head("Parol yangilandi", "")}<div class="banner ok">Parolingiz yangilandi. Xavfsizlik uchun barcha qurilmalardan chiqarildingiz.</div><a class="btn block" href="#">Kirish</a>`
+  : state === "expired"
+  ? `${head("Havola eskirgan", "")}<div class="banner">Bu havola eskirgan yoki allaqachon ishlatilgan. Havola 1 soat amal qiladi.</div><a class="btn block" href="#">Yangi havola olish</a>${backToLogin}`
+  : `${head("Yangi parol", "Hisobingiz uchun yangi parol oʻylab toping.")}
+     <div class="field"><label>Yangi parol</label><div class="input focus">••••••••••••${EYE}</div><p class="help">Kamida 10 ta belgi.</p></div>
+     <a class="btn block" href="#">Parolni saqlash</a>${backToLogin}`);
+
+const verify = (phone, state) => card(phone, state === "ok"
+  ? `${head("Email tasdiqlandi", "")}<div class="banner ok">aziz@example.com manzili tasdiqlandi. Endi Google yoki GitHub hisobingizni Sozlamalarda ulashingiz mumkin.</div><a class="btn block" href="#">Lentaga oʻtish</a><a class="btn ghost block" href="#">Sozlamalar</a>`
+  : `${head("Havola ishlamadi", "")}<div class="banner">Havola eskirgan yoki boshqa hisob uchun. Emailni tasdiqlagan hisobingizga kiring va havolani qaytadan oching.</div><a class="btn block" href="#">Kirish</a>`, state === "ok");
+
+document.getElementById("forgot-desk").innerHTML = forgot(false, false);
+document.getElementById("forgot-sent").innerHTML = forgot(true, true);
+document.getElementById("reset-desk").innerHTML = reset(false, "form");
+document.getElementById("reset-done").innerHTML = reset(true, "done");
+document.getElementById("reset-expired").innerHTML = reset(true, "expired");
+document.getElementById("verify-desk").innerHTML = verify(false, "ok");
+document.getElementById("verify-bad").innerHTML = verify(true, "bad");
+document.getElementById("verify-login").innerHTML = login({ phone: true }).replace('<div class="providers">', '<div class="banner info">Emailni tasdiqlash uchun hisobingizga kiring. Keyin tasdiqlash avtomatik davom etadi.</div><div class="providers">');
 </script>
