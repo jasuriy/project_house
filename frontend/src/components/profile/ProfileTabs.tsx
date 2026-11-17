@@ -33,10 +33,12 @@ export function ProfileTabs({
           </button>
         ))}
       </div>
-      {tab === "about" && about ? (
-        <p className="text-body whitespace-pre-line break-words text-fg">{about}</p>
-      ) : (
-        children
+      {/* Both panels stay mounted, so projects loaded with "load more" survive a visit to About. */}
+      <div hidden={tab !== "projects"}>{children}</div>
+      {about && (
+        <p hidden={tab !== "about"} className="text-body whitespace-pre-line break-words text-fg">
+          {about}
+        </p>
       )}
     </div>
   );

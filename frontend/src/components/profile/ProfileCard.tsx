@@ -6,8 +6,9 @@ import { profileLinks } from "@/lib/profile";
 import type { Profile } from "@/lib/types";
 
 const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const;
+// Grow to share the row, wrap when a translation is too long for half of it.
 const BUTTON =
-  "inline-flex h-11 items-center justify-center rounded-control px-4 text-ui font-semibold whitespace-nowrap md:h-10";
+  "inline-flex h-11 flex-auto items-center justify-center rounded-control px-4 text-ui font-semibold whitespace-nowrap md:h-10 md:max-lg:flex-none";
 const PRIMARY = `${BUTTON} bg-primary text-on-primary hover:opacity-90`;
 const GHOST = `${BUTTON} border border-border bg-card text-fg hover:border-primary`;
 
@@ -85,7 +86,7 @@ export function ProfileCard({ profile, isOwner }: { profile: Profile; isOwner: b
           </p>
         </div>
       )}
-      <div className={`grid grid-cols-2 gap-2 md:max-lg:order-last md:max-lg:flex ${second}`}>
+      <div className={`flex flex-wrap gap-2 md:max-lg:order-last ${second}`}>
         {isOwner && (
           <Link href="/settings/profile" className={PRIMARY}>
             {t("editProfile")}

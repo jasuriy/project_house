@@ -41,7 +41,7 @@ async function ProjectsGrid({ username, projects }: { username: string; projects
     );
   }
   return (
-    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {projects.data.items.map((card) => (
         <ProjectCard key={card.path} card={card} />
       ))}
