@@ -49,3 +49,45 @@ def test_malformed_cursor_raises_invalid_cursor(cursor):
         decode_cursor(cursor)
     assert exc.value.status == 400
     assert exc.value.code == "invalid_cursor"
+
+
+def _raw(payload: str) -> str:
+    import base64
+
+    return base64.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
+
+
+@pytest.mark.parametrize(
+    "cursor",
+    [
+        _raw('{"t":"0001-01-01T00:00:00+05:00","i":1}'),  # astimezone underflow
+        _raw('{"t":"9999-12-31T23:59:59-05:00","i":1}'),  # astimezone overflow
+        _raw("[" * 100000 + "]" * 100000),  # RecursionError in json
+        _raw('{"t":"2026-01-01T00:00:00+00:00","i":1000000000000000000000000000000}'),
+        _raw('{"t":"2026-01-01T00:00:00+00:00","i":9223372036854775808}'),  # 2**63
+        _raw('{"t":"2026-01-01T00:00:00+00:00","i":0}'),
+        _raw('{"t":"2026-01-01T00:00:00+00:00","i":-5}'),
+        _raw('{"t":"2026-01-01T00:00:00+00:00","i":1,"pad":"' + "a" * 600 + '"}'),  # too long
+    ],
+)
+def test_hostile_cursor_raises_invalid_cursor(cursor):
+    with pytest.raises(AppError) as exc:
+        decode_cursor(cursor)
+    assert (exc.value.status, exc.value.code) == (400, "invalid_cursor")
+
+
+def test_id_bounds_accepted():
+    ts = datetime(2026, 1, 1, tzinfo=UTC)
+    assert decode_cursor(encode_cursor(ts, 1))[1] == 1
+    assert decode_cursor(encode_cursor(ts, 2**63 - 1))[1] == 2**63 - 1
+
+
+def test_recursion_error_from_json_becomes_invalid_cursor(monkeypatch):
+    # The length limit keeps real payloads too short to nest deeply, so force the error.
+    def deep(_):
+        raise RecursionError
+
+    monkeypatch.setattr("app.core.pagination.json.loads", deep)
+    with pytest.raises(AppError) as exc:
+        decode_cursor(encode_cursor(datetime(2026, 1, 1, tzinfo=UTC), 1))
+    assert exc.value.code == "invalid_cursor"
