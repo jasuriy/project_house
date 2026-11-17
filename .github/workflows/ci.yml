@@ -27,6 +27,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql+asyncpg://projecthouse:projecthouse_dev@localhost:5432/projecthouse
+      TEST_DATABASE_URL: postgresql+asyncpg://projecthouse:projecthouse_dev@localhost:5432/projecthouse_test
     defaults:
       run:
         working-directory: backend
@@ -38,6 +39,10 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
       - run: pip install -r requirements-dev.txt
+      - name: Exactly one Alembic head
+        run: test "$(alembic heads | grep -c '(head)')" -eq 1
+      - name: Migrations apply to an empty database
+        run: alembic upgrade head
       - run: ruff check .
       - run: ruff format --check .
       - run: pytest -v

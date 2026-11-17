@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from app.db import database_is_up
+from app.core.db import database_is_up
 
 router = APIRouter()
 
