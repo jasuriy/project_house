@@ -188,13 +188,22 @@ async def oauth_callback(
         profile = await oauth.fetch_profile(provider, client, oauth_token)
     except Exception as exc:  # noqa: BLE001  (every failure here means the same redirect)
         return _oauth_failed(provider, exc)
-    auth, is_new = await service.oauth_login(
+    result = await service.oauth_login(
         db,
         provider=provider,
         profile=profile,
         user_agent=request.headers.get("user-agent"),
         old_token=token,
     )
-    response = RedirectResponse(_public_url("/onboarding" if is_new else ""), status_code=302)
-    _set_session_cookie(response, auth.session_token)
+    if result.kind == "account_exists":
+        # The address belongs to an existing account: its owner must log in and connect from
+        # there (architecture section 6). Nothing was created, linked or revoked.
+        return RedirectResponse(
+            _public_url(f"/login?error=account_exists&provider={provider}"), status_code=302
+        )
+    response = RedirectResponse(
+        _public_url("/onboarding" if result.kind == "new_account" else ""), status_code=302
+    )
+    if result.session_token:  # "connected" keeps the session the browser already has
+        _set_session_cookie(response, result.session_token)
     return response

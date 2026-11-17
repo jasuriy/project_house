@@ -1,6 +1,7 @@
 """Google and GitHub login. Authlib's real client runs (state check, token exchange, ID token
 validation); only its HTTP transport is replaced by an in-process stub, so no network is used."""
 
+import hashlib
 import time
 from collections.abc import Iterator
 from urllib.parse import parse_qs, urlsplit
@@ -17,7 +18,13 @@ from app.auth.oauth import get_oauth_client
 from app.core.config import get_settings
 from app.main import app
 from app.users.models import User
-from tests.auth_helpers import SIGNUP, session_rows, set_cookie_header, signup_body
+from tests.auth_helpers import (
+    PASSWORD,
+    SIGNUP,
+    session_rows,
+    set_cookie_header,
+    signup_body,
+)
 
 pytest_plugins = ["tests.auth_fixtures"]
 
@@ -252,16 +259,24 @@ async def test_second_login_with_same_identity_logs_in_the_same_user(auth_client
     assert len(await session_rows(db_session)) == 2
 
 
-async def test_callback_replaces_the_session_the_request_carried(auth_client, stub, db_session):
-    signed_up = await auth_client.post(f"{BASE}/signup", json=signup_body())
-    assert signed_up.status_code == 201
-    old = auth_client.cookies.get("ph_session")
+async def test_logging_in_with_a_known_identity_replaces_the_session_the_request_carried(
+    auth_client, stub, db_session
+):
+    """Session fixation defence on rule 1. (A callback with a NEW identity while logged in
+    connects it and keeps the session: see the linking tests.)"""
+    await _login_via(auth_client, stub, "github")  # octocat exists
+    auth_client.cookies.clear()
+    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    carried = auth_client.cookies.get("ph_session")
     await _login_via(auth_client, stub, "github")
-    assert auth_client.cookies.get("ph_session") != old
-    assert len(await session_rows(db_session)) == 1
+    assert auth_client.cookies.get("ph_session") != carried
+    assert (await auth_client.get(f"{BASE}/me")).json()["username"] == "octocat"
+    rows = await session_rows(db_session)
+    assert len(rows) == 2  # octocat's first session and the new one; the carried one is gone
+    assert hashlib.sha256(carried.encode()).hexdigest() not in {r.token_hash for r in rows}
 
 
-# --- callback: linking rules ------------------------------------------------------------------
+# --- callback: linking rules (architecture section 6: log in first to link) ------------------------------------------------------------------
 
 
 async def _signup_and_verify(client, email_sender):
@@ -271,57 +286,173 @@ async def _signup_and_verify(client, email_sender):
     client.cookies.clear()
 
 
-async def test_verified_provider_email_links_to_account_with_verified_email(
+ACCOUNT_EXISTS = f"{PUBLIC}/login?error=account_exists&provider="
+
+
+async def _existing_account(client, email_sender, *, verify: bool) -> str:
+    """Sign up bek@example.com (optionally verify it), log out, and return its session token."""
+    assert (await client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    if verify:
+        token = email_sender.last_token()
+        assert (await client.post(f"{BASE}/email/verify", json={"token": token})).status_code == 204
+    token = client.cookies.get("ph_session")
+    client.cookies.clear()
+    return token
+
+
+async def _assert_existing_account_untouched(client, db_session, old_token):
+    assert await _count(db_session, User) == 1
+    assert await _count(db_session, AuthIdentity) == 1  # the email identity only
+    client.cookies.set("ph_session", old_token)
+    assert (await client.get(f"{BASE}/me")).status_code == 200  # its session still works
+    login = await client.post(
+        f"{BASE}/login", json={"email": SIGNUP["email"], "password": PASSWORD}
+    )
+    assert login.status_code == 200  # and so does its password
+
+
+@pytest.mark.parametrize("verify", [True, False])
+@pytest.mark.parametrize("provider", ["google", "github"])
+async def test_logged_out_login_with_an_existing_email_creates_and_links_nothing(
+    auth_client, stub, email_sender, db_session, provider, verify
+):
+    old_token = await _existing_account(auth_client, email_sender, verify=verify)
+    stub.github_emails = [{"email": " Bek@Example.com", "primary": True, "verified": True}]
+    response = await _login_via(auth_client, stub, provider)
+    assert response.status_code == 302
+    assert response.headers["location"] == ACCOUNT_EXISTS + provider
+    assert "ph_session" not in response.headers.get("set-cookie", "")
+    assert auth_client.cookies.get("ph_session") is None
+    assert len(await session_rows(db_session)) == 1  # no session issued, none removed
+    await _assert_existing_account_untouched(auth_client, db_session, old_token)
+
+
+async def test_an_invalid_session_cookie_counts_as_logged_out(
     auth_client, stub, email_sender, db_session
 ):
-    await _signup_and_verify(auth_client, email_sender)
+    old_token = await _existing_account(auth_client, email_sender, verify=True)
+    auth_client.cookies.set("ph_session", "not-a-real-token")
     response = await _login_via(auth_client, stub, "google")
-    assert response.headers["location"] == PUBLIC
-    assert await _count(db_session, User) == 1
-    me = await auth_client.get(f"{BASE}/me")
-    assert me.json()["username"] == "bek"
-    assert me.json()["providers"] == ["email", "google"]
+    assert response.headers["location"] == ACCOUNT_EXISTS + "google"
+    await _assert_existing_account_untouched(auth_client, db_session, old_token)
 
 
-async def test_verified_github_email_also_links(auth_client, stub, email_sender, db_session):
-    await _signup_and_verify(auth_client, email_sender)
-    stub.github_emails = [{"email": SIGNUP["email"], "primary": True, "verified": True}]
-    await _login_via(auth_client, stub, "github")
-    assert await _count(db_session, User) == 1
-    assert (await auth_client.get(f"{BASE}/me")).json()["providers"] == ["email", "github"]
+async def test_unverified_google_email_matching_an_account_is_still_account_exists(
+    auth_client, stub, email_sender, db_session
+):
+    old_token = await _existing_account(auth_client, email_sender, verify=True)
+    stub.google["email_verified"] = False
+    response = await _login_via(auth_client, stub, "google")
+    assert response.headers["location"] == ACCOUNT_EXISTS + "google"
+    await _assert_existing_account_untouched(auth_client, db_session, old_token)
 
 
-async def test_unverified_existing_email_is_not_linked(auth_client, stub, db_session):
-    """An email signup nobody has proved they own must not capture a verified provider login."""
-    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+async def test_a_google_email_matching_a_github_identity_is_account_exists(
+    auth_client, stub, db_session
+):
+    stub.github_emails = [{"email": "bek@example.com", "primary": True, "verified": True}]
+    first = await _login_via(auth_client, stub, "github")
+    assert first.headers["location"] == f"{PUBLIC}/onboarding"
     auth_client.cookies.clear()
+    response = await _login_via(auth_client, stub, "google")
+    assert response.headers["location"] == ACCOUNT_EXISTS + "google"
+    assert await _count(db_session, User) == 1
+    assert await _count(db_session, AuthIdentity) == 1
+
+
+@pytest.mark.parametrize("provider_email", ["other@example.com", "bek@example.com"])
+async def test_logged_in_user_connects_a_new_identity_to_their_own_account(
+    auth_client, stub, db_session, provider_email
+):
+    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    token = auth_client.cookies.get("ph_session")
+    stub.google["email"] = provider_email
+    response = await _login_via(auth_client, stub, "google")
+    assert response.status_code == 302
+    assert response.headers["location"] == PUBLIC
+    assert auth_client.cookies.get("ph_session") == token  # still the same session
+    assert await _count(db_session, User) == 1
+    identity = await db_session.scalar(
+        select(AuthIdentity).where(AuthIdentity.provider == "google")
+    )
+    user = await db_session.scalar(select(User))
+    assert identity.user_id == user.id
+    assert (identity.provider_user_id, identity.email, identity.email_verified) == (
+        "g-1",
+        provider_email,
+        True,
+    )
+    me = (await auth_client.get(f"{BASE}/me")).json()
+    assert me["username"] == "bek"
+    assert me["providers"] == ["email", "google"]
+    assert len(await session_rows(db_session)) == 1
+
+
+async def test_after_connecting_the_new_identity_logs_in_on_its_own(auth_client, stub, db_session):
+    assert (await auth_client.post(f"{BASE}/signup", json=signup_body())).status_code == 201
+    await _login_via(auth_client, stub, "github")  # connect while logged in
+    auth_client.cookies.clear()
+    response = await _login_via(auth_client, stub, "github")
+    assert response.headers["location"] == PUBLIC
+    assert (await auth_client.get(f"{BASE}/me")).json()["username"] == "bek"
+    assert await _count(db_session, User) == 1
+
+
+async def test_pre_account_hijack_does_not_hand_the_victim_the_attackers_session(
+    auth_client, stub, email_sender, db_session
+):
+    """The attacker signs up with the victim's address and keeps the password; the victim
+    verifies it from the unsolicited mail, then signs in with Google in a fresh browser."""
+    attacker = await auth_client.post(
+        f"{BASE}/signup", json=signup_body(email="victim@example.com", username="attacker")
+    )
+    assert attacker.status_code == 201
+    verify_token = email_sender.last_token()
+    auth_client.cookies.clear()  # the victim's browser
+    verify = await auth_client.post(f"{BASE}/email/verify", json={"token": verify_token})
+    assert verify.status_code == 204
+
+    stub.google["email"] = "victim@example.com"
+    response = await _login_via(auth_client, stub, "google")
+    assert response.headers["location"] == ACCOUNT_EXISTS + "google"
+    assert "ph_session" not in response.headers.get("set-cookie", "")
+    assert auth_client.cookies.get("ph_session") is None
+    assert (await auth_client.get(f"{BASE}/me")).status_code == 401
+    assert await _count(db_session, User) == 1
+    assert await _count(db_session, AuthIdentity) == 1
+
+
+async def test_logged_out_login_with_a_new_email_still_creates_an_account(
+    auth_client, stub, email_sender, db_session
+):
+    await _existing_account(auth_client, email_sender, verify=True)
+    stub.google["email"] = "someone-else@example.com"
     response = await _login_via(auth_client, stub, "google")
     assert response.headers["location"] == f"{PUBLIC}/onboarding"
     assert await _count(db_session, User) == 2
-    me = await auth_client.get(f"{BASE}/me")
-    assert me.json()["providers"] == ["google"]
-    assert me.json()["username"] == "bek2"  # "bek" is taken: numeric suffix
 
 
-async def test_unverified_provider_email_is_not_linked(auth_client, stub, email_sender, db_session):
-    await _signup_and_verify(auth_client, email_sender)
+async def test_unverified_google_email_with_no_match_creates_an_account(
+    auth_client, stub, db_session
+):
     stub.google["email_verified"] = False
     response = await _login_via(auth_client, stub, "google")
     assert response.headers["location"] == f"{PUBLIC}/onboarding"
-    assert await _count(db_session, User) == 2
-    assert (await auth_client.get(f"{BASE}/me")).json()["providers"] == ["google"]
+    identity = await db_session.scalar(select(AuthIdentity))
+    assert (identity.email, identity.email_verified) == ("bek@example.com", False)
 
 
-async def test_github_unverified_primary_email_is_not_linked(
+async def test_github_unverified_primary_email_is_not_reported_so_the_account_is_new(
     auth_client, stub, email_sender, db_session
 ):
-    await _signup_and_verify(auth_client, email_sender)
+    """Only a verified primary email is read from GitHub; an unverified one is as good as none."""
+    await _existing_account(auth_client, email_sender, verify=True)
     stub.github_emails = [{"email": SIGNUP["email"], "primary": True, "verified": False}]
-    await _login_via(auth_client, stub, "github")
+    response = await _login_via(auth_client, stub, "github")
+    assert response.headers["location"] == f"{PUBLIC}/onboarding"
     assert await _count(db_session, User) == 2
     me = await auth_client.get(f"{BASE}/me")
-    assert me.json()["providers"] == ["github"]
-    assert me.json()["email"] is None
+    assert (me.json()["providers"], me.json()["email"]) == (["github"], None)
 
 
 async def test_github_without_any_verified_email_still_creates_an_account(
