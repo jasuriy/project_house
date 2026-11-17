@@ -4,13 +4,10 @@
 tests, a provider in production (Step 0b).
 """
 
-import logging
 import re
 from typing import NamedTuple, Protocol
 
 from app.core.config import get_settings
-
-logger = logging.getLogger(__name__)
 
 _EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 
@@ -39,11 +36,12 @@ class EmailSender(Protocol):
 
 
 class ConsoleEmailSender:
-    """Logs the recipient, subject and body. The body carries a one-time link, so this sender
-    is for development and tests only."""
+    """Prints the recipient, subject and body to stdout. The body carries a one-time link, so this
+    sender is for development only. It prints instead of logging: under uvicorn's default
+    logging configuration an application logger's INFO lines are not shown."""
 
     async def send(self, to: str, subject: str, body: str) -> None:
-        logger.info("Email to %s, subject %r:\n%s", to, subject, body)
+        print(f"Email to {to}, subject {subject!r}:\n{body}", flush=True)
 
 
 def get_email_sender() -> EmailSender:
