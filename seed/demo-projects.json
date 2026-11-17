@@ -339,7 +339,7 @@
       "https://raw.githubusercontent.com/evcc-io/evcc/master/assets/github/screenshot.webp"
     ],
     "one_line_problem": "Households with EV chargers and solar panels want to coordinate charging and energy use locally, without cloud services.",
-    "short_description": "evcc is an extensible EV charge controller and home energy management system. The README says its goal is local energy management that does not rely on cloud services.",
+    "short_description": "evcc lets a household steer its electric-car charging, and other home energy use, from software it runs itself. The README states the aim as keeping that coordination local, so no cloud service is needed.",
     "result": null,
     "tech_stack": [
       "Go"
