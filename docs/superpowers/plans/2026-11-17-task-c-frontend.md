@@ -6,7 +6,8 @@
 feed, the project page and every login screen, in Uzbek, Russian and English, with no language
 prefix in URLs.
 
-**Architecture:** Next.js App Router with `cacheComponents: true` (already on). Server components
+**Architecture:** Next.js App Router with `cacheComponents` OFF (Bek, 2026-11-18, after the C1
+spike; see "Rendering pattern"). Server components
 read data straight from FastAPI at `API_URL` and forward the visitor's cookie. Every state-changing
 request (login, logout, signup, verify, reset) is a browser `fetch` to the same-origin `/api/...`
 path, so the browser sends the `Origin` header the backend's CSRF check requires (a server-side
@@ -63,12 +64,28 @@ is applied in this version.
 - Gate before every commit: `npm run lint`, `npm test`, `npm run build` in `frontend/` (and the
   backend gate when backend files change).
 
-## Rendering pattern (frozen by the orchestrator after C1 Step 1)
+## Rendering pattern (frozen 2026-11-18 from the C1 spike; Bek chose variant G)
 
-To be filled from the C1 spike evidence before C2/C3 are dispatched: which parts of a page sit in
-Suspense leaves and with which fallbacks; the header's user slot and `LanguageSwitcher` each in
-their own Suspense; how a missing project returns a real HTTP 404 (or, if that proves costly, a
-recorded decision by Bek to accept a soft 404 with `noindex`).
+Measured [V, task-c1-report.md variants A-G]: with `cacheComponents` on, a page that fetches and
+calls `notFound()` fails the build, and the variants that build return a soft 404 or need an extra
+API call per view. With it off (variant G, now committed) the plain pattern below builds, returns a
+real 404 for browsers and Googlebot, and server-renders the title and metadata.
+
+- **Pages** are ordinary async server components: `const { locale, ... } = await params`,
+  `hasLocale` check (else `notFound()`), `setRequestLocale(locale)`, fetch through `apiGet`
+  (uncached), `notFound()` on a missing project, render. `generateMetadata` does the same and
+  shares the fetch through React `cache()`.
+- **No `loading.tsx`** above project routes: it wraps the page in Suspense and turns the 404 into a
+  soft 404 again.
+- **Layout:** awaits `params.locale`; the header's user slot (reads `cookies()`) sits in its own
+  `<Suspense>`; `LanguageSwitcher` (uses `usePathname`/`useSearchParams`) sits in its own
+  `<Suspense>`: without it the build fails (`useSearchParams() should be wrapped in a suspense
+  boundary`).
+- **Not used:** `use cache`, `cacheLife`, `instant`, `connection()`, partial prefetching.
+- **Missing project body:** Next renders the 404 into the layout with the not-found UI after
+  hydration (status 404 in the response); accepted.
+- **Locale cookie:** detection from `Accept-Language` does not write a cookie; the saved choice
+  comes from `LanguageSwitcher` (`router.replace(..., { locale })`), with `maxAge` one year.
 
 ## Review Focus
 
