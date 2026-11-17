@@ -67,6 +67,10 @@ is applied in this version.
   logic, exact pins, small commits, no emoji, no overengineering.
 - Gate before every commit: `npm run lint`, `npm test`, `npm run build` in `frontend/` (and the
   backend gate when backend files change).
+- **Test size (Bek, 2026-11-18, "why 111 tests?"):** unit tests cover logic, security and
+  translation parity only; one test row per input class (for example one valid and one invalid
+  field name, not every field); no tests of plain page markup, which the visual verification
+  covers.
 - **Visual verification (Bek, 2026-11-18; binding for every UI step):** before reporting, run the
   app (`npm run build` + `npm run start` against a backend with the demo seed) and take Playwright
   screenshots at 1440, 768 and 390 px of every page you built; open the mockup
