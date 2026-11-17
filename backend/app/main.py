@@ -23,22 +23,20 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Project House", lifespan=lifespan)
-    settings = get_settings()
-    # The last middleware added is the outermost: CORS, then the Origin check (rejects before any
-    # cookie is read), then the OAuth-state session, then the routes.
+    # Outermost first: CORS, Origin check (rejects before cookies are read), OAuth-state session.
     app.add_middleware(
         SessionMiddleware,
-        secret_key=settings.secret_key,
+        secret_key=get_settings().secret_key,
         session_cookie="ph_oauth",
         max_age=600,
         path="/api/v1/auth/oauth",
         same_site="lax",
-        https_only=settings.app_env == "production",
+        https_only=get_settings().app_env == "production",
     )
     app.add_middleware(OriginCheckMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=get_settings().cors_origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )
