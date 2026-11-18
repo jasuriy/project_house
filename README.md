@@ -68,3 +68,48 @@ npm test
 npm run lint
 npm run build
 ```
+
+## Deploy (friends' beta)
+
+Frontend on Vercel, API on Modal (EU), Postgres on Neon (Frankfurt), images in a private Cloudflare
+R2 bucket. Design: `docs/superpowers/specs/2026-11-18-deploy-design.md`. Secrets are entered in the
+providers' own pages or CLIs, never committed.
+
+### Modal secret `projecthouse-prod` (keys only; values live in Modal)
+
+| Key | Value |
+|---|---|
+| `APP_ENV` | `production` |
+| `SECRET_KEY` | 32+ random characters |
+| `DATABASE_URL` | Neon direct endpoint, `postgresql+asyncpg://...?ssl=require` |
+| `PUBLIC_BASE_URL` | `https://<name>.vercel.app` |
+| `CORS_ORIGINS` | `["https://<name>.vercel.app"]` |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | the production OAuth app (callback `https://<name>.vercel.app/api/v1/auth/oauth/github/callback`) |
+| `GITHUB_API_TOKEN` | fine-grained token, no extra permissions |
+| `MEDIA_BACKEND` | `r2` |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | the bucket and its token |
+| `EMAIL_LOGIN_ENABLED` | `false` |
+
+### Vercel project (root directory `frontend`)
+
+Environment variables: `API_URL` = the Modal web URL, `NEXT_PUBLIC_EMAIL_LOGIN` = `false`.
+`frontend/vercel.json` pins the functions to Frankfurt (`fra1`).
+
+### First deploy
+
+```bash
+pip install modal                                   # once, then: modal token new
+modal deploy backend/modal_app.py                   # prints the web URL -> Vercel API_URL
+modal run backend/modal_app.py::migrate             # empty database -> newest schema
+cd frontend && npx vercel --prod                    # once linked: vercel link
+# Bek signs in with GitHub on the live site and picks the username jasurai, then:
+modal run backend/modal_app.py::seed_samples --owner jasurai
+```
+
+### Every later release
+
+1. Before a migration: `pg_dump "<Neon direct URL>" > projecthouse-YYYYMMDD.sql`. Keep it outside
+   the repository.
+2. `modal deploy backend/modal_app.py`, then `modal run backend/modal_app.py::migrate` if the
+   release has a migration.
+3. `cd frontend && npx vercel --prod`.
