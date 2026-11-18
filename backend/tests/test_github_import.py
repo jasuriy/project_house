@@ -267,19 +267,24 @@ async def test_client_contributors(status, body, expected):
     assert await client_for(handler).contributors("a", "b") == expected
 
 
-async def test_client_sends_the_server_token_only_when_set(monkeypatch):
+async def _authorization_header_sent(monkeypatch, token: str) -> str | None:
     from app.core.config import get_settings
 
-    for token, expected in (("", None), ("srv-token", "Bearer srv-token")):
-        monkeypatch.setattr(get_settings(), "github_api_token", token)
-        seen = []
-        dependency = get_github()
-        client = await dependency.__anext__()
-        client._http._transport = httpx.MockTransport(
-            lambda r: (
-                seen.append(r.headers.get("authorization")) or httpx.Response(200, json=REPO_JSON)
-            )
-        )
-        await client.repo("octocat", "Hello-World")
-        await dependency.aclose()
-        assert seen == [expected]
+    monkeypatch.setattr(get_settings(), "github_api_token", token)
+    seen: list[str | None] = []
+
+    def handler(request):
+        seen.append(request.headers.get("authorization"))
+        return httpx.Response(200, json=REPO_JSON)
+
+    dependency = get_github()
+    client = await dependency.__anext__()
+    client._http._transport = httpx.MockTransport(handler)
+    await client.repo("octocat", "Hello-World")
+    await dependency.aclose()
+    return seen[0]
+
+
+async def test_client_sends_the_server_token_only_when_set(monkeypatch):
+    assert await _authorization_header_sent(monkeypatch, "") is None
+    assert await _authorization_header_sent(monkeypatch, "srv-token") == "Bearer srv-token"
