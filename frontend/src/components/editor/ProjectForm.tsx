@@ -7,9 +7,16 @@ import { TextField } from "@/components/auth/TextField";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { Link, useRouter } from "@/i18n/navigation";
 import { clientPatch, clientPost } from "@/lib/client-api";
+import { sameRepository } from "@/lib/github-link";
 import { youtubeId } from "@/lib/media";
 import { type ProjectField, projectErrorField, projectErrorKey } from "@/lib/project-errors";
-import { type EditableProject, FIELD_NAMES, type FieldName, type ProjectDetail } from "@/lib/types";
+import {
+  type EditableProject,
+  FIELD_NAMES,
+  type FieldName,
+  type ImportPreview,
+  type ProjectDetail,
+} from "@/lib/types";
 import { DeleteProject } from "./DeleteProject";
 import { ImagePicker, type ImageItem } from "./ImagePicker";
 import { TagsInput } from "./TagsInput";
@@ -33,39 +40,49 @@ type Values = {
   video_url: string;
 };
 
-function startValues(project?: EditableProject): Values {
+function startValues(project?: EditableProject, prefill?: ImportPreview): Values {
   return {
-    title: project?.title ?? "",
+    title: project?.title ?? prefill?.title ?? "",
     one_line_problem: project?.one_line_problem ?? "",
-    short_description: project?.short_description ?? "",
+    short_description: project?.short_description ?? prefill?.short_description ?? "",
     result: project?.result ?? "",
     role: project?.role ?? "",
     field: project?.field ?? "",
-    tech_stack: project?.tech_stack ?? [],
-    github_url: project?.github_url ?? "",
-    live_url: project?.live_url ?? "",
+    tech_stack: project?.tech_stack ?? prefill?.tech_stack ?? [],
+    github_url: project?.github_url ?? prefill?.github_url ?? "",
+    live_url: project?.live_url ?? prefill?.live_url ?? "",
     video_url: project?.video_url ?? "",
   };
 }
 
+/** The "GitHub'dan" mark beside a label the import filled (mockup screen 4 `.ai` badge). */
+function FromGitHub({ show, label }: { show: boolean; label: string }) {
+  if (!show) return null;
+  return <span className="rounded-full bg-accent-soft px-2 py-px text-caption font-medium text-primary">{label}</span>;
+}
+
 /**
- * Loyiha qo'shish / Loyihani tahrirlash (mockup screen 4 without the GitHub step): the fixed card
- * fields, a video link and up to 6 images, with the feed card as a live preview.
+ * Loyiha qo'shish / Loyihani tahrirlash (mockup screen 4): the fixed card fields, a video link and
+ * up to 6 images, with the feed card as a live preview. `prefill` comes from the GitHub step.
  */
 export function ProjectForm({
   author,
   username,
   project,
+  prefill,
+  onOtherRepo,
 }: {
   author: string;
   username: string;
   project?: EditableProject;
+  prefill?: ImportPreview;
+  onOtherRepo?: () => void;
 }) {
   const t = useTranslations("Editor");
   const te = useTranslations("EditorErrors");
   const tf = useTranslations("Fields");
   const router = useRouter();
-  const [values, setValues] = useState<Values>(() => startValues(project));
+  const [values, setValues] = useState<Values>(() => startValues(project, prefill));
   const [images, setImages] = useState<ImageItem[]>(
     () => project?.images.map((image) => ({ key: `m${image.id}`, url: image.url, media: image.id })) ?? [],
   );
@@ -100,6 +117,17 @@ export function ProjectForm({
     if (field !== "form") document.querySelector<HTMLElement>(`[name="${field}"]`)?.focus();
   }
 
+  // The licence is read from GitHub when the link is saved: show what that link gave, or say so.
+  const checkedLink = project?.github_url ?? prefill?.github_url ?? null;
+  const checkedLicense = project?.license ?? prefill?.license ?? null;
+  const licenseText = !values.github_url.trim()
+    ? t("licenseNone")
+    : sameRepository(checkedLink, values.github_url)
+      ? checkedLicense
+        ? t("licenseFromGithub", { license: checkedLicense })
+        : t("licenseNone")
+      : t("licenseOnSave");
+
   const cover = youtubeId(values.video_url)
     ? { kind: "video" as const, url: values.video_url }
     : ready[0]
@@ -109,8 +137,27 @@ export function ProjectForm({
   return (
     <form onSubmit={submit} noValidate className="grid items-start gap-5 lg:grid-cols-[1fr_360px] lg:gap-8">
       <div className="grid gap-4.5 rounded-card border border-border bg-card p-5 md:p-5.5">
+        {prefill && (
+          <Banner tone="ok">
+            {t(prefill.relation === "owner" ? "ownerBanner" : "contributorBanner", { login: prefill.github_login })}{" "}
+            {onOtherRepo && (
+              <button type="button" onClick={onOtherRepo} className="font-semibold underline">
+                {t("otherRepo")}
+              </button>
+            )}
+          </Banner>
+        )}
         {error?.field === "form" && <Banner tone="warn">{error.message}</Banner>}
-        <TextField name="title" label={t("name")} required defaultValue={values.title} maxLength={MAX.title} onChange={set("title")} error={fieldError("title")} />
+        <TextField
+          name="title"
+          label={t("name")}
+          required
+          labelBadge={<FromGitHub show={Boolean(prefill?.title)} label={t("fromGithub")} />}
+          defaultValue={values.title}
+          maxLength={MAX.title}
+          onChange={set("title")}
+          error={fieldError("title")}
+        />
         <TextField
           name="one_line_problem"
           label={t("problem")}
@@ -125,6 +172,7 @@ export function ProjectForm({
           name="short_description"
           label={t("description")}
           requiredMark
+          labelAside={<FromGitHub show={Boolean(prefill?.short_description)} label={t("fromGithub")} />}
           value={values.short_description}
           onChange={set("short_description")}
           maxLength={MAX.description}
@@ -154,6 +202,7 @@ export function ProjectForm({
             tags={values.tech_stack}
             onChange={set("tech_stack")}
             error={fieldError("tech_stack")}
+            labelAside={<FromGitHub show={Boolean(prefill?.tech_stack.length)} label={t("fromGithub")} />}
           />
           <FieldSelect
             label={t("field")}
@@ -165,9 +214,34 @@ export function ProjectForm({
           />
         </div>
         <div className="grid gap-4.5 md:grid-cols-2 md:gap-4">
-          <TextField name="github_url" label={t("github")} placeholder="https://github.com/" defaultValue={values.github_url} maxLength={MAX.link} onChange={set("github_url")} error={fieldError("github_url")} />
-          <TextField name="live_url" label={t("live")} help={t("liveHelp")} placeholder="https://" defaultValue={values.live_url} maxLength={MAX.link} onChange={set("live_url")} error={fieldError("live_url")} />
+          <TextField
+            name="github_url"
+            label={t("github")}
+            labelBadge={<FromGitHub show={Boolean(prefill)} label={t("fromGithub")} />}
+            placeholder="https://github.com/"
+            defaultValue={values.github_url}
+            maxLength={MAX.link}
+            onChange={set("github_url")}
+            error={fieldError("github_url")}
+          />
+          <div className="grid content-start gap-1.5">
+            <span className="text-small font-semibold text-fg">{t("license")}</span>
+            <p className="flex min-h-11 items-center rounded-control border border-border bg-muted px-3 text-ui text-mute md:min-h-10.5">
+              {licenseText}
+            </p>
+          </div>
         </div>
+        <TextField
+          name="live_url"
+          label={t("live")}
+          help={t("liveHelp")}
+          labelBadge={<FromGitHub show={Boolean(prefill?.live_url)} label={t("fromGithub")} />}
+          placeholder="https://"
+          defaultValue={values.live_url}
+          maxLength={MAX.link}
+          onChange={set("live_url")}
+          error={fieldError("live_url")}
+        />
         <div className="flex flex-wrap gap-2 border-t border-border pt-4 md:justify-end">
           {project && (
             <div className="w-full md:mr-auto md:w-auto">

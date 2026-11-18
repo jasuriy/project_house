@@ -19,6 +19,7 @@ export function TextField({
   error,
   help,
   labelAside,
+  labelBadge,
   prefix,
   toggleLabels,
   defaultValue,
@@ -36,6 +37,8 @@ export function TextField({
   error?: string;
   help?: string;
   labelAside?: ReactNode;
+  /** Shown right after the label (the add form's "from GitHub" mark); `labelAside` sits at the far end. */
+  labelBadge?: ReactNode;
   prefix?: string;
   toggleLabels?: { show: string; hide: string };
   defaultValue?: string;
@@ -52,15 +55,18 @@ export function TextField({
   return (
     <div className="grid content-start gap-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={id} className="text-small font-semibold text-fg">
-          {label}
-          {requiredMark && (
-            <span aria-hidden className="text-danger">
-              {" "}
-              *
-            </span>
-          )}
-        </label>
+        <span className="flex items-baseline gap-2">
+          <label htmlFor={id} className="text-small font-semibold text-fg">
+            {label}
+            {requiredMark && (
+              <span aria-hidden className="text-danger">
+                {" "}
+                *
+              </span>
+            )}
+          </label>
+          {labelBadge}
+        </span>
         {labelAside}
       </div>
       <div

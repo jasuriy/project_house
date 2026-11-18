@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { ProjectForm } from "@/components/editor/ProjectForm";
+import { NewProject } from "@/components/editor/NewProject";
 import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { getCurrentUser } from "@/lib/session";
@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/new">): 
   return { title: `${t("title")} - Project House` };
 }
 
-/** Loyiha qo'shish (mockup screen 4, part 1 without the GitHub step). Developers only. */
+/** Loyiha qo'shish (mockup screens 4a and 4): from GitHub, or by hand. Developers only. */
 export default async function NewProjectPage({ params }: PageProps<"/[locale]/new">) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
@@ -39,7 +39,11 @@ export default async function NewProjectPage({ params }: PageProps<"/[locale]/ne
   return (
     <div className="grid gap-5">
       <h1 className="text-h2 font-bold tracking-[-0.015em] text-fg">{t("title")}</h1>
-      <ProjectForm author={user.display_name} username={user.username} />
+      <NewProject
+        author={user.display_name}
+        username={user.username}
+        githubConnected={user.providers.includes("github")}
+      />
     </div>
   );
 }
