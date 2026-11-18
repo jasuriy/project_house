@@ -59,7 +59,7 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
     <div className="mx-auto grid w-full max-w-[640px] gap-5 rounded-card border border-border bg-card p-5 md:gap-6 md:p-8 lg:mt-7">
       <h1 className="text-h2 font-bold tracking-[-0.015em] text-fg">{t("title")}</h1>
       {errorCode && <Banner tone="warn">{te(authErrorKey(errorCode), { provider: providerName })}</Banner>}
-      {connectedName && <Banner tone="ok">{t("connected", { provider: connectedName })}</Banner>}
+      {connectedName && <Banner tone="ok">{t("connectedBanner", { provider: connectedName })}</Banner>}
 
       <section>
         <h2 className="mb-1 text-lead font-semibold text-fg">{t("profile")}</h2>

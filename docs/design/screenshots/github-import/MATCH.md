@@ -33,4 +33,5 @@ and normalised; import 0.9 s; title "Hello-World", description and canonical lin
 account without GitHub sees the connect box; publishing keeps the canonical link; the edit page shows
 the licence row, says "read from GitHub when saved" after the link changes, and refuses someone
 else's repo on save with the cursor on the GitHub field; Settings shows "GitHub hisobingiz ulandi."
-on `?connected=github`; no horizontal scroll at 1440/768/390/360. The test project was deleted.
+on `?connected=github` and keeps its "Ulangan hisoblar" heading (uz/ru/en checked, no `{` left on the
+page; the first version broke that heading: branch review); no horizontal scroll at 1440/768/390/360. The test project was deleted.

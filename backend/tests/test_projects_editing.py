@@ -344,3 +344,16 @@ async def test_link_without_connected_github_is_refused_on_save(auth_client, git
     await signup(auth_client)
     r = await auth_client.post(MINE, json=body(github_url="https://github.com/octocat/Hello-World"))
     assert (r.status_code, _code(r)) == (422, "github_not_connected")
+
+
+async def test_edit_with_a_new_link_and_no_media_spends_no_github_call(
+    auth_client, db_session, github
+):
+    await signup(auth_client)
+    await connect_github(db_session)
+    await auth_client.post(MINE, json=body())
+    r = await auth_client.patch(
+        f"{MINE}/weed-finder",
+        json={"github_url": "https://github.com/apache/superset", "video_url": "", "images": []},
+    )
+    assert (r.status_code, _code(r), github.calls) == (422, "media_required", 0)

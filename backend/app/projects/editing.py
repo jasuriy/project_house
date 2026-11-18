@@ -21,6 +21,7 @@ from app.projects.fields import FIELDS
 from app.projects.github import (
     GitHubClient,
     GitHubUnavailable,
+    Ownership,
     check_ownership,
     github_account,
     parse_github_url,
@@ -197,13 +198,15 @@ async def own_project(session: AsyncSession, user: User, slug: str) -> Project:
     return project
 
 
-async def _verified_link(session: AsyncSession, user: User, github: GitHubClient, url: str) -> dict:
-    """The ownership check for a new or changed GitHub link: the stored link and licence."""
+async def _owned(session: AsyncSession, user: User, github: GitHubClient, url: str) -> Ownership:
+    """The ownership check with no transaction open while GitHub answers (may take seconds).
+    commit, not rollback: a rollback would expire the loaded objects (expire_on_commit=False)."""
     account = await github_account(session, user.id)
-    # End the read before GitHub answers (may take seconds). commit, not rollback: a rollback
-    # would expire the loaded user (expire_on_commit=False keeps it on commit).
     await session.commit()
-    owned = await check_ownership(github, account, url)
+    return await check_ownership(github, account, url)
+
+
+def _link_columns(owned: Ownership) -> dict:
     return {"github_url": owned.repo.html_url, "license": owned.repo.license_spdx}
 
 
@@ -217,7 +220,7 @@ async def create_project(
     if not columns.get("demo_video_url") and not refs:
         raise _fail("media_required")
     if columns.get("github_url"):
-        columns.update(await _verified_link(session, user, github, columns["github_url"]))
+        columns.update(_link_columns(await _owned(session, user, github, columns["github_url"])))
 
     media = _place(columns.get("demo_video_url"), await _images(session, user, refs, {}))
     slug = await _unique_slug(session, user.id, columns["title"])
@@ -245,30 +248,12 @@ async def create_project(
 async def update_project(
     session: AsyncSession, user: User, slug: str, data: ProjectUpdate, github: GitHubClient
 ) -> Project:
-    sent = data.model_dump(exclude_unset=True)
-    sent.pop("images", None)
-    columns = _columns(sent)
-    if "github_url" in columns:
-        stored = (
-            await session.execute(
-                select(Project.github_url, Project.is_demo).where(
-                    Project.owner_id == user.id, Project.slug == slug
-                )
-            )
-        ).first()
-        if stored is None:
-            raise AppError(404, "project_not_found", "Project not found")
-        if stored.is_demo:
-            raise AppError(403, "sample_read_only", "Sample projects can only be deleted")
-        if not columns["github_url"]:
-            columns["license"] = None
-        elif same_repository(stored.github_url, columns["github_url"]):
-            del columns["github_url"]  # unchanged: keep the stored link and licence
-        else:
-            columns.update(await _verified_link(session, user, github, columns["github_url"]))
     project = await own_project(session, user, slug)
     if project.is_demo:
         raise AppError(403, "sample_read_only", "Sample projects can only be deleted")
+    sent = data.model_dump(exclude_unset=True)
+    sent.pop("images", None)
+    columns = _columns(sent)
 
     current_images = {m.id: m for m in project.media if m.kind == "image"}
     current_video = next((m.url for m in project.media if m.kind == "video"), None)
@@ -279,6 +264,17 @@ async def update_project(
     image_count = len(refs) if refs is not None else len(current_images)
     if not video and image_count == 0:
         raise _fail("media_required")
+
+    # GitHub last, after every cheap check, and only for a new or changed link.
+    if "github_url" in columns:
+        if not columns["github_url"]:
+            columns["license"] = None
+        elif same_repository(project.github_url, columns["github_url"]):
+            del columns["github_url"]  # unchanged: keep the stored link and licence
+        else:
+            columns.update(
+                _link_columns(await _owned(session, user, github, columns["github_url"]))
+            )
 
     removed: list[str] = []
     if refs is not None:
@@ -319,11 +315,7 @@ async def import_preview(
     parsed = parse_github_url(url)
     if parsed is None:
         raise _fail("invalid_github_url")
-    account = await github_account(session, user.id)
-    # End the read before GitHub answers (may take seconds). commit, not rollback: a rollback
-    # would expire the loaded user (expire_on_commit=False keeps it on commit).
-    await session.commit()
-    owned = await check_ownership(github, account, url)
+    owned = await _owned(session, user, github, url)
     try:
         languages = await github.languages(*parsed)
     except GitHubUnavailable:

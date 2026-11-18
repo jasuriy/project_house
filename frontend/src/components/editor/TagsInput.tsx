@@ -15,7 +15,7 @@ export function TagsInput({
   tags,
   onChange,
   error,
-  labelAside,
+  labelBadge,
 }: {
   label: string;
   help: string;
@@ -24,7 +24,7 @@ export function TagsInput({
   tags: string[];
   onChange: (tags: string[]) => void;
   error?: string;
-  labelAside?: ReactNode;
+  labelBadge?: ReactNode;
 }) {
   const id = useId();
   const noteId = `${id}-note`;
@@ -48,7 +48,7 @@ export function TagsInput({
             *
           </span>
         </label>
-        {labelAside}
+        {labelBadge}
       </div>
       <div
         className={`flex min-h-11 flex-wrap items-center gap-2 rounded-control border bg-card px-3 py-1.5 focus-within:border-primary focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)] md:min-h-10.5 ${

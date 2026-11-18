@@ -115,6 +115,18 @@ video taken from the README; a server-side GitHub token (needed before launch: s
 - **Rate limit:** an import makes up to 3 calls, a save with a changed link up to 3; the shared 60 per
   hour is for local use only. `GITHUB_API_TOKEN` before testers (DEFERRED to deploy).
 
+## Calls made during the build (Claude's, Bek can override)
+
+- The two steps live in the page's state, not in the address (`?manual=1` from the plan dropped):
+  browser Back leaves the add page, and the hand-filled path has no way back to step 1 (reload the
+  page). The step bar marks step 1 done only after an import.
+- An edit runs every cheap check (sample rule, fields, images, video-or-image rule) before any GitHub
+  call (branch review).
+- Malformed GitHub answers are `github_unavailable`, never a 500.
+
+DEFERRED: a per-user throttle on `/me/projects/import` (one user can use up the shared GitHub quota;
+with `GITHUB_API_TOKEN` at deploy the quota is 5000/hour).
+
 ## Left to the builder
 
 Component split, the fake GitHub's shape, exact texts.

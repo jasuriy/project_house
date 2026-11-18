@@ -241,7 +241,9 @@ async def test_client_timeout_is_unavailable():
         (204, None, {}),
         (
             403,
-            {"message": "The history or contributor list is too large to list contributors for this repository via the API."},
+            {
+                "message": "The history or contributor list is too large to list contributors for this repository via the API."
+            },
             None,
         ),
     ],
@@ -289,3 +291,19 @@ async def test_client_contributors_secondary_rate_limit_is_unavailable():
 
     with pytest.raises(GitHubUnavailable):
         await client_for(handler).contributors("a", "b")
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        httpx.Response(200, text="<html>not json</html>"),
+        httpx.Response(200, json={"name": "x"}),  # no owner
+        httpx.Response(403, text="forbidden"),  # not JSON, not a rate limit
+    ],
+)
+async def test_client_malformed_answers_are_unavailable(response):
+    with pytest.raises(GitHubUnavailable):
+        client = client_for(lambda r: response)
+        await client.repo("a", "b") if response.status_code == 200 else await client.contributors(
+            "a", "b"
+        )

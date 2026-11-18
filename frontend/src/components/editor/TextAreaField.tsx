@@ -12,7 +12,7 @@ export function TextAreaField({
   maxLength,
   error,
   help,
-  labelAside,
+  labelBadge,
 }: {
   name: string;
   label: string;
@@ -22,7 +22,7 @@ export function TextAreaField({
   maxLength: number;
   error?: string;
   help?: string;
-  labelAside?: ReactNode;
+  labelBadge?: ReactNode;
 }) {
   const id = useId();
   const noteId = `${id}-note`;
@@ -39,7 +39,7 @@ export function TextAreaField({
             </span>
           )}
         </label>
-        {labelAside}
+        {labelBadge}
       </div>
       <div
         className={`rounded-control border bg-card focus-within:border-primary focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)] ${

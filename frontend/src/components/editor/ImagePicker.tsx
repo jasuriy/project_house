@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { type Dispatch, type SetStateAction, useId, useRef } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useId, useRef } from "react";
 import { projectErrorKey } from "@/lib/project-errors";
 import { discardUpload, IMAGE_TYPES, MAX_IMAGE_BYTES, uploadImage } from "@/lib/upload";
 
@@ -41,6 +41,13 @@ export function ImagePicker({
   const labelId = useId();
   const nextKey = useRef(0); // crypto.randomUUID needs https; a counter is enough for list keys
   const removed = useRef(new Set<string>()); // tiles removed while their upload was running
+  const gone = useRef(false); // the form was left (another repository, another page)
+  useEffect(() => {
+    gone.current = false;
+    return () => {
+      gone.current = true;
+    };
+  }, []);
   const noteId = `${labelId}-note`;
 
   const update = (key: string, change: Partial<ImageItem>) =>
@@ -62,7 +69,7 @@ export function ImagePicker({
       ]);
       if (refused) continue;
       const result = await uploadImage(file);
-      if (removed.current.has(key)) {
+      if (removed.current.has(key) || gone.current) {
         if (result.ok) discardUpload(result.data.id);
         URL.revokeObjectURL(local);
         continue;

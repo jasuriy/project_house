@@ -14,13 +14,20 @@ const PRIMARY =
   "inline-flex h-11 items-center justify-center rounded-control bg-primary px-4 text-ui font-semibold text-on-primary hover:opacity-90 disabled:opacity-60 md:h-10";
 
 /** The step bar (mockup screens 4a / 4): 1 GitHub havolasi, 2 Ma'lumotlar va demo. */
-function Steps({ current }: { current: 1 | 2 }) {
+function Steps({ current, imported = false }: { current: 1 | 2; imported?: boolean }) {
   const t = useTranslations("Editor");
   const step = (n: 1 | 2, label: string) => (
-    <span className={`inline-flex items-center gap-2 ${current === n ? "font-semibold text-fg" : "text-mute"}`}>
+    <span
+      aria-current={current === n ? "step" : undefined}
+      className={`inline-flex items-center gap-2 ${current === n ? "font-semibold text-fg" : "text-mute"}`}
+    >
       <b
         className={`grid size-5.5 place-items-center rounded-full text-caption ${
-          current === n ? "bg-primary text-on-primary" : n < current ? "bg-ok text-on-primary" : "bg-muted text-fg"
+          current === n
+            ? "bg-primary text-on-primary"
+            : n === 1 && imported
+              ? "bg-ok text-on-primary"
+              : "bg-muted text-fg"
         }`}
       >
         {n}
@@ -72,7 +79,7 @@ export function NewProject({
   if (prefill || manual) {
     return (
       <div className="grid gap-5">
-        <Steps current={2} />
+        <Steps current={2} imported={prefill !== null} />
         <ProjectForm
           key={prefill?.github_url ?? "manual"}
           author={author}

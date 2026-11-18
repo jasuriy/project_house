@@ -66,22 +66,29 @@ class GitHubClient:
             raise RepoNotFound
         if response.status_code != 200:
             raise GitHubUnavailable
-        data = response.json()
-        spdx = (data.get("license") or {}).get("spdx_id")
-        return RepoInfo(
-            owner_id=int(data["owner"]["id"]),
-            owner_login=str(data["owner"]["login"]),
-            name=str(data["name"]),
-            html_url=str(data["html_url"]),
-            fork=bool(data.get("fork")),
-            description=str(data.get("description") or ""),
-            homepage=str(data.get("homepage") or ""),
-            license_spdx=spdx if spdx and spdx != "NOASSERTION" else None,
-        )
+        try:
+            data = response.json()
+            spdx = (data.get("license") or {}).get("spdx_id")
+            return RepoInfo(
+                owner_id=int(data["owner"]["id"]),
+                owner_login=str(data["owner"]["login"]),
+                name=str(data["name"]),
+                html_url=str(data["html_url"]),
+                fork=bool(data.get("fork")),
+                description=str(data.get("description") or ""),
+                homepage=str(data.get("homepage") or ""),
+                license_spdx=spdx if spdx and spdx != "NOASSERTION" else None,
+            )
+        except (ValueError, KeyError, TypeError, AttributeError):
+            raise GitHubUnavailable from None  # not the answer GitHub documents
 
     async def languages(self, owner: str, name: str) -> dict[str, int]:
         response = await self._get(f"/repos/{owner}/{name}/languages")
-        return response.json() if response.status_code == 200 else {}
+        try:
+            data = response.json() if response.status_code == 200 else {}
+        except ValueError:
+            return {}
+        return {str(k): int(v) for k, v in data.items()} if isinstance(data, dict) else {}
 
     async def contributors(self, owner: str, name: str) -> dict[int, str] | None:
         """{user id: login} of the first 100 contributors; None when GitHub will not list them
@@ -92,13 +99,19 @@ class GitHubClient:
         if response.status_code == 403:
             # Only "too large to list" means the list is unavailable for good; any other 403 (a
             # secondary rate limit leaves calls remaining) is GitHub being busy, not "not yours".
-            message = str(response.json().get("message", "")) if response.content else ""
+            try:
+                message = str(response.json().get("message", ""))
+            except (ValueError, AttributeError):
+                message = ""
             if "too large" in message.lower():
                 return None
             raise GitHubUnavailable
         if response.status_code != 200:
             raise GitHubUnavailable
-        return {int(c["id"]): str(c.get("login") or "") for c in response.json() if "id" in c}
+        try:
+            return {int(c["id"]): str(c.get("login") or "") for c in response.json() if "id" in c}
+        except (ValueError, KeyError, TypeError, AttributeError):
+            raise GitHubUnavailable from None
 
 
 async def get_github() -> AsyncIterator[GitHubClient]:

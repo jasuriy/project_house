@@ -181,7 +181,7 @@ export function ProjectForm({
           name="short_description"
           label={t("description")}
           requiredMark
-          labelAside={<FromGitHub show={Boolean(prefill?.short_description)} label={t("fromGithub")} />}
+          labelBadge={<FromGitHub show={Boolean(prefill?.short_description)} label={t("fromGithub")} />}
           value={values.short_description}
           onChange={set("short_description")}
           maxLength={MAX.description}
@@ -211,7 +211,7 @@ export function ProjectForm({
             tags={values.tech_stack}
             onChange={set("tech_stack")}
             error={fieldError("tech_stack")}
-            labelAside={<FromGitHub show={Boolean(prefill?.tech_stack.length)} label={t("fromGithub")} />}
+            labelBadge={<FromGitHub show={Boolean(prefill?.tech_stack.length)} label={t("fromGithub")} />}
           />
           <FieldSelect
             label={t("field")}
@@ -233,12 +233,14 @@ export function ProjectForm({
             onChange={set("github_url")}
             error={fieldError("github_url")}
           />
-          <div className="grid content-start gap-1.5">
+          <label className="grid content-start gap-1.5">
             <span className="text-small font-semibold text-fg">{t("license")}</span>
-            <p className="flex min-h-11 items-center rounded-control border border-border bg-muted px-3 text-ui text-mute md:min-h-10.5">
-              {licenseText}
-            </p>
-          </div>
+            <input
+              readOnly
+              value={licenseText}
+              className="h-11 rounded-control border border-border bg-muted px-3 text-ui text-mute md:h-10.5"
+            />
+          </label>
         </div>
         <TextField
           name="live_url"
