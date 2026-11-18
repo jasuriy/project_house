@@ -1,7 +1,6 @@
 """Decode an uploaded image and re-encode it as a clean WebP (no metadata, bounded size)."""
 
 import io
-import warnings
 
 from PIL import Image, ImageOps
 
@@ -22,19 +21,19 @@ def _too_many_pixels() -> AppError:
 def to_webp(data: bytes, *, max_side: int = 1600, square: int | None = None) -> bytes:
     """`square` crops to the centre and resizes to that side (profile photos)."""
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", Image.DecompressionBombWarning)
-            image = Image.open(io.BytesIO(data))  # reads only the header
-            if image.format not in ALLOWED_FORMATS:
-                raise _invalid()
-            width, height = image.size
-            if width * height > MAX_PIXELS:
-                raise _too_many_pixels()
-            image = ImageOps.exif_transpose(image)
-            image = image.convert("RGBA" if image.mode in ("RGBA", "LA", "P") else "RGB")
+        # The header check runs before any pixel is decoded and is far below Pillow's own warning
+        # level (~89 MP), so no process-wide warning filter is needed (conversions run in threads).
+        image = Image.open(io.BytesIO(data))  # reads only the header
+        if image.format not in ALLOWED_FORMATS:
+            raise _invalid()
+        width, height = image.size
+        if width * height > MAX_PIXELS:
+            raise _too_many_pixels()
+        image = ImageOps.exif_transpose(image)
+        image = image.convert("RGBA" if image.mode in ("RGBA", "LA", "P") else "RGB")
     except AppError:
         raise
-    except (Image.DecompressionBombError, Image.DecompressionBombWarning):
+    except Image.DecompressionBombError:
         raise _too_many_pixels() from None
     except (OSError, ValueError):
         raise _invalid() from None
