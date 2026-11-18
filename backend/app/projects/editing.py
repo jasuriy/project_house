@@ -19,8 +19,15 @@ from app.core.errors import AppError
 from app.media import storage
 from app.media.service import consume_uploads
 from app.projects.fields import FIELDS
+from app.projects.github import (
+    GitHubClient,
+    GitHubUnavailable,
+    check_ownership,
+    github_account,
+    parse_github_url,
+)
 from app.projects.models import Project, ProjectMedia
-from app.projects.schemas import ImageRef, ProjectInput, ProjectUpdate
+from app.projects.schemas import ImageRef, ImportPreview, ProjectInput, ProjectUpdate
 from app.projects.slugs import slugify
 from app.projects.video import is_playable
 from app.users.models import User
@@ -278,3 +285,36 @@ async def delete_project(session: AsyncSession, user: User, slug: str) -> None:
     await session.commit()
     for key in keys:
         storage.delete(key)
+
+
+IMPORT_TAGS = 5
+
+
+async def import_preview(
+    session: AsyncSession, user: User, github: GitHubClient, url: str
+) -> ImportPreview:
+    """The add form's pre-fill from a repository the user owns or contributed to. Creates nothing.
+    The link is checked before any GitHub call; no transaction stays open while GitHub answers."""
+    parsed = parse_github_url(url)
+    if parsed is None:
+        raise _fail("invalid_github_url")
+    account = await github_account(session, user.id)
+    await session.rollback()  # end the read; GitHub may take seconds
+    owned = await check_ownership(github, account, url)
+    try:
+        languages = await github.languages(*parsed)
+    except GitHubUnavailable:
+        languages = {}  # the check passed; tags are only a convenience
+    top = sorted(languages.items(), key=lambda item: -item[1])[:IMPORT_TAGS]
+    repo = owned.repo
+    homepage = repo.homepage.strip()
+    return ImportPreview(
+        title=repo.name[: TEXT["title"][0]],
+        short_description=repo.description.strip()[: TEXT["short_description"][0]],
+        tech_stack=[name[:MAX_TAG] for name, _ in top],
+        live_url=homepage if _https_parts(homepage, ("http", "https")) else "",
+        github_url=repo.html_url,
+        license=repo.license_spdx,
+        relation=owned.relation,
+        github_login=owned.login,
+    )

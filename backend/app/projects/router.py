@@ -7,9 +7,12 @@ from app.auth.dependencies import current_developer
 from app.core.db import get_session
 from app.projects import editing, service
 from app.projects.fields import FieldName
+from app.projects.github import GitHubClient, get_github
 from app.projects.schemas import (
     EditableProject,
     FeedPage,
+    ImportPreview,
+    ImportRequest,
     ProjectDetail,
     ProjectInput,
     ProjectUpdate,
@@ -56,6 +59,17 @@ async def get_user_project(username: str, slug: str, session: Session) -> Projec
 
 
 # A developer's own projects (add-project design, part 1). Another user's slug is 404.
+
+
+@router.post("/me/projects/import")
+async def import_from_github(
+    data: ImportRequest,
+    user: Developer,
+    session: Session,
+    github: Annotated[GitHubClient, Depends(get_github)],
+) -> ImportPreview:
+    """Pre-fill for the add form from the user's own repository (part 2). Creates nothing."""
+    return await editing.import_preview(session, user, github, data.github_url)
 
 
 @router.post("/me/projects", status_code=201)
