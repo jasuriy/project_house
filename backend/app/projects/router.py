@@ -26,6 +26,7 @@ MAX_LIMIT = 60
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 Developer = Annotated[User, Depends(current_developer)]
+GitHub = Annotated[GitHubClient, Depends(get_github)]
 
 
 @router.get("/projects")
@@ -66,15 +67,17 @@ async def import_from_github(
     data: ImportRequest,
     user: Developer,
     session: Session,
-    github: Annotated[GitHubClient, Depends(get_github)],
+    github: GitHub,
 ) -> ImportPreview:
     """Pre-fill for the add form from the user's own repository (part 2). Creates nothing."""
     return await editing.import_preview(session, user, github, data.github_url)
 
 
 @router.post("/me/projects", status_code=201)
-async def create_project(data: ProjectInput, user: Developer, session: Session) -> ProjectDetail:
-    return ProjectDetail.from_project(await editing.create_project(session, user, data))
+async def create_project(
+    data: ProjectInput, user: Developer, session: Session, github: GitHub
+) -> ProjectDetail:
+    return ProjectDetail.from_project(await editing.create_project(session, user, data, github))
 
 
 @router.get("/me/projects/{slug}")
@@ -84,9 +87,11 @@ async def get_own_project(slug: str, user: Developer, session: Session) -> Edita
 
 @router.patch("/me/projects/{slug}")
 async def update_project(
-    slug: str, data: ProjectUpdate, user: Developer, session: Session
+    slug: str, data: ProjectUpdate, user: Developer, session: Session, github: GitHub
 ) -> ProjectDetail:
-    return ProjectDetail.from_project(await editing.update_project(session, user, slug, data))
+    return ProjectDetail.from_project(
+        await editing.update_project(session, user, slug, data, github)
+    )
 
 
 @router.delete("/me/projects/{slug}", status_code=204)

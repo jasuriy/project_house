@@ -14,7 +14,9 @@ Not observed (from GitHub's documentation) [A]: rate-limited 403/429 with remain
 repositories answer 301; an empty repository's contributors answer 204; a very large one 403.
 """
 
+from app.auth.models import AuthIdentity
 from app.projects.github import GitHubUnavailable, RepoInfo, RepoNotFound
+from app.users.service import get_by_username
 
 OCTOCAT = 583231
 STRANGER = 1
@@ -71,3 +73,10 @@ class FakeGitHub:
 
     async def contributors(self, owner: str, name: str) -> dict[int, str] | None:
         return self.contributor_map.get(self._key(owner, name), {})
+
+
+async def connect_github(db_session, username: str = "bek", account: int = OCTOCAT) -> None:
+    """Give a test user a connected GitHub account (what the OAuth connect would store)."""
+    user = await get_by_username(db_session, username)
+    db_session.add(AuthIdentity(user_id=user.id, provider="github", provider_user_id=str(account)))
+    await db_session.commit()

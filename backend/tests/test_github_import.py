@@ -3,8 +3,6 @@
 import httpx
 import pytest
 
-from app.auth.models import AuthIdentity
-from app.main import app
 from app.projects.github import (
     GitHubClient,
     GitHubUnavailable,
@@ -12,27 +10,12 @@ from app.projects.github import (
     get_github,
     parse_github_url,
 )
-from app.users.service import get_by_username
-from tests.github_fake import OCTOCAT, STRANGER, FakeGitHub, repo
+from tests.github_fake import OCTOCAT, STRANGER, connect_github, repo
 from tests.media_helpers import signup
 
-pytest_plugins = ["tests.auth_fixtures"]
+pytest_plugins = ["tests.auth_fixtures", "tests.github_fixtures"]
 
 IMPORT = "/api/v1/me/projects/import"
-
-
-@pytest.fixture
-def github(client) -> FakeGitHub:
-    """Depends on `client`: its teardown clears the overrides."""
-    fake = FakeGitHub()
-    app.dependency_overrides[get_github] = lambda: fake
-    return fake
-
-
-async def connect_github(db_session, username: str = "bek", account: int = OCTOCAT) -> None:
-    user = await get_by_username(db_session, username)
-    db_session.add(AuthIdentity(user_id=user.id, provider="github", provider_user_id=str(account)))
-    await db_session.commit()
 
 
 def _code(response) -> str:
