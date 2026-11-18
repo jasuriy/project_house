@@ -7,6 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import router as auth
 from app.auth.csrf import OriginCheckMiddleware
+from app.core.cache import NoStoreApiMiddleware
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import register_error_handlers
@@ -36,6 +37,7 @@ def create_app() -> FastAPI:
         https_only=get_settings().app_env == "production",
     )
     app.add_middleware(OriginCheckMiddleware)
+    app.add_middleware(NoStoreApiMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=get_settings().cors_origins,

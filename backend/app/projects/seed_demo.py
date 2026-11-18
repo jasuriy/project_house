@@ -136,13 +136,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.projects.seed_demo", description=__doc__)
     parser.add_argument("--file", type=Path, default=DEFAULT_SEED_FILE, help="seed JSON file")
     parser.add_argument("--owner", help="username of the account that posts every sample")
+    parser.add_argument(
+        "--allow-production",
+        action="store_true",
+        help="load into production, once, onto --owner's account (Bek, 2026-11-18)",
+    )
     args = parser.parse_args(argv)
 
     # Read the environment directly: production Settings can fail validation, and the refusal
     # must come first, before any settings or database access.
     if os.environ.get("APP_ENV") == "production":
-        print("seed_demo: refusing to run when APP_ENV=production", file=sys.stderr)
-        return 2
+        if not args.allow_production:
+            print("seed_demo: refusing to run when APP_ENV=production", file=sys.stderr)
+            return 2
+        if args.owner is None:
+            print("seed_demo: --allow-production needs --owner", file=sys.stderr)
+            return 2
     return asyncio.run(_run(args))
 
 

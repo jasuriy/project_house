@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     # Uploaded images (disk storage, app/media/storage.py). Default: backend/media, resolved from
     # this file so it never depends on the working directory.
     media_root: str = str(Path(__file__).resolve().parents[2] / "media")
+    # Where images live: "disk" (media_root, local) or "r2" (Cloudflare R2, the deployment).
+    media_backend: Literal["disk", "r2"] = "disk"
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket: str = ""
+    # Email sign-up, login, verification and reset. Off in the deployment until an email service
+    # exists (GitHub login only); the routes then answer 404 email_login_disabled.
+    email_login_enabled: bool = True
 
     @model_validator(mode="after")
     def _require_or_default_secrets(self) -> Self:

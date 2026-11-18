@@ -21,6 +21,7 @@ from app.auth.schemas import (
 )
 from app.core.config import get_settings
 from app.core.db import get_session
+from app.core.errors import AppError
 from app.users.models import User
 from app.users.profile import update_profile
 from app.users.schemas import ProfileUpdate, UserPublic
@@ -28,6 +29,15 @@ from app.users.schemas import ProfileUpdate, UserPublic
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def email_login_on() -> None:
+    """The email routes exist only while email login is on (the deployment: GitHub only)."""
+    if not get_settings().email_login_enabled:
+        raise AppError(404, "email_login_disabled", "Email login is not available")
+
+
+EmailOnly = [Depends(email_login_on)]
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
@@ -69,7 +79,7 @@ async def _account(db: AsyncSession, user: User) -> AccountResponse:
     )
 
 
-@router.post("/signup", status_code=201)
+@router.post("/signup", status_code=201, dependencies=EmailOnly)
 async def signup(
     body: SignupRequest,
     request: Request,
@@ -94,7 +104,7 @@ async def signup(
     return await _account(db, auth.user)
 
 
-@router.post("/login")
+@router.post("/login", dependencies=EmailOnly)
 async def login(
     body: LoginRequest,
     request: Request,
@@ -134,7 +144,7 @@ async def edit_me(
     return await _account(db, await update_profile(db, user, body))
 
 
-@router.post("/email/verify", status_code=204)
+@router.post("/email/verify", status_code=204, dependencies=EmailOnly)
 async def verify_email(
     body: TokenRequest, db: DbSession, user: Annotated[User, Depends(current_user)]
 ) -> None:
@@ -142,7 +152,7 @@ async def verify_email(
     await service.verify_email(db, body.token, user.id)
 
 
-@router.post("/password/forgot", status_code=202)
+@router.post("/password/forgot", status_code=202, dependencies=EmailOnly)
 async def forgot_password(
     body: ForgotPasswordRequest,
     db: DbSession,
@@ -156,7 +166,7 @@ async def forgot_password(
         background.add_task(sender.send, *message)
 
 
-@router.post("/password/reset", status_code=204)
+@router.post("/password/reset", status_code=204, dependencies=EmailOnly)
 async def reset_password(body: ResetPasswordRequest, db: DbSession) -> None:
     await service.reset_password(db, body.token, body.new_password)
 
