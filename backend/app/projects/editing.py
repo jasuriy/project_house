@@ -291,7 +291,7 @@ async def update_project(
         setattr(project, name, value)
     await session.commit()
     for key in removed:
-        storage.delete(key)
+        await storage.delete(key)
     return await own_project(session, user, slug)
 
 
@@ -301,7 +301,7 @@ async def delete_project(session: AsyncSession, user: User, slug: str) -> None:
     await session.delete(project)
     await session.commit()
     for key in keys:
-        storage.delete(key)
+        await storage.delete(key)
 
 
 IMPORT_TAGS = 5

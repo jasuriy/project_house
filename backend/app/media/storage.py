@@ -1,16 +1,41 @@
-"""Where image files live. Disk now; at deploy only this module changes (Cloudflare R2).
+"""Where image files live: a folder on disk (local development) or Cloudflare R2 (the deployment),
+chosen by MEDIA_BACKEND.
 
 Files are named by a random key `<32 hex>.webp`; the database stores the key, never a URL, and
-URLs are built here when a response is made.
+URLs are built here when a response is made. Every file operation runs in a worker thread, so a
+slow disk or a slow R2 call never stalls other requests.
 """
 
 import re
 import uuid
+from functools import cache
 from pathlib import Path
+from typing import Any
+
+import anyio
+from botocore.exceptions import ClientError
 
 from app.core.config import get_settings
 
 KEY = re.compile(r"[0-9a-f]{32}\.webp")
+
+
+def is_key(key: str) -> bool:
+    """A well-formed key; anything else is never looked up (no path can leave the folder)."""
+    return KEY.fullmatch(key) is not None
+
+
+def url(key: str) -> str:
+    """Images are served by the API in both backends (R2's own public address is for development
+    only, and the API's long cache header lets the CDN in front of it keep each image)."""
+    return f"{get_settings().public_base_url}/api/v1/media/{key}"
+
+
+def _r2() -> bool:
+    return get_settings().media_backend == "r2"
+
+
+# ---- disk ------------------------------------------------------------------------------------
 
 
 def _root() -> Path:
@@ -19,24 +44,74 @@ def _root() -> Path:
     return root
 
 
-def save(data: bytes) -> str:
+def _disk_read(key: str) -> bytes | None:
+    file = _root() / key
+    return file.read_bytes() if file.is_file() else None
+
+
+# ---- R2 (S3-compatible API) ------------------------------------------------------------------
+
+
+@cache
+def _client() -> Any:
+    """One S3 client for the process (boto3 clients are thread-safe)."""
+    import boto3  # only the deployment needs it loaded
+
+    settings = get_settings()
+    return boto3.client(
+        "s3",
+        endpoint_url=f"https://{settings.r2_account_id}.r2.cloudflarestorage.com",
+        aws_access_key_id=settings.r2_access_key_id,
+        aws_secret_access_key=settings.r2_secret_access_key,
+        region_name="auto",
+    )
+
+
+def _r2_put(key: str, data: bytes) -> None:
+    _client().put_object(
+        Bucket=get_settings().r2_bucket, Key=key, Body=data, ContentType="image/webp"
+    )
+
+
+def _r2_get(key: str) -> bytes | None:
+    try:
+        answer = _client().get_object(Bucket=get_settings().r2_bucket, Key=key)
+    except ClientError as error:
+        if error.response.get("Error", {}).get("Code") in {"NoSuchKey", "404"}:
+            return None
+        raise
+    return answer["Body"].read()
+
+
+def _r2_delete(key: str) -> None:
+    _client().delete_object(Bucket=get_settings().r2_bucket, Key=key)
+
+
+# ---- the four operations ---------------------------------------------------------------------
+
+
+async def save(data: bytes) -> str:
     key = f"{uuid.uuid4().hex}.webp"
-    (_root() / key).write_bytes(data)
+    if _r2():
+        await anyio.to_thread.run_sync(_r2_put, key, data)
+    else:
+        await anyio.to_thread.run_sync((_root() / key).write_bytes, data)
     return key
 
 
-def path(key: str) -> Path | None:
-    """The file of a well-formed key (None for anything else, so no path can leave the folder)."""
-    if not KEY.fullmatch(key):
+async def read(key: str) -> bytes | None:
+    """The image's bytes; None for a malformed or missing key."""
+    if not is_key(key):
         return None
-    return _root() / key
+    if _r2():
+        return await anyio.to_thread.run_sync(_r2_get, key)
+    return await anyio.to_thread.run_sync(_disk_read, key)
 
 
-def url(key: str) -> str:
-    return f"{get_settings().public_base_url}/api/v1/media/{key}"
-
-
-def delete(key: str) -> None:
-    file = path(key)
-    if file is not None:
-        file.unlink(missing_ok=True)
+async def delete(key: str) -> None:
+    if not is_key(key):
+        return
+    if _r2():
+        await anyio.to_thread.run_sync(_r2_delete, key)
+    else:
+        await anyio.to_thread.run_sync(lambda: (_root() / key).unlink(missing_ok=True))
