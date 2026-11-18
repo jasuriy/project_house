@@ -1,17 +1,21 @@
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { coverImage } from "@/lib/media";
 import type { ProjectCard as Card } from "@/lib/types";
 import { CoverImage } from "./CoverImage";
 
-/** One feed card, laid out as the mockup's `.card` (design-guide section 6). */
-export function ProjectCard({ card }: { card: Card }) {
+/**
+ * One feed card, laid out as the mockup's `.card` (design-guide section 6). `preview` renders the
+ * same card without the link (the add form's live preview points nowhere yet).
+ */
+export function ProjectCard({ card, preview = false }: { card: Card; preview?: boolean }) {
   const t = useTranslations("Feed");
   const cover = coverImage(card.cover);
 
   return (
     <article data-focus-ring className="grid content-start overflow-hidden rounded-card border border-border bg-card">
-      <Link href={card.path} className="group grid content-start rounded-card">
+      <Body href={preview ? null : card.path}>
         <CoverImage src={cover.src} alt={card.title} isVideo={cover.isVideo} videoLabel={t("video")} />
         <div className="grid gap-2 px-3.5 pt-3 pb-3.5">
           <h2 className="line-clamp-2 text-base leading-tight font-semibold text-fg group-hover:text-primary">
@@ -42,7 +46,17 @@ export function ProjectCard({ card }: { card: Card }) {
             )}
           </div>
         </div>
-      </Link>
+      </Body>
     </article>
+  );
+}
+
+function Body({ href, children }: { href: string | null; children: ReactNode }) {
+  const className = "group grid content-start rounded-card";
+  if (href === null) return <div className={className}>{children}</div>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }

@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -27,6 +27,18 @@ async function UserSlot() {
 
   return (
     <div className="flex items-center gap-1 md:gap-2">
+      {user.account_type === "developer" && (
+        // Mockup: a plus icon on a phone, "+ Qo'shish" on a tablet, "Loyiha qo'shish" on desktop.
+        <Link
+          href="/new"
+          aria-label={t("addProject")}
+          className="grid size-11 place-items-center rounded-control text-primary md:inline-flex md:size-auto md:min-h-10 md:items-center md:gap-1.5 md:bg-primary md:px-3.5 md:text-ui md:font-semibold md:whitespace-nowrap md:text-on-primary md:hover:opacity-90 lg:px-4"
+        >
+          <Plus aria-hidden strokeWidth={2.25} className="size-5 md:size-4 lg:hidden" />
+          <span className="hidden md:inline lg:hidden">{t("addShort")}</span>
+          <span className="hidden lg:inline">{t("addProject")}</span>
+        </Link>
+      )}
       <Link
         href={`/${user.username}`}
         className="hidden max-w-48 truncate rounded-control text-ui font-semibold text-fg hover:text-primary md:inline"

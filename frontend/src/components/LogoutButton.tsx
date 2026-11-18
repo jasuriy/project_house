@@ -1,5 +1,6 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
@@ -34,9 +35,12 @@ export function LogoutButton() {
         type="button"
         onClick={logout}
         disabled={pending}
+        aria-label={t("logout")}
         className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control px-2 text-ui text-mute transition-colors hover:text-fg disabled:opacity-60"
       >
-        {t("logout")}
+        {/* Icon on a phone (the 390 px header also holds the add button), the word from 768 px. */}
+        <LogOut aria-hidden strokeWidth={2} className="size-5 md:hidden" />
+        <span className="hidden md:inline">{t("logout")}</span>
       </button>
       {error && (
         <p

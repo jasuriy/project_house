@@ -78,6 +78,27 @@ export type ProjectDetail = {
   published_at: string;
 };
 
+/** One image of the add/edit form: GET /api/v1/me/projects/{slug} `images`. */
+export type EditableImage = { id: number; url: string };
+
+/** What the edit form starts from: GET /api/v1/me/projects/{slug}. */
+export type EditableProject = {
+  slug: string;
+  path: string;
+  is_demo: boolean;
+  title: string;
+  one_line_problem: string;
+  short_description: string;
+  result: string | null;
+  field: FieldName;
+  tech_stack: string[];
+  github_url: string | null;
+  live_url: string | null;
+  role: string | null;
+  video_url: string | null;
+  images: EditableImage[];
+};
+
 export type FeedPage = {
   items: ProjectCard[];
   next_cursor: string | null;

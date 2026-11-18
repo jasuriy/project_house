@@ -23,6 +23,7 @@ export function TextField({
   toggleLabels,
   defaultValue,
   maxLength,
+  onChange,
 }: {
   name: string;
   label: string;
@@ -39,6 +40,8 @@ export function TextField({
   toggleLabels?: { show: string; hide: string };
   defaultValue?: string;
   maxLength?: number;
+  /** Called with the new value on every edit (the add form's live preview). */
+  onChange?: (value: string) => void;
 }) {
   const id = useId();
   const noteId = `${id}-note`;
@@ -47,7 +50,7 @@ export function TextField({
   const note = error ?? help;
 
   return (
-    <div className="grid gap-1.5">
+    <div className="grid content-start gap-1.5">
       <div className="flex items-baseline justify-between gap-2">
         <label htmlFor={id} className="text-small font-semibold text-fg">
           {label}
@@ -76,6 +79,7 @@ export function TextField({
           required={required}
           defaultValue={defaultValue}
           maxLength={maxLength}
+          onChange={onChange ? (event) => onChange(event.target.value) : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={note ? noteId : undefined}
           className={`h-full w-0 min-w-0 flex-1 rounded-control bg-transparent text-ui text-fg placeholder:text-mute outline-none ${
