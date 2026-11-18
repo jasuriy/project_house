@@ -40,8 +40,11 @@ export function ProjectCard({ card, preview = false }: { card: Card; preview?: b
           <div className="flex items-center gap-2 border-t border-border pt-2 text-meta text-mute">
             <Avatar name={card.author.name} src={card.author.avatar_url} fallback="blank" className="size-5.5 border border-border bg-muted" />
             <span className="truncate">{card.author.name}</span>
+            {!preview && (
+              <span className="ml-auto flex-none tabular-nums">{t("likes", { count: card.like_count })}</span>
+            )}
             {card.author.kind === "demo" && (
-              <span className="ml-auto flex-none rounded-full bg-accent-soft px-2 py-px text-caption font-medium text-primary">
+              <span className="flex-none rounded-full bg-accent-soft px-2 py-px text-caption font-medium text-primary">
                 {t("demo")}
               </span>
             )}

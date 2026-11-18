@@ -8,7 +8,8 @@
     "loadMore": "Show more",
     "loading": "Loading",
     "demo": "Sample",
-    "video": "Video"
+    "video": "Video",
+    "likes": "{count, plural, one {# like} other {# likes}}"
   },
   "Project": {
     "breadcrumb": "Breadcrumb",
@@ -137,5 +138,47 @@
     "not_your_repo": "This repository is not yours: you are neither its owner nor one of its contributors.",
     "github_repo_not_found": "Repository not found or private.",
     "github_unavailable": "GitHub is not answering right now. Please try again in a moment."
+  },
+  "Social": {
+    "like": "Like ({count})",
+    "save": "Save",
+    "report": "Report",
+    "comments": "Comments",
+    "commentLabel": "Your comment",
+    "commentPlaceholder": "Write a comment",
+    "send": "Send",
+    "sending": "Sending",
+    "signIn": "<link>Log in</link> to write a comment.",
+    "delete": "Delete",
+    "deleteAsk": "Delete this comment?",
+    "deleteYes": "Yes, delete",
+    "deleteNo": "No",
+    "loadMore": "More comments",
+    "empty": "No comments yet. Be the first.",
+    "loadFailed": "Comments could not be loaded.",
+    "reportProject": "The project \"{title}\". Only moderators see reports.",
+    "reportComment": "A comment by {name}. Only moderators see reports.",
+    "reason": "Reason",
+    "reasons": {
+      "spam": "Spam or advertising",
+      "not_own_work": "This is not the author's own work",
+      "offensive": "Offensive",
+      "other": "Other reason"
+    },
+    "note": "Note",
+    "optional": "(optional)",
+    "cancel": "Cancel",
+    "submit": "Send",
+    "sent": "Thank you. Your report was sent.",
+    "close": "Close"
+  },
+  "SocialErrors": {
+    "invalid_comment": "A comment is 1 to 1000 characters.",
+    "comment_not_found": "This comment is gone.",
+    "invalid_report": "Choose a reason; the note is up to 500 characters.",
+    "project_not_found": "This project is gone.",
+    "not_authenticated": "Log in again.",
+    "unreachable": "No connection to the server. Try again.",
+    "generic": "Something went wrong. Try again."
   }
 }

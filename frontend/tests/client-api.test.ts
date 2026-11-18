@@ -110,3 +110,20 @@ describe("clientPost", () => {
     });
   });
 });
+
+describe("clientPut and empty bodies", () => {
+  it("PUTs without a body and maps 204 to null", async () => {
+    const { clientPut } = await import("@/lib/client-api");
+    const fetchMock = stubFetch(async () => new Response(null, { status: 204 }));
+    expect(await clientPut("/api/v1/me/likes/7")).toEqual({ ok: true, data: null });
+    expect(fetchMock.mock.calls[0][1]?.method).toBe("PUT");
+  });
+
+  it.each([200, 201])("a %i with an empty body is a success with null", async (status) => {
+    stubFetch(async () => new Response(null, { status }));
+    expect(await clientPost("/api/v1/me/reports", { reason: "spam" })).toEqual({
+      ok: true,
+      data: null,
+    });
+  });
+});

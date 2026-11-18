@@ -274,6 +274,8 @@ export function ProjectForm({
           <ProjectCard
             preview
             card={{
+              id: 0, // not saved yet; the preview hides the like count
+              like_count: 0,
               slug: "",
               path: "",
               title: values.title || t("previewTitle"),
