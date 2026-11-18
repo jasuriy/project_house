@@ -49,7 +49,8 @@ function Shell({
   children,
 }: {
   loginHref: string | null;
-  pressed: boolean;
+  /** Omitted for a button whose own words say its state (Saqlash / Saqlangan). */
+  pressed?: boolean;
   onClick: () => void;
   label?: string;
   className: string;
@@ -113,13 +114,12 @@ export function SaveButton({
   return (
     <Shell
       loginHref={loginHref}
-      pressed={on}
       onClick={() => toggle()}
       className={`${BUTTON} ${on ? "border-primary text-primary" : "border-border text-fg hover:border-primary"}`}
     >
-      {/* One label in both states: aria-pressed and the filled icon carry "saved". */}
+      {/* The words carry the state, so no aria-pressed (it would be read twice). */}
       <Bookmark aria-hidden className={`size-4.5 ${on ? "fill-current" : ""}`} />
-      {t("save")}
+      {on ? t("saved") : t("save")}
     </Shell>
   );
 }

@@ -107,4 +107,10 @@ class Report(Base):
     reason: Mapped[str] = mapped_column(Text)
     note: Mapped[str | None] = mapped_column(Text)
     snapshot: Mapped[str] = mapped_column(Text)
+    # Who posted the reported item, kept after they delete it (null for an ownerless sample);
+    # the username stays even when the account goes.
+    target_user_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+    target_username: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

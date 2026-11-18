@@ -81,6 +81,8 @@ def upgrade() -> None:
         sa.Column("reason", sa.Text(), nullable=False),
         sa.Column("note", sa.Text(), nullable=True),
         sa.Column("snapshot", sa.Text(), nullable=False),
+        sa.Column("target_user_id", sa.BigInteger(), nullable=True),
+        sa.Column("target_username", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=NOW, nullable=False),
         sa.CheckConstraint(
             "target_kind IN ('project', 'comment')", name=op.f("ck_reports_target_kind")
@@ -105,6 +107,12 @@ def upgrade() -> None:
             ["reporter_id"],
             ["users.id"],
             name=op.f("fk_reports_reporter_id_users"),
+            ondelete="SET NULL",
+        ),
+        sa.ForeignKeyConstraint(
+            ["target_user_id"],
+            ["users.id"],
+            name=op.f("fk_reports_target_user_id_users"),
             ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_reports")),

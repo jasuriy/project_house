@@ -265,3 +265,88 @@ async def test_report_outlives_the_reporter(auth_client, db_session):
     await db_session.commit()
     [report] = await _reports(db_session)
     assert (report.reporter_id, report.project_id) == (None, pid)
+
+
+# ---- review fixes ------------------------------------------------------------------------------
+
+TOO_BIG = 2**63  # one past bigint
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        ("get", f"/api/v1/projects/{TOO_BIG}/comments"),
+        ("post", f"/api/v1/projects/{TOO_BIG}/comments"),
+        ("put", f"/api/v1/me/likes/{TOO_BIG}"),
+        ("delete", f"/api/v1/me/likes/{TOO_BIG}"),
+        ("put", f"/api/v1/me/saves/{TOO_BIG}"),
+        ("delete", f"/api/v1/me/saves/{TOO_BIG}"),
+        ("delete", f"/api/v1/me/comments/{TOO_BIG}"),
+        ("get", "/api/v1/projects/0/comments"),
+        ("put", "/api/v1/me/likes/-1"),
+    ],
+)
+async def test_ids_outside_bigint_are_422_not_500(auth_client, method, path):
+    await signup(auth_client, "alice")
+    kwargs = {"json": {"body": "Hi"}} if method == "post" else {}
+    r = await getattr(auth_client, method)(path, **kwargs)
+    assert r.status_code == 422, r.text
+
+
+@pytest.mark.parametrize("target", [{"project_id": TOO_BIG}, {"comment_id": 0}])
+async def test_report_ids_outside_bigint_are_422(auth_client, target):
+    await signup(auth_client, "alice")
+    r = await auth_client.post(REPORTS, json={**target, "reason": "spam"})
+    assert r.status_code == 422, r.text
+
+
+async def test_lone_surrogate_is_invalid_not_500(auth_client, db_session):
+    await signup(auth_client, "alice")
+    pid = await _owned(db_session, "alice", "tool")
+    # Sent as raw JSON with an escaped surrogate (httpx's json= cannot encode one; a browser can).
+    raw = {"content-type": "application/json"}
+    r = await auth_client.post(_comments(pid), content='{"body": "hi \\ud800 there"}', headers=raw)
+    assert (r.status_code, r.json()["error"]["code"]) == (422, "invalid_comment")
+    note = f'{{"project_id": {pid}, "reason": "other", "note": "\\udfff"}}'
+    r = await auth_client.post(REPORTS, content=note, headers=raw)
+    assert (r.status_code, r.json()["error"]["code"]) == (422, "invalid_report")
+
+
+async def test_report_body_says_created_or_not(auth_client, db_session):
+    await signup(auth_client, "alice")
+    pid = await _owned(db_session, "alice", "tool")
+    await _switch(auth_client, "bobby")
+    body = {"project_id": pid, "reason": "spam"}
+    first = await auth_client.post(REPORTS, json=body)
+    again = await auth_client.post(REPORTS, json=body)
+    assert (first.status_code, first.json()) == (201, {"created": True})
+    assert (again.status_code, again.json()) == (200, {"created": False})
+
+
+async def test_report_remembers_who_posted_the_item(auth_client, db_session):
+    await signup(auth_client, "alice")
+    pid = await _owned(db_session, "alice", "tool")
+    await _switch(auth_client, "bobby")
+    c = await _comment(auth_client, pid, "Spam text")
+    sample = make_project(slug="sample")
+    await add_projects(db_session, sample)
+    await _switch(auth_client, "carol")
+    for target in ({"project_id": pid}, {"comment_id": c["id"]}, {"project_id": sample.id}):
+        assert (
+            await auth_client.post(REPORTS, json={**target, "reason": "spam"})
+        ).status_code == 201
+    alice = (await db_session.execute(select(User.id).where(User.username == "alice"))).scalar()
+    bobby = (await db_session.execute(select(User.id).where(User.username == "bobby"))).scalar()
+    project_r, comment_r, sample_r = await _reports(db_session)
+    assert (project_r.target_user_id, project_r.target_username) == (alice, "alice")
+    assert (comment_r.target_user_id, comment_r.target_username) == (bobby, "bobby")
+    assert (sample_r.target_user_id, sample_r.target_username) == (None, None)
+    # The comment's author deletes the account: the comment goes, the report keeps the username.
+    await db_session.execute(delete(User).where(User.username == "bobby"))
+    await db_session.commit()
+    comment_r = (await _reports(db_session))[1]
+    assert (comment_r.comment_id, comment_r.target_user_id, comment_r.target_username) == (
+        None,
+        None,
+        "bobby",
+    )

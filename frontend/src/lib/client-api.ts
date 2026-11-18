@@ -8,9 +8,7 @@ async function request<T>(path: string, init: RequestInit): Promise<ApiResult<T>
     if (!response.ok) return await failureOf(response);
     if (response.status === 204) return { ok: true, data: null as T };
     try {
-      // Some writes answer 200/201 with no body (a repeated report, for one).
-      const text = await response.text();
-      return { ok: true, data: (text ? JSON.parse(text) : null) as T };
+      return { ok: true, data: (await response.json()) as T };
     } catch {
       return { ok: false, status: response.status, code: `http_${response.status}` };
     }

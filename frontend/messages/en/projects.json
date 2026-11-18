@@ -143,6 +143,7 @@
   "Social": {
     "like": "Like ({count})",
     "save": "Save",
+    "saved": "Saved",
     "report": "Report",
     "comments": "Comments",
     "commentLabel": "Your comment",

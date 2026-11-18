@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.core.pagination import MAX_ID
 
 
 class CommentInput(BaseModel):
@@ -36,7 +38,13 @@ class ReportInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    project_id: int | None = None
-    comment_id: int | None = None
+    project_id: int | None = Field(default=None, ge=1, le=MAX_ID)
+    comment_id: int | None = Field(default=None, ge=1, le=MAX_ID)
     reason: str
     note: str | None = None
+
+
+class ReportResult(BaseModel):
+    """False when this person had already reported the item (no new report was made)."""
+
+    created: bool

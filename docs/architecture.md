@@ -71,6 +71,9 @@ This closes Step 0's Ruling B: the dev default can never silently reach producti
 
 - PostgreSQL 17, SQLAlchemy 2 async + asyncpg, **Alembic** for every schema change (async env).
 - Primary keys: `bigint` identity. Public URLs use usernames and slugs, never ids.
+  Exception (Bek, 2026-11-18): the API calls for likes, saves, comments and reports name a project
+  or comment by its numeric id (`/api/v1/me/likes/{project_id}`), and project responses carry that
+  id; page addresses never do. Path ids are checked against the bigint range (422 outside it).
 - Timestamps: `timestamptz`, stored UTC, `created_at` / `updated_at` on every table.
 - Naming convention for constraints set on `Base.metadata` (pk/fk/uq/ck/ix names are deterministic,
   so migrations stay readable).

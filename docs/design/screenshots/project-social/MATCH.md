@@ -17,8 +17,9 @@ Checked on the branch servers (backend 8002, frontend 3002, database `projecthou
 
 Differences on purpose:
 
-- Saqlash keeps its label when saved; the filled blue bookmark and `aria-pressed` show the state
-  (a toggle that also changes its label is read twice by screen readers).
+- After review, Bek chose the spec's wording: Saqlash turns into "Saqlangan" when saved (filled
+  bookmark, blue border). The button has no `aria-pressed`, because its words already say the
+  state (ours-saqlangan.png).
 - The drawing's phone frame leaves out result, tech and Loyiha haqida to fit the comments; the page
   shows them.
 - Comment dates are absolute ("18 noyabr 2026"), not relative as drawn ("2 kun oldin"): an

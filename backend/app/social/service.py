@@ -119,9 +119,14 @@ async def _project(session: AsyncSession, project_id: int) -> Project:
     return project
 
 
+def _storable(text: str) -> bool:
+    """PostgreSQL text takes neither NUL nor a lone UTF-16 surrogate (JSON can carry both)."""
+    return "\x00" not in text and not any("\ud800" <= ch <= "\udfff" for ch in text)
+
+
 def _comment_body(value: str) -> str:
     body = value.strip()
-    if not body or len(body) > MAX_COMMENT or "\x00" in body:
+    if not body or len(body) > MAX_COMMENT or not _storable(body):
         raise AppError(422, "invalid_comment", "A comment is 1 to 1000 characters")
     return body
 
@@ -221,9 +226,15 @@ def _bad_report() -> AppError:
 
 def _note(value: str | None) -> str | None:
     note = (value or "").strip()
-    if len(note) > MAX_NOTE or "\x00" in note:
+    if len(note) > MAX_NOTE or not _storable(note):
         raise _bad_report()
     return note or None
+
+
+async def _username(session: AsyncSession, user_id: int | None) -> str | None:
+    if user_id is None:
+        return None
+    return await session.scalar(select(User.username).where(User.id == user_id))
 
 
 async def report(session: AsyncSession, user: User, data: ReportInput) -> bool:
@@ -236,11 +247,13 @@ async def report(session: AsyncSession, user: User, data: ReportInput) -> bool:
         if comment is None:
             raise AppError(404, "comment_not_found", "Comment not found")
         kind, project_id, snapshot = "comment", comment.project_id, comment.body
+        target_user_id: int | None = comment.author_id
         # Matches the partial unique index uq_reports_reporter_comment.
         conflict = (["reporter_id", "comment_id"], text("comment_id IS NOT NULL"))
     else:
         project = await _project(session, data.project_id)  # type: ignore[arg-type]
         kind, project_id, snapshot = "project", project.id, project.title
+        target_user_id = project.owner_id  # None for an ownerless sample
         # Matches the partial unique index uq_reports_reporter_project.
         conflict = (
             ["reporter_id", "project_id"],
@@ -256,6 +269,8 @@ async def report(session: AsyncSession, user: User, data: ReportInput) -> bool:
             reason=data.reason,
             note=note,
             snapshot=snapshot,
+            target_user_id=target_user_id,
+            target_username=await _username(session, target_user_id),
         )
         .on_conflict_do_nothing(index_elements=conflict[0], index_where=conflict[1])
         .returning(Report.id)
