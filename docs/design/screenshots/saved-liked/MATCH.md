@@ -30,6 +30,12 @@ Flows run in the browser:
 - Back button: open /saved, open a project, unsave it, press Back -> the list no longer shows it
   (it did before: the browser kept the old page). Fixed with `router.refresh()` after a successful
   like or save. Forward again shows the right liked state; no script errors.
+- Russian at 360 px (longest labels: Сохранённые, Понравившиеся): each button on its own row, no
+  clipping (ours-own-profile-360-ru.png, ours-saved-360-ru.png).
+- Company account (dilnoza-karimova) on its own profile: both buttons, 1440 and 768
+  (ours-company-own-1440.png, ours-company-own-768.png).
+- Yana koʻrsatish: with 26 saved, the first page has 24 cards; one click -> 26, all different, and
+  the button goes away.
 - Sweep: /madina-yusupova, /saved, /liked, /aziz-rahimov x 9 widths (360-1440) x uz/ru/en, while
   loading and after: 108 of 108 with no sideways scroll. Phone tap targets outside cards: none
   under 44 px.
