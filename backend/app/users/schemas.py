@@ -3,6 +3,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from app.media import storage
+from app.users.models import User
+
 
 class UserPublic(BaseModel):
     """Public profile. The numeric id is deliberately not exposed (URLs use usernames)."""
@@ -22,6 +25,14 @@ class UserPublic(BaseModel):
     avatar_url: str | None
     links: dict[str, Any]
     created_at: datetime
+
+    @classmethod
+    def of(cls, user: User) -> "UserPublic":
+        """The public profile; `avatar_url` is the uploaded photo when there is one."""
+        profile = cls.model_validate(user)
+        if user.avatar_key:
+            profile.avatar_url = storage.url(user.avatar_key)
+        return profile
 
 
 class ProfileResponse(UserPublic):

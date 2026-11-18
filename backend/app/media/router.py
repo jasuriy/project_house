@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import current_developer
+from app.auth.dependencies import current_developer, current_user
 from app.core.db import get_session
 from app.core.errors import AppError
 from app.media import images, service, storage
@@ -13,6 +13,7 @@ from app.users.models import User
 router = APIRouter(tags=["media"])
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+AVATAR_SIDE = 512
 
 
 def _too_large() -> AppError:
@@ -50,6 +51,26 @@ async def delete_upload(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
     await service.delete_upload(session, user.id, upload_id)
+
+
+@router.put("/me/avatar")
+async def set_avatar(
+    request: Request,
+    user: Annotated[User, Depends(current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, str]:
+    """The profile photo (any account type): cropped to a 512 px square; replaces the old one."""
+    webp = images.to_webp(await read_image_body(request), square=AVATAR_SIDE)
+    key = await service.replace_avatar(session, user, storage.save(webp))
+    return {"avatar_url": storage.url(key)}
+
+
+@router.delete("/me/avatar", status_code=204)
+async def delete_avatar(
+    user: Annotated[User, Depends(current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    await service.replace_avatar(session, user, None)
 
 
 @router.get("/media/{key}")

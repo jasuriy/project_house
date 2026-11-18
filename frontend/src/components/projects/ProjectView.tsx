@@ -1,9 +1,10 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { formatDate, initials } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { safeExternalUrl } from "@/lib/safe-url";
 import type { ProjectDetail } from "@/lib/types";
 import { MediaPlayer } from "./MediaPlayer";
+import { Avatar } from "@/components/Avatar";
 import { DeleteProject } from "@/components/editor/DeleteProject";
 import { ShareButton } from "./ShareButton";
 
@@ -98,12 +99,11 @@ export function ProjectView({ project, viewer }: { project: ProjectDetail; viewe
           <div className="h-px bg-border" />
 
           <div className="flex items-center gap-3">
-            <span
-              aria-hidden
-              className="grid size-11 flex-none place-items-center rounded-full border border-border bg-muted text-small font-semibold text-fg"
-            >
-              {initials(project.author.name)}
-            </span>
+            <Avatar
+              name={project.author.name}
+              src={project.author.avatar_url}
+              className="size-11 border border-border bg-muted text-small font-semibold text-fg"
+            />
             <div className="grid min-w-0 justify-items-start gap-0.5 text-ui font-semibold text-fg">
               {project.author.kind === "user" ? (
                 <Link href={project.author.url} className="inline-flex min-h-11 max-w-full items-center truncate hover:text-primary md:min-h-0">

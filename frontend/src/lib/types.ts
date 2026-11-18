@@ -44,6 +44,8 @@ export type Author = {
   kind: "demo" | "user";
   name: string;
   url: string;
+  /** The owner's uploaded photo; null for samples' original authors and people without one. */
+  avatar_url?: string | null;
 };
 
 export type ProjectCard = {

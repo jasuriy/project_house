@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AppError
 from app.media import storage
 from app.media.models import Upload
+from app.users.models import User
 
 MAX_PENDING = 12  # unused uploads per user
 MAX_AGE = timedelta(hours=24)  # an upload never attached within a day is removed
@@ -36,6 +37,16 @@ async def create_upload(session: AsyncSession, owner_id: int, webp: bytes) -> Up
     session.add(upload)
     await session.commit()
     return upload
+
+
+async def replace_avatar(session: AsyncSession, user: User, key: str | None) -> str | None:
+    """Set (or clear, with None) the user's photo; the old file is deleted after the commit."""
+    old = user.avatar_key
+    user.avatar_key = key
+    await session.commit()
+    if old:
+        storage.delete(old)
+    return key
 
 
 async def delete_upload(session: AsyncSession, owner_id: int, upload_id: str) -> None:

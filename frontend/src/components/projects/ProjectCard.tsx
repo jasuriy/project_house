@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
+import { Avatar } from "@/components/Avatar";
 import { coverImage } from "@/lib/media";
 import type { ProjectCard as Card } from "@/lib/types";
 import { CoverImage } from "./CoverImage";
@@ -37,7 +38,7 @@ export function ProjectCard({ card, preview = false }: { card: Card; preview?: b
             </ul>
           )}
           <div className="flex items-center gap-2 border-t border-border pt-2 text-meta text-mute">
-            <span aria-hidden className="size-5.5 flex-none rounded-full border border-border bg-muted" />
+            <Avatar name={card.author.name} src={card.author.avatar_url} fallback="blank" className="size-5.5 border border-border bg-muted" />
             <span className="truncate">{card.author.name}</span>
             {card.author.kind === "demo" && (
               <span className="ml-auto flex-none rounded-full bg-accent-soft px-2 py-px text-caption font-medium text-primary">

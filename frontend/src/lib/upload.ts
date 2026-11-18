@@ -26,3 +26,18 @@ export async function uploadImage(file: File): Promise<ApiResult<Uploaded>> {
 export function discardUpload(id: string): void {
   void fetch(`/api/v1/me/uploads/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
 }
+
+/** PUT the profile photo (raw bytes); the backend crops it to a square. Never throws. */
+export async function uploadAvatar(file: File): Promise<ApiResult<{ avatar_url: string }>> {
+  try {
+    const response = await fetch("/api/v1/me/avatar", {
+      method: "PUT",
+      headers: { "content-type": file.type },
+      body: file,
+    });
+    if (!response.ok) return await failureOf(response);
+    return { ok: true, data: (await response.json()) as { avatar_url: string } };
+  } catch {
+    return UNREACHABLE;
+  }
+}

@@ -29,6 +29,7 @@ class Author(BaseModel):
     kind: Literal["demo", "user"]
     name: str
     url: str
+    avatar_url: str | None = None
 
 
 def media_url(media: ProjectMedia) -> str:
@@ -58,7 +59,8 @@ def _author(project: Project) -> Author:
             kind="demo", name=project.demo_author or "", url=project.demo_author_url or ""
         )
     owner = project.owner
-    return Author(kind="user", name=owner.display_name, url=f"/{owner.username}")  # type: ignore[union-attr]
+    avatar = storage.url(owner.avatar_key) if owner.avatar_key else None  # type: ignore[union-attr]
+    return Author(kind="user", name=owner.display_name, url=f"/{owner.username}", avatar_url=avatar)  # type: ignore[union-attr]
 
 
 class ProjectCard(BaseModel):

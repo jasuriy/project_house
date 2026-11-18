@@ -26,3 +26,14 @@ profile shows the new headline; a gitlab.com link gives the GitHub error under t
 aria-invalid; no horizontal scroll at 390; a company account has no developer fields; About box
 focus shows one ring (the box), not two; logged out `/settings/profile` -> 307 to
 `/login?next=/settings/profile`.
+
+## Profile photo (2026-11-18, add-project part 1)
+
+Drawing: screen 10 now has a "Profil rasmi" row at the top. Ours: `ours-edit-photo-1440.png` /
+`-390.png`; the profile with the photo: `../profile/ours-photo-1440.png` (also on every card of that
+person and next to the author on the project page).
+Checks (browser): upload -> button turns into "Rasmni almashtirish" and "Olib tashlash" appears;
+the photo shows on the profile, the person's 4 cards and the project page; a GIF is refused before
+upload with the invalid-image message; "Olib tashlash" clears it and the old file answers 404; no
+horizontal scroll at 390. Backend: stored as a 512 x 512 WebP; replacing deletes the old file;
+company accounts may have a photo.

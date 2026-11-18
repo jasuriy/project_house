@@ -14,6 +14,7 @@ describe("profileErrorField", () => {
     ["invalid_github_link", "github"],
     ["invalid_linkedin_link", "linkedin"],
     ["invalid_website_link", "website"],
+    ["image_too_large", "photo"],
     ["field_not_allowed", "form"],
     ["something_new", "form"],
     ["constructor", "form"],

@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
+import { Avatar } from "@/components/Avatar";
 import { ShareButton } from "@/components/projects/ShareButton";
 import { Link } from "@/i18n/navigation";
-import { initials } from "@/lib/format";
 import { profileLinks } from "@/lib/profile";
 import type { Profile } from "@/lib/types";
 
@@ -33,12 +33,11 @@ export function ProfileCard({ profile, isOwner }: { profile: Profile; isOwner: b
       aria-label={t("profileOf")}
       className="grid gap-3.5 rounded-card border border-border bg-card p-5.5 md:max-lg:grid-cols-[96px_1fr] md:max-lg:items-start md:max-lg:gap-x-5 md:max-lg:gap-y-1.5"
     >
-      <span
-        aria-hidden
-        className="grid size-24 place-items-center rounded-full border border-border bg-linear-135 from-avatar-from to-avatar-to text-[30px] font-bold text-fg md:max-lg:row-span-3"
-      >
-        {initials(profile.display_name)}
-      </span>
+      <Avatar
+        name={profile.display_name}
+        src={profile.avatar_url}
+        className="size-24 border border-border bg-linear-135 from-avatar-from to-avatar-to text-[30px] font-bold text-fg md:max-lg:row-span-3"
+      />
       <div className={`min-w-0 ${second}`}>
         <h1 className="text-h2 font-bold tracking-[-0.015em] break-words text-fg">
           {profile.display_name}

@@ -185,3 +185,73 @@ async def test_delete_someone_elses_upload_is_404(auth_client):
     for target in (upload_id, "not-a-uuid"):
         r = await auth_client.delete(f"{UPLOADS}/{target}")
         assert (r.status_code, _code(r)) == (404, "upload_not_found")
+
+
+# ---- profile photo: PUT/DELETE /api/v1/me/avatar ----------------------------------------------
+
+AVATAR = "/api/v1/me/avatar"
+
+
+async def _put_avatar(client, data: bytes, content_type: str = "image/png"):
+    return await client.put(AVATAR, content=data, headers={"content-type": content_type})
+
+
+async def test_avatar_upload_stores_a_square_photo(auth_client, media_root):
+    await _signup(auth_client)
+    r = await _put_avatar(auth_client, image_bytes("PNG", (900, 600)))
+    assert r.status_code == 200, r.text
+    url = r.json()["avatar_url"]
+    stored = Image.open(media_root / url.rsplit("/", 1)[1])
+    assert (stored.format, stored.size) == ("WEBP", (512, 512))
+    assert (await auth_client.get("/api/v1/users/bek")).json()["avatar_url"] == url
+    assert (await auth_client.get("/api/v1/auth/me")).json()["avatar_url"] == url
+
+
+async def test_avatar_replace_deletes_the_old_file(auth_client, media_root):
+    await _signup(auth_client)
+    old = (await _put_avatar(auth_client, image_bytes())).json()["avatar_url"]
+    new = (await _put_avatar(auth_client, image_bytes("PNG", (50, 50)))).json()["avatar_url"]
+    assert old != new
+    assert not (media_root / old.rsplit("/", 1)[1]).exists()
+    assert (media_root / new.rsplit("/", 1)[1]).exists()
+
+
+async def test_avatar_delete_clears_it_and_its_file(auth_client, media_root):
+    await _signup(auth_client)
+    url = (await _put_avatar(auth_client, image_bytes())).json()["avatar_url"]
+    assert (await auth_client.delete(AVATAR)).status_code == 204
+    assert (await auth_client.get("/api/v1/users/bek")).json()["avatar_url"] is None
+    assert not (media_root / url.rsplit("/", 1)[1]).exists()
+
+
+async def test_company_accounts_can_have_a_photo(auth_client):
+    await _signup(auth_client, account_type="company")
+    assert (await _put_avatar(auth_client, image_bytes())).status_code == 200
+
+
+async def test_avatar_rejects_non_images_and_needs_login(auth_client):
+    r = await _put_avatar(auth_client, image_bytes())
+    assert r.status_code == 401
+    await _signup(auth_client)
+    r = await _put_avatar(auth_client, b"not an image")
+    assert (r.status_code, _code(r)) == (422, "invalid_image")
+
+
+async def test_card_author_carries_the_owners_photo(auth_client):
+    await _signup(auth_client)
+    url = (await _put_avatar(auth_client, image_bytes())).json()["avatar_url"]
+    await auth_client.post(
+        "/api/v1/me/projects",
+        json={
+            "title": "Tool",
+            "one_line_problem": "P.",
+            "short_description": "D.",
+            "field": "web",
+            "tech_stack": ["Go"],
+            "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        },
+    )
+    card = (await auth_client.get("/api/v1/projects")).json()["items"][0]
+    assert card["author"]["avatar_url"] == url
+    detail = (await auth_client.get("/api/v1/users/bek/projects/tool")).json()
+    assert detail["author"]["avatar_url"] == url
