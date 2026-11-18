@@ -158,8 +158,12 @@ async def test_card_shape_for_demo_project(client, db_session):
             demo_author="jacobgil",
             demo_author_url="https://github.com/jacobgil",
             published_at=_day(4),
-            # Position order differs from insert order: the cover is position 0.
-            media=[media("image", "https://x/second.png", 1), media("video", "https://x/v", 0)],
+            # Position order differs from insert order: the cover is the first pictured item by
+            # position (a YouTube video has a thumbnail).
+            media=[
+                media("image", "https://x/second.png", 1),
+                media("video", "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 0),
+            ],
         ),
     )
     item = (await client.get("/api/v1/projects")).json()["items"][0]
@@ -170,8 +174,13 @@ async def test_card_shape_for_demo_project(client, db_session):
         "one_line_problem": "Problem.",
         "field": "cv-ml",
         "tech_stack": ["Py", "C++", "CUDA"],
-        "cover": {"kind": "video", "url": "https://x/v"},
-        "author": {"kind": "demo", "name": "jacobgil", "url": "https://github.com/jacobgil"},
+        "cover": {"kind": "video", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+        "author": {
+            "kind": "demo",
+            "name": "jacobgil",
+            "url": "https://github.com/jacobgil",
+            "avatar_url": None,
+        },
         "published_at": "2026-11-05T00:00:00Z",
     }
 
@@ -188,7 +197,7 @@ async def test_card_for_user_project(client, db_session):
     )
     item = (await client.get("/api/v1/projects")).json()["items"][0]
     assert item["path"] == "/aziz/mine"
-    assert item["author"] == {"kind": "user", "name": "Aziz R.", "url": "/aziz"}
+    assert item["author"] == {"kind": "user", "name": "Aziz R.", "url": "/aziz", "avatar_url": None}
 
 
 # ---- detail -------------------------------------------------------------------------------
@@ -271,7 +280,7 @@ async def test_user_project_200(client, db_session):
     assert r.status_code == 200
     body = r.json()
     assert body["path"] == "/aziz/mine"
-    assert body["author"] == {"kind": "user", "name": "Aziz R.", "url": "/aziz"}
+    assert body["author"] == {"kind": "user", "name": "Aziz R.", "url": "/aziz", "avatar_url": None}
     assert body["role"] == "Backend"
     assert body["is_demo"] is False
 
@@ -349,7 +358,7 @@ async def test_owned_sample_shows_the_owner_and_lives_under_their_name(client, d
     await add_projects(db_session, make_project(slug="tool", owner_id=user.id))
 
     card = (await client.get("/api/v1/projects")).json()["items"][0]
-    assert card["author"] == {"kind": "user", "name": "Bek", "url": "/bek"}
+    assert card["author"] == {"kind": "user", "name": "Bek", "url": "/bek", "avatar_url": None}
     assert card["path"] == "/bek/tool"
     assert (await client.get("/api/v1/users/bek/projects/tool")).status_code == 200
     assert (await client.get("/api/v1/projects/demo/tool")).status_code == 404

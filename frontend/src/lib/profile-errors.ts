@@ -9,7 +9,8 @@ export type ProfileField =
   | "about"
   | "github"
   | "linkedin"
-  | "website";
+  | "website"
+  | "photo";
 
 const FIELD_OF: Record<string, ProfileField> = {
   invalid_display_name: "display_name",
@@ -21,6 +22,9 @@ const FIELD_OF: Record<string, ProfileField> = {
   invalid_github_link: "github",
   invalid_linkedin_link: "linkedin",
   invalid_website_link: "website",
+  invalid_image: "photo",
+  image_too_large: "photo",
+  image_too_many_pixels: "photo",
 };
 
 /** Every code the form has a message for. */

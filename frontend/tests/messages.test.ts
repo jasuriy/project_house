@@ -56,6 +56,8 @@ describe("common namespace", () => {
     const fields = [...FIELDS, "all"].map((f) => `Fields.${f}`);
     expect(keys(en)).toEqual(
       [
+        "Nav.addProject",
+        "Nav.addShort",
         "Nav.feed",
         "Nav.language",
         "Nav.login",

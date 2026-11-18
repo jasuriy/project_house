@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Project House screens</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -148,6 +149,17 @@ section.scr { display: grid; gap: 12px; scroll-margin-top: 16px; }
 .m .steps .cur b { background: var(--primary); color: #fff; }
 .m .steps i { width: 28px; height: 1px; background: var(--border); display: block; }
 .m .footer-acts { display: flex; gap: 10px; justify-content: flex-end; padding-top: 6px; border-top: 1px solid var(--border); }
+.m .footer-acts .btn.danger { margin-right: auto; }
+.m .dim { position: relative; }
+.m .dim::after { content: ""; position: absolute; inset: 0; background: rgb(12 74 110 / 0.35); }
+.m .dialog { position: absolute; z-index: 2; left: 50%; top: 180px; transform: translateX(-50%); width: 420px; background: var(--card); border-radius: 12px; padding: 24px; display: grid; gap: 12px; box-shadow: 0 12px 32px rgb(12 74 110 / 0.18); }
+.m .dialog h3 { margin: 0; font-size: 20px; }
+.m .dialog p { margin: 0; font-size: 15px; color: var(--mute); }
+.m .dialog .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+.m .btn.solid-danger { background: var(--danger); color: #fff; }
+.m.p .dialog { width: calc(100% - 32px); top: 220px; padding: 20px; }
+.m.p .dialog .row { display: grid; grid-template-columns: 1fr; }
+
 .m .preview { display: grid; gap: 14px; position: sticky; top: 0; }
 .m .tg { border-radius: 14px; padding: 10px 12px; background: #e7f0f9; color: #10202f; font-size: 13px; display: grid; gap: 6px; border-left: 3px solid #3d8bd8; }
 .m .tg .site { color: #2b6fb3; font-weight: 600; }
@@ -274,7 +286,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--page-focus); ou
     <p class="note">All people, companies and the student's projects here are made up (Aziz Rahimov, Dilnoza Karimova, Nova Systems). The feed uses projects from our temporary demo data, described in our own words. Images are drawn placeholders. Uzbek interface text is a first draft.</p>
   </div>
   <div class="switch" role="group" aria-label="Screen size"><button type="button" id="b-desktop" aria-pressed="true">Desktop</button><button type="button" id="b-tablet" aria-pressed="false">Planshet</button><button type="button" id="b-phone" aria-pressed="false">Telefon</button></div>
-  <nav class="toc" aria-label="Screens"><a href="#s-feed">1. Lenta</a><a href="#s-project">2. Loyiha sahifasi</a><a href="#s-profile">3. Profil</a><a href="#s-add">4. Loyiha qoʻshish</a><a href="#s-messages">5. Xabarlar</a></nav>
+  <nav class="toc" aria-label="Screens"><a href="#s-feed">1. Lenta</a><a href="#s-project">2. Loyiha sahifasi</a><a href="#s-profile">3. Profil</a><a href="#s-add">4. Loyiha qoʻshish</a><a href="#s-edit">4b. Tahrirlash</a><a href="#s-messages">5. Xabarlar</a></nav>
   <div id="screens"></div>
 </div>
 
@@ -397,12 +409,42 @@ const messages = t => `<div class="${M(t)}">${nav("msg", t)}<div class="main"><d
   </div>
 </div></div></div>`;
 
+
+const editForm = (t) => `<div class="formgrid" style="margin-top:20px">
+  <div class="panel form">
+    <div class="field"><label>Loyiha nomi <span class="req">*</span></label><div class="input">Paxta dalasida begona oʻt aniqlash</div></div>
+    <div class="field"><label>Qanday muammoni hal qiladi? <span class="req">*</span></label><div class="input">Fermerlar begona oʻtni qoʻlda qidiradi va gerbitsidni butun dalaga sepadi.</div><span class="help">Bir jumla. Bu jumla lentada chiqadi.</span></div>
+    <div class="field"><label>Qisqa tavsif <span class="req">*</span></label><div class="input area">Dron suratlaridan begona oʻtlarni YOLO modeli bilan aniqlaydi va xaritada belgilaydi.</div></div>
+    <div class="field"><label>Demo video havolasi</label><div class="input">youtube.com/watch?v=Kq3x...</div><span class="help">YouTube yoki Loom. Video yoki kamida bitta rasm shart.</span></div>
+    <div class="field"><label>Rasmlar (6 tagacha)</label><div class="drop" style="grid-template-columns: repeat(${t ? 4 : 6}, 1fr)">${[0, 1].map(i => `<div class="ph" style="background: linear-gradient(135deg, hsl(${110 + i * 12} 40% ${28 + i * 6}%), hsl(${140 + i * 10} 45% 44%))"></div>`).join("")}<div class="add">+</div></div></div>
+    <div class="row2">
+      <div class="field"><label>Texnologiyalar <span class="req">*</span></label><div class="input"><span class="chip">PyTorch <span class="x">x</span></span><span class="chip">YOLO <span class="x">x</span></span></div></div>
+      <div class="field"><label>Yoʻnalish <span class="req">*</span></label><div class="input">Kompyuter koʻrishi</div></div>
+    </div>
+    <div class="footer-acts"><button class="btn danger" type="button">Oʻchirish</button><button class="btn ghost" type="button">Bekor qilish</button><button class="btn" type="button">Saqlash</button></div>
+  </div>
+  <div class="preview"><div><p class="muted" style="margin:0 0 8px;font-size:13px">Lentada shunday koʻrinadi</p>${card(AZIZ[0])}</div></div>
+  </div>`;
+const edit = t => `<div class="${M(t)}">${nav("", t)}<div class="main">
+  <h2 class="h1">Loyihani tahrirlash</h2>
+  <p class="muted" style="margin:6px 0 0;font-size:14px">Manzil oʻzgarmaydi: projecthouse.uz/aziz-rahimov/paxta-dalasida-begona-o-t-aniqlash</p>
+  ${editForm(t)}
+</div></div>`;
+const editDelete = t => `<div class="${M(t)}" style="position:relative">${nav("", t)}<div class="main dim">
+  <h2 class="h1">Loyihani tahrirlash</h2>
+  ${editForm(t)}
+</div>
+<div class="dialog" role="dialog" aria-label="Oʻchirishni tasdiqlash"><h3>Loyihani oʻchirasizmi?</h3><p>"Paxta dalasida begona oʻt aniqlash" va uning rasmlari butunlay oʻchiriladi. Buni qaytarib boʻlmaydi.</p><div class="row"><button class="btn ghost" type="button">Yoʻq, qoldirish</button><button class="btn solid-danger" type="button">Ha, oʻchirish</button></div></div>
+</div>`;
+
 const SCREENS = [
   { id: "feed", h: "1. Lenta (feed)", d: "Newest first, filter by field (spec D7). Each card: demo, title, one-line problem, tech, author.", dt: "Two columns. Feed and Explore move from the top bar into tabs; the field filters scroll sideways; sort sits next to the heading.", url: "projecthouse.uz", html: feed },
   { id: "project", h: "2. Loyiha sahifasi (project page)", d: "Everything a recruiter needs on the first screen, with a Report link (spec section 10).", dt: "Demo on top, full width. Under it: title, problem, result, tech, and the author with Message on one row, so they stay near the top. Details follow.", url: "projecthouse.uz/aziz-rahimov/paxta-begona-ot", html: project },
   { id: "profile", h: "3. Profil (developer profile)", d: "Who the person is, open to work, Message and Share. Phone and email are never shown. No Follow button in Phase 1.", dt: "The side column becomes a header card across the top; projects in two columns.", url: "projecthouse.uz/aziz-rahimov", html: profile },
   { id: "profile-company", h: "3b. Profil (company account)", d: "One person per company account in Phase 1 (spec D14); the verified badge is set by the admin.", dt: "Same header card as the developer profile, then About.", url: "projecthouse.uz/dilnoza-karimova", html: company },
   { id: "add", h: "4. Loyiha qoʻshish (add project)", d: "Step 2 of 3 after the GitHub link: ownership confirmed, AI-filled fields marked, live preview of the feed card and Telegram link.", dt: "One column. The preview moves below the form, feed card and Telegram link side by side, then the buttons.", url: "projecthouse.uz/new", html: add },
+  { id: "edit", h: "4b. Loyihani tahrirlash (edit project)", d: "Your own project, opened with Tahrirlash on its page. The same form as Add project without the GitHub step; Save keeps the address. Delete sits on the left, away from Save.", dt: "One column; the preview moves below the form.", url: "projecthouse.uz/aziz-rahimov/paxta-dalasida-begona-o-t-aniqlash/edit", html: edit },
+  { id: "edit-delete", h: "4c. Oʻchirishni tasdiqlash (delete confirmation)", d: "Delete asks once more and names the project. Sample projects have only this action (no edit).", dt: "The same dialog over the edit page.", url: "projecthouse.uz/aziz-rahimov/paxta-dalasida-begona-o-t-aniqlash/edit", html: editDelete },
   { id: "messages", h: "5. Xabarlar (messages)", d: "A first message from a stranger lands in Requests (spec D9): accept, ignore or report; reply only after accepting.", dt: "Both panes stay, with a narrower list (280 px).", url: "projecthouse.uz/messages", html: messages }
 ];
 
@@ -459,6 +501,16 @@ const addP = () => `<div class="m p">${topBack("Loyiha qoʻshish")}<div class="c
 </div>
 <div class="actionbar"><button class="btn" type="button">Davom etish</button><button class="btn ghost" type="button">Koʻrish</button></div></div>`;
 
+
+const editP = (confirm) => `<div class="m p" style="position:relative">${topBack("Loyihani tahrirlash")}<div class="content${confirm ? " dim" : ""}" style="padding-bottom:100px">
+  <div class="field"><label>Loyiha nomi <span class="req">*</span></label><div class="input">Paxta dalasida begona oʻt aniqlash</div></div>
+  <div class="field"><label>Qanday muammoni hal qiladi? <span class="req">*</span></label><div class="input">Fermerlar begona oʻtni qoʻlda qidiradi va gerbitsidni butun dalaga sepadi.</div></div>
+  <div class="field"><label>Natija</label><div class="input">91% aniqlik, 420 ta test surati</div></div>
+  <button class="btn danger" type="button" style="justify-self:start">Oʻchirish</button>
+</div>
+<div class="actionbar"><button class="btn" type="button">Saqlash</button><button class="btn ghost" type="button">Bekor qilish</button></div>
+${confirm ? `<div class="dialog" role="dialog" aria-label="Oʻchirishni tasdiqlash"><h3>Loyihani oʻchirasizmi?</h3><p>"Paxta dalasida begona oʻt aniqlash" va uning rasmlari butunlay oʻchiriladi. Buni qaytarib boʻlmaydi.</p><div class="row"><button class="btn solid-danger" type="button">Ha, oʻchirish</button><button class="btn ghost" type="button">Yoʻq, qoldirish</button></div></div>` : ""}</div>`;
+
 const msgListP = () => `<div class="m p"><div class="topbar"><span class="tt">Xabarlar</span><span class="ic">${I.search}</span></div>
   <div class="ctabs" style="background:var(--card)"><a>Suhbatlar</a><a class="on">Soʻrovlar (2)</a></div>
   <div class="items" style="background:var(--card)">
@@ -483,6 +535,8 @@ const PHONE = {
   profile: [["Dasturchi profili", () => profileP("dev")]],
   "profile-company": [["Kompaniya profili", () => profileP("co")]],
   add: [["2-qadam, birinchi ekran", addP]],
+  edit: [["Tahrirlash", () => editP(false)]],
+  "edit-delete": [["Tasdiqlash", () => editP(true)]],
   messages: [["Roʻyxat: Soʻrovlar", msgListP], ["Ochilgan soʻrov", msgConvP]]
 };
 const PDESC = {
@@ -491,6 +545,8 @@ const PDESC = {
   profile: "Header stacked: photo and name, open to work, facts, stats, then Message and Share at full width. Projects in one column below.",
   "profile-company": "Same header, then About.",
   add: "One field per row, a progress bar for the 3 steps, and a fixed bar with Continue and Preview at the bottom.",
+  edit: "One field per row; Save and Cancel in the fixed bar; Delete at the end of the form, away from Save.",
+  "edit-delete": "The dialog over the page; the destructive button first and full width, Keep under it.",
   messages: "Two screens: the list (with the Requests tab) and the opened request with Accept, Ignore and Report."
 };
 

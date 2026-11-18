@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Banner } from "@/components/auth/Banner";
 import { ProviderMark } from "@/components/auth/ProviderButtons";
+import { LogoutButton } from "@/components/LogoutButton";
 import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { apiGet } from "@/lib/api";
@@ -125,6 +126,10 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
           </section>
         </>
       )}
+      {/* The phone header has no logout button (no room at 360 px): it is here. */}
+      <div className="-mb-2 border-t border-border pt-3 md:hidden">
+        <LogoutButton />
+      </div>
     </div>
   );
 }

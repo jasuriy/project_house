@@ -6,7 +6,9 @@
     "settings": "Sozlamalar",
     "logout": "Chiqish",
     "language": "Til",
-    "skip": "Asosiy mazmunga oʻtish"
+    "skip": "Asosiy mazmunga oʻtish",
+    "addProject": "Loyiha qoʻshish",
+    "addShort": "Qoʻshish"
   },
   "Fields": {
     "all": "Hammasi",

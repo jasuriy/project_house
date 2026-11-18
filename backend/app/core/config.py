@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import model_validator
@@ -27,6 +28,9 @@ class Settings(BaseSettings):
     github_client_id: str = ""
     github_client_secret: str = ""
     session_days: int = 30
+    # Uploaded images (disk storage, app/media/storage.py). Default: backend/media, resolved from
+    # this file so it never depends on the working directory.
+    media_root: str = str(Path(__file__).resolve().parents[2] / "media")
 
     @model_validator(mode="after")
     def _require_or_default_secrets(self) -> Self:

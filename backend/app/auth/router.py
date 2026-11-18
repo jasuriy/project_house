@@ -62,7 +62,7 @@ def _clear_session_cookie(response: Response) -> None:
 async def _account(db: AsyncSession, user: User) -> AccountResponse:
     email, email_verified, providers = await service.account_summary(db, user.id)
     return AccountResponse(
-        **UserPublic.model_validate(user).model_dump(),
+        **UserPublic.of(user).model_dump(),
         email=email,
         email_verified=email_verified,
         providers=providers,

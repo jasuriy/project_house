@@ -22,6 +22,11 @@ export function clientGet<T>(path: string): Promise<ApiResult<T>> {
   return request<T>(path, { method: "GET" });
 }
 
+/** DELETE. Never throws. 204 gives `{ ok: true, data: null }`. */
+export function clientDelete(path: string): Promise<ApiResult<null>> {
+  return request<null>(path, { method: "DELETE" });
+}
+
 /** JSON PATCH. Never throws. */
 export function clientPatch<T>(path: string, body: unknown): Promise<ApiResult<T>> {
   return request<T>(path, {

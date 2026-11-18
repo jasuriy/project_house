@@ -30,3 +30,10 @@ async def current_user(user: Annotated[User | None, Depends(current_user_optiona
     if user is None:
         raise AppError(401, "not_authenticated", "Not authenticated")
     return user
+
+
+async def current_developer(user: Annotated[User, Depends(current_user)]) -> User:
+    """Only developer accounts publish projects (spec section 3); companies browse."""
+    if user.account_type != "developer":
+        raise AppError(403, "developers_only", "Only developer accounts can add projects")
+    return user

@@ -19,6 +19,6 @@ async def get_user(
     if user is None:
         raise AppError(404, "user_not_found", "User not found")
     return ProfileResponse(
-        **UserPublic.model_validate(user).model_dump(),
+        **UserPublic.of(user).model_dump(),
         project_count=await service.count_projects(session, user.id),
     )

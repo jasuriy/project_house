@@ -1,21 +1,25 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { formatDate, initials } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { safeExternalUrl } from "@/lib/safe-url";
 import type { ProjectDetail } from "@/lib/types";
 import { MediaPlayer } from "./MediaPlayer";
+import { Avatar } from "@/components/Avatar";
+import { DeleteProject } from "@/components/editor/DeleteProject";
 import { ShareButton } from "./ShareButton";
 
 const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const;
 
 /** The project page body, laid out as mockup screen 2 ("Loyiha sahifasi"). */
-export function ProjectView({ project }: { project: ProjectDetail }) {
+/** `viewer` is the signed-in username: the owner gets Tahrirlash, or O'chirish for a sample. */
+export function ProjectView({ project, viewer }: { project: ProjectDetail; viewer: string | null }) {
   const t = useTranslations("Project");
   const tf = useTranslations("Fields");
   const tn = useTranslations("Nav");
   const locale = useLocale();
   const fieldLabel = tf(project.field);
   const authorUrl = project.author.kind === "demo" ? safeExternalUrl(project.author.url) : null;
+  const isOwner = viewer !== null && project.author.kind === "user" && project.author.url === `/${viewer}`;
 
   const links = [
     { href: safeExternalUrl(project.github_url), label: t("github") },
@@ -95,12 +99,11 @@ export function ProjectView({ project }: { project: ProjectDetail }) {
           <div className="h-px bg-border" />
 
           <div className="flex items-center gap-3">
-            <span
-              aria-hidden
-              className="grid size-11 flex-none place-items-center rounded-full border border-border bg-muted text-small font-semibold text-fg"
-            >
-              {initials(project.author.name)}
-            </span>
+            <Avatar
+              name={project.author.name}
+              src={project.author.avatar_url}
+              className="size-11 border border-border bg-muted text-small font-semibold text-fg"
+            />
             <div className="grid min-w-0 justify-items-start gap-0.5 text-ui font-semibold text-fg">
               {project.author.kind === "user" ? (
                 <Link href={project.author.url} className="inline-flex min-h-11 max-w-full items-center truncate hover:text-primary md:min-h-0">
@@ -133,6 +136,14 @@ export function ProjectView({ project }: { project: ProjectDetail }) {
               </a>
             ))}
             <ShareButton label={t("share")} copiedLabel={t("copied")} />
+            {isOwner && !project.is_demo && (
+              <Link href={`${project.path}/edit`} className="inline-flex min-h-11 items-center rounded-control text-small font-semibold text-primary hover:underline md:min-h-0">
+                {t("edit")}
+              </Link>
+            )}
+            {isOwner && project.is_demo && viewer && (
+              <DeleteProject slug={project.slug} title={project.title} username={viewer} look="link" />
+            )}
           </div>
 
           {project.author.kind === "demo" && (

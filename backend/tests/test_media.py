@@ -1,0 +1,269 @@
+"""Image uploads (POST /api/v1/me/uploads), disk storage and the media route."""
+
+import struct
+import zlib
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from PIL import Image
+from sqlalchemy import func, select, update
+
+from app.core.config import get_settings
+from app.core.errors import AppError
+from app.media.models import Upload
+from app.media.service import consume_uploads
+from tests.media_helpers import UPLOADS, image_bytes, signup
+
+pytest_plugins = ["tests.auth_fixtures", "tests.media_fixtures"]
+
+LIMIT = 5 * 1024 * 1024
+
+
+def png_claiming(width: int, height: int) -> bytes:
+    """A tiny PNG whose header claims `width` x `height` (a decompression bomb, without the RAM)."""
+    data = bytearray(image_bytes("PNG", (1, 1)))
+    data[16:24] = struct.pack(">II", width, height)  # IHDR width, height
+    data[29:33] = struct.pack(">I", zlib.crc32(bytes(data[12:29])))  # IHDR CRC over type + data
+    return bytes(data)
+
+
+async def _signup(client, username: str = "bek", account_type: str = "developer") -> None:
+    await signup(client, username, account_type)
+
+
+async def _upload(client, data: bytes, content_type: str = "image/png"):
+    return await client.post(UPLOADS, content=data, headers={"content-type": content_type})
+
+
+def _code(response) -> str:
+    return response.json()["error"]["code"]
+
+
+async def test_upload_png_returns_id_and_webp_url(auth_client):
+    await _signup(auth_client)
+    r = await _upload(auth_client, image_bytes())
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["url"].startswith(get_settings().public_base_url + "/api/v1/media/")
+    assert body["url"].endswith(".webp")
+    served = await auth_client.get(body["url"].removeprefix(get_settings().public_base_url))
+    assert served.status_code == 200
+    assert served.headers["content-type"] == "image/webp"
+    assert served.headers["x-content-type-options"] == "nosniff"
+
+
+async def test_upload_strips_metadata_and_resizes(auth_client, media_root):
+    await _signup(auth_client)
+    exif = Image.Exif()
+    exif[0x010F] = "SecretCam"  # camera maker
+    data = image_bytes("JPEG", (3000, 1000), exif=exif)
+    url = (await _upload(auth_client, data, "image/jpeg")).json()["url"]
+    stored = Image.open(media_root / url.rsplit("/", 1)[1])
+    assert (stored.format, stored.size) == ("WEBP", (1600, 533))
+    assert not stored.getexif()
+
+
+@pytest.mark.parametrize(
+    ("data", "content_type"),
+    [
+        (b"not an image at all", "image/png"),
+        (b"", "image/png"),
+        (image_bytes("GIF"), "image/gif"),
+        (image_bytes("GIF"), "image/png"),
+    ],
+)
+async def test_upload_rejects_non_images(auth_client, data, content_type):
+    await _signup(auth_client)
+    r = await _upload(auth_client, data, content_type)
+    assert (r.status_code, _code(r)) == (422, "invalid_image")
+
+
+async def test_upload_over_5mb_is_413(auth_client):
+    await _signup(auth_client)
+    r = await _upload(auth_client, b"\0" * (LIMIT + 1))
+    assert (r.status_code, _code(r)) == (413, "image_too_large")
+
+
+async def test_upload_over_5mb_without_content_length_is_413(auth_client):
+    await _signup(auth_client)
+
+    async def chunks():
+        for _ in range(6):
+            yield b"\0" * (1024 * 1024)
+
+    r = await auth_client.post(UPLOADS, content=chunks(), headers={"content-type": "image/png"})
+    assert (r.status_code, _code(r)) == (413, "image_too_large")
+
+
+@pytest.mark.parametrize("size", [(20000, 20000), (7000, 7000)])  # 400 MP, and 49 MP (1x-2x limit)
+async def test_upload_rejects_a_header_claiming_huge_pixels(auth_client, size):
+    await _signup(auth_client)
+    r = await _upload(auth_client, png_claiming(*size))
+    assert (r.status_code, _code(r)) == (422, "image_too_many_pixels")
+
+
+async def test_pixel_limit_is_checked_before_decoding(auth_client, monkeypatch):
+    # A valid 20x20 image (400 px) over a lowered limit: only the header check can refuse it.
+    monkeypatch.setattr("app.media.images.MAX_PIXELS", 100)
+    await _signup(auth_client)
+    r = await _upload(auth_client, image_bytes("PNG", (20, 20)))
+    assert (r.status_code, _code(r)) == (422, "image_too_many_pixels")
+
+
+async def test_upload_requires_login(auth_client):
+    r = await _upload(auth_client, image_bytes())
+    assert r.status_code == 401
+
+
+async def test_upload_by_company_is_403(auth_client):
+    await _signup(auth_client, account_type="company")
+    r = await _upload(auth_client, image_bytes())
+    assert (r.status_code, _code(r)) == (403, "developers_only")
+
+
+async def test_thirteenth_unused_upload_is_429(auth_client):
+    await _signup(auth_client)
+    for _ in range(12):
+        assert (await _upload(auth_client, image_bytes())).status_code == 201
+    r = await _upload(auth_client, image_bytes())
+    assert (r.status_code, _code(r)) == (429, "too_many_uploads")
+
+
+async def test_old_unused_uploads_of_anyone_are_cleaned(
+    auth_client, client, db_session, media_root
+):
+    await _signup(auth_client, "alice")
+    old_url = (await _upload(auth_client, image_bytes())).json()["url"]
+    await db_session.execute(
+        update(Upload).values(created_at=datetime.now(UTC) - timedelta(hours=25))
+    )
+    await db_session.commit()
+    await auth_client.post("/api/v1/auth/logout")
+    await _signup(auth_client, "bobby")
+    assert (await _upload(auth_client, image_bytes())).status_code == 201
+
+    assert await db_session.scalar(select(func.count()).select_from(Upload)) == 1
+    assert not (media_root / old_url.rsplit("/", 1)[1]).exists()
+
+
+@pytest.mark.parametrize("key", ["..%2Fsecret.webp", "abc.png", "x", "0" * 32 + ".png"])
+async def test_media_route_rejects_bad_keys(client, key):
+    assert (await client.get(f"/api/v1/media/{key}")).status_code == 404
+
+
+async def test_consume_uploads_only_own_and_once(auth_client, db_session):
+    await _signup(auth_client, "alice")
+    upload_id = (await _upload(auth_client, image_bytes())).json()["id"]
+    (alice,) = await db_session.scalars(select(Upload.owner_id))
+
+    with pytest.raises(AppError) as exc:
+        await consume_uploads(db_session, alice + 1, [upload_id])
+    assert exc.value.code == "invalid_images"
+    await db_session.rollback()
+
+    assert len(await consume_uploads(db_session, alice, [upload_id])) == 1
+    await db_session.commit()
+    with pytest.raises(AppError):
+        await consume_uploads(db_session, alice, [upload_id])
+
+
+async def test_delete_own_unused_upload_frees_it(auth_client, media_root):
+    await _signup(auth_client)
+    body = (await _upload(auth_client, image_bytes())).json()
+    r = await auth_client.delete(f"{UPLOADS}/{body['id']}")
+    assert r.status_code == 204
+    assert not (media_root / body["url"].rsplit("/", 1)[1]).exists()
+    for _ in range(12):  # all 12 places are free again
+        assert (await _upload(auth_client, image_bytes())).status_code == 201
+
+
+async def test_delete_someone_elses_upload_is_404(auth_client):
+    await _signup(auth_client, "alice")
+    upload_id = (await _upload(auth_client, image_bytes())).json()["id"]
+    await auth_client.post("/api/v1/auth/logout")
+    await _signup(auth_client, "bobby")
+    for target in (upload_id, "not-a-uuid"):
+        r = await auth_client.delete(f"{UPLOADS}/{target}")
+        assert (r.status_code, _code(r)) == (404, "upload_not_found")
+
+
+# ---- profile photo: PUT/DELETE /api/v1/me/avatar ----------------------------------------------
+
+AVATAR = "/api/v1/me/avatar"
+
+
+async def _put_avatar(client, data: bytes, content_type: str = "image/png"):
+    return await client.put(AVATAR, content=data, headers={"content-type": content_type})
+
+
+async def test_avatar_upload_stores_a_square_photo(auth_client, media_root):
+    await _signup(auth_client)
+    r = await _put_avatar(auth_client, image_bytes("PNG", (900, 600)))
+    assert r.status_code == 200, r.text
+    url = r.json()["avatar_url"]
+    stored = Image.open(media_root / url.rsplit("/", 1)[1])
+    assert (stored.format, stored.size) == ("WEBP", (512, 512))
+    assert (await auth_client.get("/api/v1/users/bek")).json()["avatar_url"] == url
+    assert (await auth_client.get("/api/v1/auth/me")).json()["avatar_url"] == url
+
+
+async def test_avatar_replace_deletes_the_old_file(auth_client, media_root):
+    await _signup(auth_client)
+    old = (await _put_avatar(auth_client, image_bytes())).json()["avatar_url"]
+    new = (await _put_avatar(auth_client, image_bytes("PNG", (50, 50)))).json()["avatar_url"]
+    assert old != new
+    assert not (media_root / old.rsplit("/", 1)[1]).exists()
+    assert (media_root / new.rsplit("/", 1)[1]).exists()
+
+
+async def test_avatar_delete_clears_it_and_its_file(auth_client, media_root):
+    await _signup(auth_client)
+    url = (await _put_avatar(auth_client, image_bytes())).json()["avatar_url"]
+    assert (await auth_client.delete(AVATAR)).status_code == 204
+    assert (await auth_client.get("/api/v1/users/bek")).json()["avatar_url"] is None
+    assert not (media_root / url.rsplit("/", 1)[1]).exists()
+
+
+async def test_company_accounts_can_have_a_photo(auth_client):
+    await _signup(auth_client, account_type="company")
+    assert (await _put_avatar(auth_client, image_bytes())).status_code == 200
+
+
+async def test_avatar_rejects_non_images_and_needs_login(auth_client):
+    r = await _put_avatar(auth_client, image_bytes())
+    assert r.status_code == 401
+    await _signup(auth_client)
+    r = await _put_avatar(auth_client, b"not an image")
+    assert (r.status_code, _code(r)) == (422, "invalid_image")
+
+
+async def test_card_author_carries_the_owners_photo(auth_client):
+    await _signup(auth_client)
+    url = (await _put_avatar(auth_client, image_bytes())).json()["avatar_url"]
+    await auth_client.post(
+        "/api/v1/me/projects",
+        json={
+            "title": "Tool",
+            "one_line_problem": "P.",
+            "short_description": "D.",
+            "field": "web",
+            "tech_stack": ["Go"],
+            "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        },
+    )
+    card = (await auth_client.get("/api/v1/projects")).json()["items"][0]
+    assert card["author"]["avatar_url"] == url
+    detail = (await auth_client.get("/api/v1/users/bek/projects/tool")).json()
+    assert detail["author"]["avatar_url"] == url
+
+
+async def test_multi_picture_phone_jpeg_is_accepted(auth_client):
+    # Phones write some photos as multi-picture JPEGs (Pillow reads them as "MPO").
+    await _signup(auth_client)
+    import io
+
+    first, second = Image.new("RGB", (60, 40), (10, 120, 200)), Image.new("RGB", (30, 20))
+    buffer = io.BytesIO()
+    first.save(buffer, "MPO", save_all=True, append_images=[second])
+    r = await _upload(auth_client, buffer.getvalue(), "image/jpeg")
+    assert r.status_code == 201, r.text

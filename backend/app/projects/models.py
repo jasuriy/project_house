@@ -29,6 +29,9 @@ class Project(Base):
         CheckConstraint("field IN (" + ", ".join(f"'{f}'" for f in FIELDS) + ")", name="field"),
         # The frontend renders live_url as a link: only http(s), never a javascript: URL.
         CheckConstraint("live_url IS NULL OR live_url ~* '^https?://'", name="live_url"),
+        CheckConstraint(
+            "demo_video_url IS NULL OR demo_video_url ~* '^https?://'", name="demo_video_url"
+        ),
         # Real projects: one slug per owner. Demo rows have no owner: one slug among demo rows.
         Index(
             "uq_projects_owner_id_slug",
@@ -88,7 +91,11 @@ Index("ix_projects_feed", Project.published_at.desc(), Project.id.desc())
 
 class ProjectMedia(Base):
     __tablename__ = "project_media"
-    __table_args__ = (CheckConstraint("kind IN ('image', 'video')", name="kind"),)
+    __table_args__ = (
+        CheckConstraint("kind IN ('image', 'video')", name="kind"),
+        # External media (video links, the samples) have a URL; images we store have a key.
+        CheckConstraint("url IS NOT NULL OR storage_key IS NOT NULL", name="url_or_key"),
+    )
     __mapper_args__: ClassVar[dict[str, Any]] = {"eager_defaults": True}
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -96,9 +103,11 @@ class ProjectMedia(Base):
         ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
     kind: Mapped[str] = mapped_column(Text)
-    url: Mapped[str] = mapped_column(Text)
+    url: Mapped[str | None] = mapped_column(Text)
     position: Mapped[int] = mapped_column(Integer)
     alt: Mapped[str | None] = mapped_column(Text)
+    # Set for images we store (app/media/storage.py); NULL for external URLs (the samples).
+    storage_key: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

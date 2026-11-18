@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { ProfilePhoto } from "@/components/profile/ProfilePhoto";
 import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { getCurrentUser } from "@/lib/session";
@@ -37,6 +38,8 @@ export default async function EditProfilePage({ params }: PageProps<"/[locale]/s
           {t("viewProfile")}
         </Link>
       </div>
+      <ProfilePhoto name={user.display_name} photo={user.avatar_url} />
+      <div className="h-px bg-border" />
       <ProfileForm account={user} />
     </div>
   );

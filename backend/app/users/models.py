@@ -37,6 +37,8 @@ class User(Base):
         Boolean, default=False, server_default=text("false")
     )
     avatar_url: Mapped[str | None] = mapped_column(Text)
+    # The uploaded profile photo (app/media/storage.py); the API builds avatar_url from it.
+    avatar_key: Mapped[str | None] = mapped_column(Text)
     # Profile links as {label: url}, e.g. {"github": "https://github.com/..."}.
     links: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default=dict, server_default=text("'{}'::jsonb")

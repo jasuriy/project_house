@@ -13,7 +13,6 @@ import argparse
 import asyncio
 import json
 import os
-import re
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -27,17 +26,13 @@ from sqlalchemy.orm import selectinload
 
 from app.core.db import dispose_engine, get_engine
 from app.projects.models import Project, ProjectMedia
+from app.projects.slugs import slugify
 from app.users import service as users_service
 
 # This file is <repo>/backend/app/projects/seed_demo.py: never resolved from the working directory.
 DEFAULT_SEED_FILE = Path(__file__).resolve().parents[3] / "seed" / "demo-projects.json"
 
 VIDEO_HOSTS = ("youtube.com", "youtu.be", "loom.com", "vimeo.com")
-
-
-def slugify(title: str) -> str:
-    """Lowercase; every run of characters outside [a-z0-9] becomes one '-'; trimmed."""
-    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
 
 
 def media_kind(url: str) -> str:
