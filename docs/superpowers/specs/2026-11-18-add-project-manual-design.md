@@ -145,6 +145,26 @@ library is needed and the 5 MB cap is enforced while the bytes arrive (advisor, 
   crop), stored in a new nullable `users.avatar_key` (migration 0005); the API keeps returning
   `avatar_url`, built from the key; the profile, cards and project page show it instead of initials.
 
+## Calls made during the build (Claude's, Bek can override)
+
+- Two creates with the same title at the same moment: the second answers 409 `slug_taken` ("try
+  again"); no automatic retry (the plan's retry was dropped as needless).
+- Over 40 megapixels has its own code `image_too_many_pixels` (not `invalid_image`), so the message
+  says what is wrong.
+- `DELETE /api/v1/me/uploads/{id}`: removing an image from the form frees its upload at once (the
+  12-upload cap would otherwise fill up during one editing session).
+- Image conversion runs in a worker thread, at most 2 at a time (branch review: ~0.5 s per phone
+  photo would otherwise block every other request).
+- `demo_video_url` has a database CHECK for http(s), like `live_url`.
+- Multi-picture JPEGs (Pillow format "MPO", written by phones) are accepted; the first picture is
+  used.
+- Phone header: language, add and settings; logout sits at the bottom of Settings on phones.
+
+DEFERRED (from the branch review): a per-user upload rate limit (with the reverse proxy, Step 0b);
+two concurrent photo uploads by one user can leave one file behind; a file written just before a
+failed commit stays on disk. The day-old cleanup does not cover those; a periodic disk sweep at
+deploy would.
+
 ## Left to the builder
 
 Component split, the tags input details, exact cache headers, how progress is shown, test data.

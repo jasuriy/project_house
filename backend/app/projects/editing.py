@@ -93,7 +93,7 @@ def _github(value: Any) -> str | None:
             and not parts.query
             and not parts.fragment
             and len(segments) == 2
-            and all(GITHUB_PART.fullmatch(s) for s in segments)
+            and all(GITHUB_PART.fullmatch(s) and s.strip(".") for s in segments)
         ):
             return value
     raise _fail("invalid_github_url")

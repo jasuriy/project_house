@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { clientDelete } from "@/lib/client-api";
 import { projectErrorKey } from "@/lib/project-errors";
@@ -33,6 +33,7 @@ export function DeleteProject({
   const te = useTranslations("EditorErrors");
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,11 +58,11 @@ export function DeleteProject({
       </button>
       <dialog
         ref={dialog}
-        aria-labelledby="delete-project-title"
+        aria-labelledby={titleId}
         className="m-auto w-[calc(100%-2rem)] max-w-[420px] rounded-card bg-card p-5 text-fg shadow-xl backdrop:bg-fg/35 md:p-6"
       >
         <div className="grid gap-3">
-          <h2 id="delete-project-title" className="text-h3 font-semibold">
+          <h2 id={titleId} className="text-h3 font-semibold">
             {t("deleteTitle")}
           </h2>
           <p className="text-ui text-mute">{t("deleteText", { title })}</p>
@@ -81,6 +82,7 @@ export function DeleteProject({
             </button>
             <button
               type="button"
+              autoFocus
               onClick={() => dialog.current?.close()}
               disabled={pending}
               className="inline-flex h-11 items-center justify-center rounded-control border border-border bg-card px-4 text-ui font-semibold text-fg hover:border-primary md:h-10"

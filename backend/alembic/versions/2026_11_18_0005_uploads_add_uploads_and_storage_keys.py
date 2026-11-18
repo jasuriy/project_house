@@ -1,5 +1,7 @@
 """add uploads, project_media.storage_key, users.avatar_key
 
+Downgrade deletes the media rows of stored images (they have no URL); their files stay on disk.
+
 Revision ID: 0005_uploads
 Revises: 0004_users_about
 Create Date: 2026-11-18 18:00:00
@@ -46,10 +48,16 @@ def upgrade() -> None:
         "url IS NOT NULL OR storage_key IS NOT NULL",
     )
     op.add_column("users", sa.Column("avatar_key", sa.Text(), nullable=True))
+    op.create_check_constraint(
+        op.f("ck_projects_demo_video_url"),
+        "projects",
+        "demo_video_url IS NULL OR demo_video_url ~* '^https?://'",
+    )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    op.drop_constraint(op.f("ck_projects_demo_video_url"), "projects", type_="check")
     op.drop_column("users", "avatar_key")
     op.drop_constraint(op.f("ck_project_media_url_or_key"), "project_media", type_="check")
     op.execute("DELETE FROM project_media WHERE url IS NULL")

@@ -14,6 +14,8 @@ def youtube_id(url: str) -> str | None:
         parts = urlsplit(url)
     except ValueError:
         return None
+    if parts.scheme not in ("http", "https"):
+        return None
     candidate = None
     if parts.hostname == "youtu.be":
         candidate = parts.path[1:]

@@ -29,6 +29,9 @@ class Project(Base):
         CheckConstraint("field IN (" + ", ".join(f"'{f}'" for f in FIELDS) + ")", name="field"),
         # The frontend renders live_url as a link: only http(s), never a javascript: URL.
         CheckConstraint("live_url IS NULL OR live_url ~* '^https?://'", name="live_url"),
+        CheckConstraint(
+            "demo_video_url IS NULL OR demo_video_url ~* '^https?://'", name="demo_video_url"
+        ),
         # Real projects: one slug per owner. Demo rows have no owner: one slug among demo rows.
         Index(
             "uq_projects_owner_id_slug",

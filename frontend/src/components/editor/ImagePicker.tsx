@@ -40,6 +40,7 @@ export function ImagePicker({
   const input = useRef<HTMLInputElement>(null);
   const labelId = useId();
   const nextKey = useRef(0); // crypto.randomUUID needs https; a counter is enough for list keys
+  const removed = useRef(new Set<string>()); // tiles removed while their upload was running
   const noteId = `${labelId}-note`;
 
   const update = (key: string, change: Partial<ImageItem>) =>
@@ -61,6 +62,11 @@ export function ImagePicker({
       ]);
       if (refused) continue;
       const result = await uploadImage(file);
+      if (removed.current.has(key)) {
+        if (result.ok) discardUpload(result.data.id);
+        URL.revokeObjectURL(local);
+        continue;
+      }
       if (result.ok) {
         update(key, { uploading: false, upload: result.data.id, url: result.data.url });
         URL.revokeObjectURL(local);
@@ -72,9 +78,10 @@ export function ImagePicker({
   }
 
   function remove(image: ImageItem) {
+    if (image.uploading) removed.current.add(image.key);
     setImages((list) => list.filter((item) => item.key !== image.key));
     if (image.upload) discardUpload(image.upload); // free its place among the 12 unused uploads
-    if (image.url.startsWith("blob:")) URL.revokeObjectURL(image.url);
+    if (image.url.startsWith("blob:") && !image.uploading) URL.revokeObjectURL(image.url);
   }
 
   function move(index: number, by: -1 | 1) {

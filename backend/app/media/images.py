@@ -7,7 +7,7 @@ from PIL import Image, ImageOps
 
 from app.core.errors import AppError
 
-ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
+ALLOWED_FORMATS = {"JPEG", "MPO", "PNG", "WEBP"}  # MPO: multi-picture JPEG from phones
 MAX_PIXELS = 40_000_000  # checked from the header, before any pixel is decoded
 
 

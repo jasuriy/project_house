@@ -78,6 +78,12 @@ async def test_create_with_images_keeps_their_order(auth_client):
         ({"role": "x" * 121}, "invalid_role"),
         ({"video_url": "https://vimeo.com/123"}, "invalid_video_url"),
         ({"video_url": "https://www.youtube.com/watch?v=short"}, "invalid_video_url"),
+        (
+            {"video_url": "javascript://www.youtube.com/watch?v=abcdefghijk&x=%0Aalert(1)"},
+            "invalid_video_url",
+        ),
+        ({"video_url": "ftp://youtu.be/abcdefghijk"}, "invalid_video_url"),
+        ({"github_url": "https://github.com/../.."}, "invalid_github_url"),
         ({"images": [{"upload": "not-a-uuid"}]}, "invalid_images"),
     ],
 )

@@ -33,7 +33,7 @@ export default async function EditProjectPage({
 
   const user = await getCurrentUser();
   if (!user) return redirect({ href: `/login?next=/${username}/${slug}/edit`, locale });
-  if (user.username !== username) notFound();
+  if (user.username !== username || user.account_type !== "developer") notFound();
 
   const cookie = (await headers()).get("cookie") ?? "";
   const project = await apiGet<EditableProject>(`/api/v1/me/projects/${encodeURIComponent(slug)}`, { cookie });

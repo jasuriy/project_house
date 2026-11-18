@@ -255,3 +255,15 @@ async def test_card_author_carries_the_owners_photo(auth_client):
     assert card["author"]["avatar_url"] == url
     detail = (await auth_client.get("/api/v1/users/bek/projects/tool")).json()
     assert detail["author"]["avatar_url"] == url
+
+
+async def test_multi_picture_phone_jpeg_is_accepted(auth_client):
+    # Phones write some photos as multi-picture JPEGs (Pillow reads them as "MPO").
+    await _signup(auth_client)
+    import io
+
+    first, second = Image.new("RGB", (60, 40), (10, 120, 200)), Image.new("RGB", (30, 20))
+    buffer = io.BytesIO()
+    first.save(buffer, "MPO", save_all=True, append_images=[second])
+    r = await _upload(auth_client, buffer.getvalue(), "image/jpeg")
+    assert r.status_code == 201, r.text

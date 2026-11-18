@@ -1,5 +1,7 @@
+from functools import partial
 from typing import Annotated
 
+import anyio
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +15,8 @@ from app.users.models import User
 router = APIRouter(tags=["media"])
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+# Decoding and re-encoding take ~0.5 s for a phone photo: off the event loop, two at a time.
+CONVERSIONS = anyio.CapacityLimiter(2)
 AVATAR_SIDE = 512
 
 
@@ -33,13 +37,19 @@ async def read_image_body(request: Request) -> bytes:
     return bytes(data)
 
 
+async def to_webp(data: bytes, square: int | None = None) -> bytes:
+    return await anyio.to_thread.run_sync(
+        partial(images.to_webp, data, square=square), limiter=CONVERSIONS
+    )
+
+
 @router.post("/me/uploads", status_code=201)
 async def upload_image(
     request: Request,
     user: Annotated[User, Depends(current_developer)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, str]:
-    webp = images.to_webp(await read_image_body(request))
+    webp = await to_webp(await read_image_body(request))
     upload = await service.create_upload(session, user.id, webp)
     return {"id": str(upload.id), "url": storage.url(upload.key)}
 
@@ -60,7 +70,7 @@ async def set_avatar(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, str]:
     """The profile photo (any account type): cropped to a 512 px square; replaces the old one."""
-    webp = images.to_webp(await read_image_body(request), square=AVATAR_SIDE)
+    webp = await to_webp(await read_image_body(request), square=AVATAR_SIDE)
     key = await service.replace_avatar(session, user, storage.save(webp))
     return {"avatar_url": storage.url(key)}
 
