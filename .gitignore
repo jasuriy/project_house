@@ -11,5 +11,8 @@ node_modules/
 # Local environment
 .env
 
+# Uploaded images (disk storage in development)
+backend/media/
+
 # Playwright MCP working files and third-party reference screenshots (never commit)
 .playwright-mcp/

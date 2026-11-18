@@ -8,3 +8,4 @@ httpx==0.28.1
 Authlib==1.9.8
 pwdlib[argon2]==0.4.2
 itsdangerous==2.2.0
+Pillow==13.0.0

@@ -99,6 +99,8 @@ class ProjectMedia(Base):
     url: Mapped[str] = mapped_column(Text)
     position: Mapped[int] = mapped_column(Integer)
     alt: Mapped[str | None] = mapped_column(Text)
+    # Set for images we store (app/media/storage.py); NULL for external URLs (the samples).
+    storage_key: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
