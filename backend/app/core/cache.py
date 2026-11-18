@@ -1,8 +1,9 @@
 """API answers are never cached by a proxy (the deploy puts Vercel's CDN in front of the API).
 
 Many answers depend on who asks (liked, saved, your lists, can_delete), so every /api answer says
-`private, no-store`. Images under /api/v1/media keep their own long public header: their keys
-never change. Pure ASGI middleware, like the Origin check, so it also covers error answers.
+`private, no-store` unless its route set its own header (images: a long public one, their keys
+never change). Pure ASGI middleware, like the Origin check. Unexpected 500s are answered outside
+all middleware, so app/core/errors.py sets the header on them itself.
 """
 
 from starlette.datastructures import MutableHeaders
@@ -17,7 +18,7 @@ class NoStoreApiMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         path = scope.get("path", "") if scope["type"] == "http" else ""
-        if not path.startswith("/api/") or path.startswith("/api/v1/media/"):
+        if not path.startswith("/api/"):
             await self.app(scope, receive, send)
             return
 

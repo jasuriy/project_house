@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEV_DATABASE_URL = "postgresql+asyncpg://projecthouse:projecthouse_dev@127.0.0.1:55432/projecthouse"
 DEV_SECRET_KEY = "dev-only-change-me"  # public placeholder; production requires its own key
@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     `database_url` and `secret_key` have a dev default only outside production; in production
     an empty or missing value fails at startup, so a dev default can never reach production.
     """
+
+    # A validation error must never print a value: the input holds every secret.
+    model_config = SettingsConfigDict(hide_input_in_errors=True)
 
     app_env: Literal["development", "test", "production"] = "development"
     database_url: str = ""

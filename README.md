@@ -81,7 +81,7 @@ providers' own pages or CLIs, never committed.
 |---|---|
 | `APP_ENV` | `production` |
 | `SECRET_KEY` | 32+ random characters |
-| `DATABASE_URL` | Neon direct endpoint, `postgresql+asyncpg://...?ssl=require` |
+| `DATABASE_URL` | Neon's direct endpoint (no `-pooler` in the host) in asyncpg form: `postgresql+asyncpg://USER:PASSWORD@HOST/neondb?ssl=verify-full`. Replace Neon's whole query (`sslmode=...&channel_binding=...`) with `ssl=verify-full`; asyncpg rejects the other two. The certificate is checked against the image's CA bundle (`PGSSLROOTCERT`). |
 | `PUBLIC_BASE_URL` | `https://<name>.vercel.app` |
 | `CORS_ORIGINS` | `["https://<name>.vercel.app"]` |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | the production OAuth app (callback `https://<name>.vercel.app/api/v1/auth/oauth/github/callback`) |
@@ -108,8 +108,10 @@ modal run backend/modal_app.py::seed_samples --owner jasurai
 
 ### Every later release
 
-1. Before a migration: `pg_dump "<Neon direct URL>" > projecthouse-YYYYMMDD.sql`. Keep it outside
-   the repository.
-2. `modal deploy backend/modal_app.py`, then `modal run backend/modal_app.py::migrate` if the
-   release has a migration.
-3. `cd frontend && npx vercel --prod`.
+1. If the release has a migration: back up first, with Neon's own (libpq) URL, not the asyncpg form:
+   `pg_dump "postgresql://USER:PASSWORD@HOST/neondb?sslmode=require" > D:/backups/projecthouse-YYYYMMDD.sql`
+   (a folder outside the repository).
+2. Migrate before deploying: `modal run backend/modal_app.py::migrate`. The old code keeps working
+   against an added column; a migration that drops or renames something needs its own plan.
+3. `modal deploy backend/modal_app.py`.
+4. `cd frontend && npx vercel --prod`.

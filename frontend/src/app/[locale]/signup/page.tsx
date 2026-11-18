@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { Banner } from "@/components/auth/Banner";
 import { ProviderButtons } from "@/components/auth/ProviderButtons";
 import { SignupForm } from "@/components/auth/SignupForm";
 import { Link, redirect } from "@/i18n/navigation";
@@ -33,6 +34,10 @@ export default async function SignupPage({ params }: PageProps<"/[locale]/signup
 
   return (
     <AuthCard title={t("title")} sub={t("sub")} wide>
+      {/* GitHub sign-in only and the providers call failed (or none is on): say so, not an empty card. */}
+      {!EMAIL_LOGIN && !(providers.ok && providers.data.providers.length > 0) && (
+        <Banner tone="warn">{t("unavailable")}</Banner>
+      )}
       <ProviderButtons
         providers={providers.ok ? providers.data.providers : []}
         labels={{ google: t("google"), github: t("github") }}

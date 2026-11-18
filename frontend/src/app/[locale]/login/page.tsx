@@ -47,6 +47,10 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/[l
       {!errorCode && one(query.next) === "/verify-email" && (
         <Banner tone="info">{t("verifyNeedsLogin")}</Banner>
       )}
+      {/* GitHub sign-in only and the providers call failed (or none is on): say so, not an empty card. */}
+      {!EMAIL_LOGIN && !(providers.ok && providers.data.providers.length > 0) && (
+        <Banner tone="warn">{t("unavailable")}</Banner>
+      )}
       <ProviderButtons
         providers={providers.ok ? providers.data.providers : []}
         labels={{ google: t("google"), github: t("github") }}

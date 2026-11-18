@@ -99,3 +99,33 @@ async def test_seed_allow_production_with_owner_loads_the_samples(db_session, te
     assert result.returncode == 0, result.stderr
     assert LOADER_MESSAGE_PRODUCTION not in result.stderr
     assert await db_session.scalar(select(func.count()).select_from(Project)) == 29
+
+
+async def test_unexpected_500_is_private_no_store_too():
+    from httpx import ASGITransport, AsyncClient
+
+    from app.main import create_app
+
+    app = create_app()
+
+    @app.get("/api/v1/boom")
+    async def boom() -> None:
+        raise RuntimeError("boom")
+
+    transport = ASGITransport(app=app, raise_app_exceptions=False)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        r = await c.get("/api/v1/boom")
+    assert (r.status_code, r.headers.get("cache-control")) == (500, "private, no-store")
+
+
+def test_settings_errors_never_print_values(monkeypatch, fresh_settings):
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("SECRET_KEY", "short")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "R2-SECRET-MARKER")
+    with pytest.raises(ValidationError) as error:
+        Settings()
+    assert "R2-SECRET-MARKER" not in str(error.value)

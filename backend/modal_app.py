@@ -20,8 +20,11 @@ REGION = ["eu"]
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
+    .apt_install("ca-certificates")
     .pip_install_from_requirements(str(BACKEND / "requirements.txt"))
-    .env({"PYTHONPATH": ROOT})
+    # PGSSLROOTCERT lets DATABASE_URL use ssl=verify-full: the database's certificate and host
+    # name are checked, not only encrypted.
+    .env({"PYTHONPATH": ROOT, "PGSSLROOTCERT": "/etc/ssl/certs/ca-certificates.crt"})
     .add_local_dir(str(BACKEND / "app"), f"{ROOT}/app")
     .add_local_dir(str(BACKEND / "alembic"), f"{ROOT}/alembic")
     .add_local_file(str(BACKEND / "alembic.ini"), f"{ROOT}/alembic.ini")
@@ -33,8 +36,8 @@ image = (
 app = modal.App("projecthouse", image=image)
 
 
-# One container stays warm, so a visit never waits for a cold start. argon2 uses 64 MiB per
-# password hash, so 1 GiB leaves room for the 20 concurrent requests allowed.
+# One container stays warm, so a visit never waits for a cold start. memory is a guaranteed
+# floor, not a cap (Modal docs); 1 GiB is ample with email login off (no password hashing).
 @app.function(secrets=[SECRET], region=REGION, min_containers=1, memory=1024)
 @modal.concurrent(max_inputs=20)
 @modal.asgi_app()

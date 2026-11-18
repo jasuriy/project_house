@@ -110,3 +110,30 @@ async def test_r2_avatar_replaces_and_deletes_the_old_object(auth_client, r2):
     )
     assert first.status_code == second.status_code == 200
     assert list(r2.objects) == [second.json()["avatar_url"].rsplit("/", 1)[1]]
+
+
+async def test_r2_delete_failure_after_commit_is_logged_not_500(auth_client, r2, caplog):
+    await signup(auth_client)
+    r = await upload(auth_client)
+
+    def broken_delete(**_kwargs):
+        raise ClientError({"Error": {"Code": "InternalError"}}, "DeleteObject")
+
+    r2.delete_object = broken_delete
+    # The row is gone and committed; R2 failing to drop the file must not turn that into a 500.
+    assert (await auth_client.delete(f"/api/v1/me/uploads/{r.json()['id']}")).status_code == 204
+    assert "could not delete" in caplog.text
+
+
+def test_r2_client_has_short_timeouts_and_few_retries(monkeypatch):
+    monkeypatch.setattr(storage, "_CLIENT", None)
+    settings = get_settings()
+    monkeypatch.setattr(settings, "r2_account_id", "acc")
+    monkeypatch.setattr(settings, "r2_access_key_id", "id")
+    monkeypatch.setattr(settings, "r2_secret_access_key", "secret")
+    client = storage._client()
+    config = client.meta.config
+    assert (config.connect_timeout, config.read_timeout) == (5, 15)
+    assert config.retries["total_max_attempts"] == 2  # two tries in all
+    assert storage._client() is client  # built once
+    monkeypatch.setattr(storage, "_CLIENT", None)
