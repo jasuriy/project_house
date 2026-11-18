@@ -22,7 +22,7 @@ class MediaItem(BaseModel):
 
 
 class Author(BaseModel):
-    """Who made the project: the original author for demo rows, the owner for real ones."""
+    """Who posted the project: its owner; an ownerless sample shows its original author."""
 
     kind: Literal["demo", "user"]
     name: str
@@ -30,13 +30,13 @@ class Author(BaseModel):
 
 
 def _path(project: Project) -> str:
-    if project.is_demo:
+    if project.owner_id is None:
         return f"/demo/{project.slug}"
     return f"/{project.owner.username}/{project.slug}"  # type: ignore[union-attr]
 
 
 def _author(project: Project) -> Author:
-    if project.is_demo:
+    if project.owner_id is None:
         return Author(
             kind="demo", name=project.demo_author or "", url=project.demo_author_url or ""
         )
@@ -57,7 +57,7 @@ class ProjectCard(BaseModel):
 
     @classmethod
     def from_project(cls, project: Project) -> Self:
-        """`project.media` and (for non-demo rows) `project.owner` must be loaded."""
+        """`project.media` and (for owned rows) `project.owner` must be loaded."""
         first = project.media[0] if project.media else None
         return cls(
             slug=project.slug,
@@ -93,7 +93,7 @@ class ProjectDetail(BaseModel):
 
     @classmethod
     def from_project(cls, project: Project) -> Self:
-        """`project.media` and (for non-demo rows) `project.owner` must be loaded."""
+        """`project.media` and (for owned rows) `project.owner` must be loaded."""
         return cls(
             slug=project.slug,
             path=_path(project),

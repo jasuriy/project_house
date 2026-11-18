@@ -83,8 +83,8 @@ export type FeedPage = {
   next_cursor: string | null;
 };
 
-/** The signed-in user: GET /api/v1/auth/me. */
-export type Account = {
+/** A public profile (backend UserPublic). */
+export type UserPublic = {
   username: string;
   display_name: string;
   account_type: "developer" | "company";
@@ -96,7 +96,15 @@ export type Account = {
   is_verified_company: boolean;
   avatar_url: string | null;
   links: Record<string, unknown>;
+  about: string | null;
   created_at: string;
+};
+
+/** The profile page: GET /api/v1/users/{username}. */
+export type Profile = UserPublic & { project_count: number };
+
+/** The signed-in user: GET /api/v1/auth/me. */
+export type Account = UserPublic & {
   email: string | null;
   email_verified: boolean;
   providers: string[];

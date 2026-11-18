@@ -38,7 +38,7 @@ button:focus-visible,
 /* Inputs inside a TextField box are excluded: the box shows focus (primary border + 3 px halo). */
 input:not([data-field]):focus-visible,
 select:focus-visible,
-textarea:focus-visible,
+textarea:not([data-field]):focus-visible,
 summary:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 0;

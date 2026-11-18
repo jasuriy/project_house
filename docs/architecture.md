@@ -164,12 +164,16 @@ new messages settings login logout signup admin explore feed search about help f
 
 ## 7. Demo data (Task A)
 
-- Demo projects are `projects` rows with `is_demo = true`, `owner_id = NULL`, the original author
-  in `demo_author` / `demo_author_url`. No user accounts are created for them (Bek, option 1).
-- Public URL: `/demo/<slug>` (never `/<username>/...`, so a future real user with the same name as a
-  demo author cannot collide). `demo` is a reserved username.
-- Loader: `python -m app.projects.seed_demo` (idempotent upsert by slug) and `--delete` (removes
-  every demo row). Refuses to run when `APP_ENV=production`.
+- Demo (sample) projects are `projects` rows with `is_demo = true`, the original author in
+  `demo_author` / `demo_author_url`.
+- Bek, 2026-11-18 (replaces "no user accounts for demo rows"): during development the samples are
+  posted from Bek's own account, shown as his posts. This is temporary development data; Bek
+  deletes them with the project delete button (step 2) when development is done.
+- Who is shown follows ownership: an owned row shows its owner and lives at `/<username>/<slug>`;
+  an ownerless sample shows the original author at `/demo/<slug>` (`demo` is a reserved username).
+- Loader: `python -m app.projects.seed_demo [--owner USERNAME]` (idempotent upsert by slug;
+  `--owner` gives every sample to that account, without it a row keeps its owner). Refuses to run
+  when `APP_ENV=production`.
 - Images and videos are linked from their GitHub/YouTube URLs, not copied.
 
 ## 8. Testing

@@ -31,5 +31,18 @@
     "sampleNotice": "This is a sample project. Original author: {name}.",
     "details": "Details",
     "play": "Play the video"
+  },
+  "Profile": {
+    "projectsTab": "Projects ({count})",
+    "aboutTab": "About",
+    "companyAbout": "About the company",
+    "noAbout": "No description yet.",
+    "openToWork": "Open to work",
+    "verifiedCompany": "Verified company",
+    "projectsStat": "{count, plural, one {project} other {projects}}",
+    "editProfile": "Edit profile",
+    "privacy": "Phone and email are never shown; contact happens through messages.",
+    "empty": "No projects yet.",
+    "profileOf": "Profile"
   }
 }

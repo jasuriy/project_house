@@ -27,9 +27,12 @@ async function UserSlot() {
 
   return (
     <div className="flex items-center gap-1 md:gap-2">
-      <span className="hidden max-w-48 truncate text-ui font-semibold text-fg md:inline">
+      <Link
+        href={`/${user.username}`}
+        className="hidden max-w-48 truncate rounded-control text-ui font-semibold text-fg hover:text-primary md:inline"
+      >
         {user.display_name}
-      </span>
+      </Link>
       {/* Icon on a phone (the 390 px header has no room for the word), text from 768 px. */}
       <NavLink href="/settings" aria-label={t("settings")}>
         <Settings aria-hidden strokeWidth={2} className="size-5 md:hidden" />

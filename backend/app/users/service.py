@@ -1,8 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.projects.models import Project
 from app.users.models import ACCOUNT_TYPES, User
 from app.users.usernames import validate_username
 
@@ -25,6 +26,11 @@ async def get_by_id(session: AsyncSession, user_id: int) -> User | None:
 
 async def get_by_username(session: AsyncSession, username: str) -> User | None:
     return await session.scalar(select(User).where(User.username == username))
+
+
+async def count_projects(session: AsyncSession, user_id: int) -> int:
+    count = await session.scalar(select(func.count()).where(Project.owner_id == user_id))
+    return count or 0
 
 
 async def username_exists(session: AsyncSession, username: str) -> bool:

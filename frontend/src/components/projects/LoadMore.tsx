@@ -3,16 +3,19 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { clientGet } from "@/lib/client-api";
-import type { FeedPage, FieldName, ProjectCard as Card } from "@/lib/types";
+import type { FeedPage, ProjectCard as Card } from "@/lib/types";
 import { ProjectCard } from "./ProjectCard";
 
-/** Appends the next feed pages; keeps the field filter on every request (plan C2 Step 2). */
+/**
+ * Appends the next pages of a card list. `endpoint` is the list's API path with its fixed query
+ * (the feed's field filter, kept on every request), limit and cursor are added here.
+ */
 export function LoadMore({
   initialCursor,
-  field,
+  endpoint,
 }: {
   initialCursor: string | null;
-  field: FieldName | null;
+  endpoint: string;
 }) {
   const t = useTranslations("Feed");
   const te = useTranslations("Errors");
@@ -25,9 +28,10 @@ export function LoadMore({
     if (!cursor || busy) return;
     setBusy(true);
     setFailed(false);
-    const query = new URLSearchParams({ limit: "24", cursor });
-    if (field) query.set("field", field);
-    const result = await clientGet<FeedPage>(`/api/v1/projects?${query}`);
+    const url = new URL(endpoint, "http://x");
+    url.searchParams.set("limit", "24");
+    url.searchParams.set("cursor", cursor);
+    const result = await clientGet<FeedPage>(`${url.pathname}${url.search}`);
     if (result.ok) {
       setCards((previous) => [...previous, ...result.data.items]);
       setCursor(result.data.next_cursor);

@@ -18,8 +18,10 @@ async def list_feed(
     field: str | None,
     limit: int,
     cursor: str | None,
+    owner_id: int | None = None,
 ) -> FeedPage:
-    """Newest first by (published_at, id). Keyset paging: one extra row tells if a page follows."""
+    """Newest first by (published_at, id). Keyset paging: one extra row tells if a page follows.
+    `owner_id` limits the list to one user's projects (their profile page)."""
     stmt = (
         select(Project)
         .options(*_LOAD)
@@ -28,6 +30,8 @@ async def list_feed(
     )
     if field is not None:
         stmt = stmt.where(Project.field == field)
+    if owner_id is not None:
+        stmt = stmt.where(Project.owner_id == owner_id)
     if cursor is not None:
         published_at, id_ = decode_cursor(cursor)
         stmt = stmt.where(tuple_(Project.published_at, Project.id) < tuple_(published_at, id_))
@@ -37,8 +41,22 @@ async def list_feed(
     return FeedPage(items=[ProjectCard.from_project(p) for p in page], next_cursor=next_cursor)
 
 
+async def list_user_projects(
+    session: AsyncSession, username: str, *, limit: int, cursor: str | None
+) -> FeedPage:
+    user = await users_service.get_by_username(session, username)
+    if user is None:
+        raise AppError(404, "user_not_found", "User not found")
+    return await list_feed(session, field=None, limit=limit, cursor=cursor, owner_id=user.id)
+
+
 async def get_demo_project(session: AsyncSession, slug: str) -> Project:
-    stmt = select(Project).options(*_LOAD).where(Project.is_demo, Project.slug == slug)
+    # Only ownerless samples live under /demo/; an owned one answers at /<username>/<slug>.
+    stmt = (
+        select(Project)
+        .options(*_LOAD)
+        .where(Project.is_demo, Project.owner_id.is_(None), Project.slug == slug)
+    )
     project = await session.scalar(stmt)
     if project is None:
         raise AppError(404, "project_not_found", "Project not found")

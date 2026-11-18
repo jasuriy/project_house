@@ -1,10 +1,12 @@
 """Load the temporary demo projects (seed/demo-projects.json) into the database.
 
-    python -m app.projects.seed_demo [--file PATH] [--delete]
+    python -m app.projects.seed_demo [--file PATH] [--owner USERNAME]
 
 Idempotent: demo rows are upserted by slug, and a demo project's media is replaced with the
-entry's current media. `--delete` removes every demo row (media cascade in the database).
-Refuses to run when APP_ENV=production (exit code 2), before any database access.
+entry's current media. `--owner` gives every sample to that existing account, so they show as
+that person's posts (Bek, 2026-11-18: development data, deleted later with the delete button);
+without it a row keeps the owner it has. Refuses to run when APP_ENV=production (exit code 2),
+before any database access.
 """
 
 import argparse
@@ -19,12 +21,13 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.db import dispose_engine, get_engine
 from app.projects.models import Project, ProjectMedia
+from app.users import service as users_service
 
 # This file is <repo>/backend/app/projects/seed_demo.py: never resolved from the working directory.
 DEFAULT_SEED_FILE = Path(__file__).resolve().parents[3] / "seed" / "demo-projects.json"
@@ -53,7 +56,6 @@ def project_values(entry: dict[str, Any]) -> dict[str, Any]:
     """Project columns for one seed entry. Pure: no database access."""
     return {
         "is_demo": True,
-        "owner_id": None,
         "slug": slugify(entry["title"]),
         "title": entry["title"],
         "one_line_problem": entry["one_line_problem"],
@@ -89,8 +91,11 @@ def media_rows(entry: dict[str, Any]) -> list[ProjectMedia]:
     ]
 
 
-async def upsert_demo(session: AsyncSession, entries: Sequence[dict[str, Any]]) -> int:
-    """Insert or update one demo project per entry, in one transaction. Returns the count."""
+async def upsert_demo(
+    session: AsyncSession, entries: Sequence[dict[str, Any]], owner_id: int | None = None
+) -> int:
+    """Insert or update one demo project per entry, in one transaction. Returns the count.
+    `owner_id` (when given) becomes the owner of every entry; otherwise owners stay as they are."""
     parsed = [(project_values(e), media_rows(e)) for e in entries]
     slugs = [values["slug"] for values, _ in parsed]
 
@@ -108,26 +113,25 @@ async def upsert_demo(session: AsyncSession, entries: Sequence[dict[str, Any]]) 
         else:
             for column, value in values.items():
                 setattr(project, column, value)
+        if owner_id is not None:
+            project.owner_id = owner_id
         project.media = media  # delete-orphan removes the previous rows
     await session.commit()
     return len(parsed)
 
 
-async def delete_demo(session: AsyncSession) -> int:
-    """Remove every demo project. Media rows go with them (ON DELETE CASCADE)."""
-    result = await session.execute(delete(Project).where(Project.is_demo))
-    await session.commit()
-    return result.rowcount  # type: ignore[attr-defined,no-any-return]
-
-
 async def _run(args: argparse.Namespace) -> int:
-    entries = None if args.delete else json.loads(args.file.read_text(encoding="utf-8"))
+    entries = json.loads(args.file.read_text(encoding="utf-8"))
     try:
         async with AsyncSession(get_engine(), expire_on_commit=False) as session:
-            if entries is None:
-                print(f"Deleted {await delete_demo(session)} demo projects")
-            else:
-                print(f"Upserted {await upsert_demo(session, entries)} demo projects")
+            owner_id = None
+            if args.owner is not None:
+                owner = await users_service.get_by_username(session, args.owner)
+                if owner is None:
+                    print(f"seed_demo: no account named {args.owner!r}", file=sys.stderr)
+                    return 2
+                owner_id = owner.id
+            print(f"Upserted {await upsert_demo(session, entries, owner_id)} demo projects")
     finally:
         await dispose_engine()
     return 0
@@ -136,7 +140,7 @@ async def _run(args: argparse.Namespace) -> int:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.projects.seed_demo", description=__doc__)
     parser.add_argument("--file", type=Path, default=DEFAULT_SEED_FILE, help="seed JSON file")
-    parser.add_argument("--delete", action="store_true", help="remove every demo project")
+    parser.add_argument("--owner", help="username of the account that posts every sample")
     args = parser.parse_args(argv)
 
     # Read the environment directly: production Settings can fail validation, and the refusal

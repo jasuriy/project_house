@@ -22,6 +22,15 @@ export function clientGet<T>(path: string): Promise<ApiResult<T>> {
   return request<T>(path, { method: "GET" });
 }
 
+/** JSON PATCH. Never throws. */
+export function clientPatch<T>(path: string, body: unknown): Promise<ApiResult<T>> {
+  return request<T>(path, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 /** JSON POST. Never throws. 204 gives `{ ok: true, data: null }`. */
 export function clientPost<T = null>(
   path: string,
