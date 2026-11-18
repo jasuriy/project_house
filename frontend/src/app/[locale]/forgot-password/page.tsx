@@ -4,8 +4,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { ForgotForm } from "@/components/auth/ForgotForm";
-import { Link } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { EMAIL_LOGIN } from "@/lib/features";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/forgot-password">): Promise<Metadata> {
   const { locale } = await params;
@@ -19,6 +20,8 @@ export default async function ForgotPasswordPage({ params }: PageProps<"/[locale
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  // GitHub sign-in only (the deployment): an old email link lands on the login page.
+  if (!EMAIL_LOGIN) redirect({ href: "/login", locale });
   const t = await getTranslations("Forgot");
 
   return (

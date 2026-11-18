@@ -8,6 +8,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { ProviderButtons } from "@/components/auth/ProviderButtons";
 import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { EMAIL_LOGIN } from "@/lib/features";
 import { apiGet } from "@/lib/api";
 import { authErrorKey } from "@/lib/auth-errors";
 import { getCurrentUser } from "@/lib/session";
@@ -49,9 +50,9 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/[l
       <ProviderButtons
         providers={providers.ok ? providers.data.providers : []}
         labels={{ google: t("google"), github: t("github") }}
-        orLabel={t("or")}
+        orLabel={EMAIL_LOGIN ? t("or") : undefined}
       />
-      <LoginForm next={one(query.next)} />
+      {EMAIL_LOGIN && <LoginForm next={one(query.next)} />}
       <p className="text-center text-small text-mute">
         {t("noAccount")}{" "}
         <Link href="/signup" className="-my-3 inline-block rounded-control py-3 font-semibold text-primary hover:underline md:my-0 md:py-0">

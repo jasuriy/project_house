@@ -1,4 +1,5 @@
-/** Google and GitHub buttons, only for providers the backend has switched on, then "or with email". */
+/** Google and GitHub buttons, only for providers the backend has switched on, then "or with email"
+ * (`orLabel`; left out when there is no email form below). */
 export function ProviderButtons({
   providers,
   labels,
@@ -6,7 +7,7 @@ export function ProviderButtons({
 }: {
   providers: string[];
   labels: { google: string; github: string };
-  orLabel: string;
+  orLabel?: string;
 }) {
   const shown = providers.filter((p): p is "google" | "github" => p === "google" || p === "github");
   if (shown.length === 0) return null;
@@ -26,11 +27,13 @@ export function ProviderButtons({
           </a>
         ))}
       </div>
-      <div className="flex items-center gap-3 text-meta text-mute">
-        <span aria-hidden className="h-px flex-1 bg-border" />
-        {orLabel}
-        <span aria-hidden className="h-px flex-1 bg-border" />
-      </div>
+      {orLabel && (
+        <div className="flex items-center gap-3 text-meta text-mute">
+          <span aria-hidden className="h-px flex-1 bg-border" />
+          {orLabel}
+          <span aria-hidden className="h-px flex-1 bg-border" />
+        </div>
+      )}
     </>
   );
 }

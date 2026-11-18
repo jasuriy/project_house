@@ -7,6 +7,7 @@ import { ProviderButtons } from "@/components/auth/ProviderButtons";
 import { SignupForm } from "@/components/auth/SignupForm";
 import { Link, redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { EMAIL_LOGIN } from "@/lib/features";
 import { apiGet } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
 
@@ -35,9 +36,9 @@ export default async function SignupPage({ params }: PageProps<"/[locale]/signup
       <ProviderButtons
         providers={providers.ok ? providers.data.providers : []}
         labels={{ google: t("google"), github: t("github") }}
-        orLabel={t("or")}
+        orLabel={EMAIL_LOGIN ? t("or") : undefined}
       />
-      <SignupForm />
+      {EMAIL_LOGIN && <SignupForm />}
       <p className="text-center text-small text-mute">
         {t("haveAccount")}{" "}
         <Link
