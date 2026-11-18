@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     github_client_id: str = ""
     github_client_secret: str = ""
+    # Server key for GitHub's REST API (5000 calls/hour instead of 60); empty locally.
+    github_api_token: str = ""
     session_days: int = 30
     # Uploaded images (disk storage, app/media/storage.py). Default: backend/media, resolved from
     # this file so it never depends on the working directory.

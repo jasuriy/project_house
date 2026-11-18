@@ -5,7 +5,6 @@ can show it next to the field. Nothing is written until everything passed; files
 are deleted only after the commit.
 """
 
-import re
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlsplit
@@ -19,8 +18,17 @@ from app.core.errors import AppError
 from app.media import storage
 from app.media.service import consume_uploads
 from app.projects.fields import FIELDS
+from app.projects.github import (
+    GitHubClient,
+    GitHubUnavailable,
+    Ownership,
+    check_ownership,
+    github_account,
+    parse_github_url,
+    same_repository,
+)
 from app.projects.models import Project, ProjectMedia
-from app.projects.schemas import ImageRef, ProjectInput, ProjectUpdate
+from app.projects.schemas import ImageRef, ImportPreview, ProjectInput, ProjectUpdate
 from app.projects.slugs import slugify
 from app.projects.video import is_playable
 from app.users.models import User
@@ -36,7 +44,6 @@ TEXT = {
 MAX_TAGS, MAX_TAG = 12, 30
 MAX_IMAGES = 6
 MAX_LINK = 200
-GITHUB_PART = re.compile(r"[A-Za-z0-9._-]{1,100}")
 SLUG_INDEX = "uq_projects_owner_id_slug"
 
 
@@ -79,24 +86,14 @@ def _https_parts(value: str, schemes: tuple[str, ...]):
 
 
 def _github(value: Any) -> str | None:
-    """Empty, or exactly https://github.com/<owner>/<repo>."""
-    value = (value or "").strip()
-    if not value:
+    """Empty, or a GitHub repository link in its plain form https://github.com/<owner>/<repo>
+    (what people paste is accepted: no scheme, www., .git, a deeper page of the repository)."""
+    if not (value or "").strip():
         return None
-    checked = _https_parts(value, ("https",))
-    if checked:
-        parts, port = checked
-        segments = parts.path.strip("/").split("/")
-        if (
-            parts.hostname == "github.com"
-            and port is None
-            and not parts.query
-            and not parts.fragment
-            and len(segments) == 2
-            and all(GITHUB_PART.fullmatch(s) and s.strip(".") for s in segments)
-        ):
-            return value
-    raise _fail("invalid_github_url")
+    parsed = parse_github_url(value) if isinstance(value, str) else None
+    if parsed is None:
+        raise _fail("invalid_github_url")
+    return "https://github.com/{}/{}".format(*parsed)
 
 
 def _live(value: Any) -> str | None:
@@ -201,13 +198,29 @@ async def own_project(session: AsyncSession, user: User, slug: str) -> Project:
     return project
 
 
-async def create_project(session: AsyncSession, user: User, data: ProjectInput) -> Project:
+async def _owned(session: AsyncSession, user: User, github: GitHubClient, url: str) -> Ownership:
+    """The ownership check with no transaction open while GitHub answers (may take seconds).
+    commit, not rollback: a rollback would expire the loaded objects (expire_on_commit=False)."""
+    account = await github_account(session, user.id)
+    await session.commit()
+    return await check_ownership(github, account, url)
+
+
+def _link_columns(owned: Ownership) -> dict:
+    return {"github_url": owned.repo.html_url, "license": owned.repo.license_spdx}
+
+
+async def create_project(
+    session: AsyncSession, user: User, data: ProjectInput, github: GitHubClient
+) -> Project:
     sent = data.model_dump(exclude_unset=True)
     refs = data.images or []
     columns = _columns({**sent, "result": sent.get("result"), "role": sent.get("role")})
     _check_refs(refs, kept_allowed=set())
     if not columns.get("demo_video_url") and not refs:
         raise _fail("media_required")
+    if columns.get("github_url"):
+        columns.update(_link_columns(await _owned(session, user, github, columns["github_url"])))
 
     media = _place(columns.get("demo_video_url"), await _images(session, user, refs, {}))
     slug = await _unique_slug(session, user.id, columns["title"])
@@ -233,7 +246,7 @@ async def create_project(session: AsyncSession, user: User, data: ProjectInput) 
 
 
 async def update_project(
-    session: AsyncSession, user: User, slug: str, data: ProjectUpdate
+    session: AsyncSession, user: User, slug: str, data: ProjectUpdate, github: GitHubClient
 ) -> Project:
     project = await own_project(session, user, slug)
     if project.is_demo:
@@ -251,6 +264,17 @@ async def update_project(
     image_count = len(refs) if refs is not None else len(current_images)
     if not video and image_count == 0:
         raise _fail("media_required")
+
+    # GitHub last, after every cheap check, and only for a new or changed link.
+    if "github_url" in columns:
+        if not columns["github_url"]:
+            columns["license"] = None
+        elif same_repository(project.github_url, columns["github_url"]):
+            del columns["github_url"]  # unchanged: keep the stored link and licence
+        else:
+            columns.update(
+                _link_columns(await _owned(session, user, github, columns["github_url"]))
+            )
 
     removed: list[str] = []
     if refs is not None:
@@ -278,3 +302,34 @@ async def delete_project(session: AsyncSession, user: User, slug: str) -> None:
     await session.commit()
     for key in keys:
         storage.delete(key)
+
+
+IMPORT_TAGS = 5
+
+
+async def import_preview(
+    session: AsyncSession, user: User, github: GitHubClient, url: str
+) -> ImportPreview:
+    """The add form's pre-fill from a repository the user owns or contributed to. Creates nothing.
+    The link is checked before any GitHub call; no transaction stays open while GitHub answers."""
+    parsed = parse_github_url(url)
+    if parsed is None:
+        raise _fail("invalid_github_url")
+    owned = await _owned(session, user, github, url)
+    try:
+        languages = await github.languages(*parsed)
+    except GitHubUnavailable:
+        languages = {}  # the check passed; tags are only a convenience
+    top = sorted(languages.items(), key=lambda item: -item[1])[:IMPORT_TAGS]
+    repo = owned.repo
+    homepage = repo.homepage.strip()
+    return ImportPreview(
+        title=repo.name[: TEXT["title"][0]],
+        short_description=repo.description.strip()[: TEXT["short_description"][0]],
+        tech_stack=[name[:MAX_TAG] for name, _ in top],
+        live_url=homepage if _https_parts(homepage, ("http", "https")) else "",
+        github_url=repo.html_url,
+        license=repo.license_spdx,
+        relation=owned.relation,
+        github_login=owned.login,
+    )

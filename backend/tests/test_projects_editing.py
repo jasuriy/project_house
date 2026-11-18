@@ -5,10 +5,11 @@ from sqlalchemy import select
 
 from app.projects.models import Project
 from app.users.service import get_by_username
+from tests.github_fake import STRANGER, connect_github, repo
 from tests.media_helpers import file_of, signup, upload
 from tests.projects_fixtures import add_projects, make_project
 
-pytest_plugins = ["tests.auth_fixtures", "tests.media_fixtures"]
+pytest_plugins = ["tests.auth_fixtures", "tests.media_fixtures", "tests.github_fixtures"]
 
 MINE = "/api/v1/me/projects"
 VIDEO = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -93,8 +94,12 @@ async def test_create_field_rules(auth_client, overrides, code):
     assert (r.status_code, _code(r)) == (422, code)
 
 
-async def test_create_accepts_good_optional_values_and_dedupes_tags(auth_client):
+async def test_create_accepts_good_optional_values_and_dedupes_tags(
+    auth_client, db_session, github
+):
     await signup(auth_client)
+    await connect_github(db_session)
+    github.add(repo("aziz", "weed-finder"))
     r = await auth_client.post(
         MINE,
         json=body(
@@ -240,3 +245,115 @@ async def test_youtube_video_stays_the_cover(auth_client):
     await auth_client.post(MINE, json=body(images=[{"upload": a}]))
     card = (await auth_client.get("/api/v1/projects")).json()["items"][0]
     assert card["cover"] == {"kind": "video", "url": VIDEO}
+
+
+# ---- part 2: every GitHub link is checked on save ----------------------------------------------
+
+
+async def test_create_with_someone_elses_github_link_is_refused(auth_client, db_session, github):
+    await signup(auth_client)
+    await connect_github(db_session)
+    github.add(repo("apache", "superset", owner_id=STRANGER), contributors={7: "x"})
+    r = await auth_client.post(MINE, json=body(github_url="https://github.com/apache/superset"))
+    assert (r.status_code, _code(r)) == (422, "not_your_repo")
+    assert (await auth_client.get("/api/v1/users/bek/projects")).json()["items"] == []
+
+
+async def test_create_with_own_link_stores_the_canonical_link_and_licence(
+    auth_client, db_session, github
+):
+    await signup(auth_client)
+    await connect_github(db_session)
+    github.add(repo(license_spdx="MIT"))
+    r = await auth_client.post(MINE, json=body(github_url="github.com/OCTOCAT/hello-world.git"))
+    assert r.status_code == 201, r.text
+    assert (r.json()["github_url"], r.json()["license"]) == (
+        "https://github.com/octocat/Hello-World",
+        "MIT",
+    )
+    assert (await auth_client.get(f"{MINE}/weed-finder")).json()["license"] == "MIT"
+
+
+async def test_bad_title_spends_no_github_call(auth_client, db_session, github):
+    await signup(auth_client)
+    await connect_github(db_session)
+    r = await auth_client.post(
+        MINE, json=body(title="", github_url="https://github.com/apache/superset")
+    )
+    assert (r.status_code, _code(r), github.calls) == (422, "invalid_title", 0)
+
+
+async def test_edit_without_touching_the_link_calls_github_zero_times(
+    auth_client, db_session, github
+):
+    await signup(auth_client)
+    await connect_github(db_session)
+    github.add(repo())
+    await auth_client.post(MINE, json=body(github_url="https://github.com/octocat/Hello-World"))
+    github.calls = 0
+    r = await auth_client.patch(f"{MINE}/weed-finder", json={"title": "New title"})
+    assert (r.status_code, github.calls) == (200, 0)
+
+
+@pytest.mark.parametrize(
+    "written",
+    [
+        "https://github.com/octocat/Hello-World/",
+        "https://www.github.com/OCTOCAT/hello-world",
+        "github.com/octocat/Hello-World.git",
+    ],
+)
+async def test_the_same_link_written_differently_is_not_rechecked(
+    auth_client, db_session, github, written
+):
+    await signup(auth_client)
+    await connect_github(db_session)
+    github.add(repo(license_spdx="MIT"))
+    await auth_client.post(MINE, json=body(github_url="https://github.com/octocat/Hello-World"))
+    github.calls = 0
+    r = await auth_client.patch(f"{MINE}/weed-finder", json={"github_url": written})
+    assert (r.status_code, github.calls) == (200, 0)
+    assert (r.json()["github_url"], r.json()["license"]) == (
+        "https://github.com/octocat/Hello-World",
+        "MIT",
+    )
+
+
+async def test_changing_to_someone_elses_link_on_edit_is_refused(auth_client, db_session, github):
+    await signup(auth_client)
+    await connect_github(db_session)
+    github.add(repo())
+    github.add(repo("apache", "superset", owner_id=STRANGER), contributors={7: "x"})
+    await auth_client.post(MINE, json=body(github_url="https://github.com/octocat/Hello-World"))
+    r = await auth_client.patch(
+        f"{MINE}/weed-finder", json={"github_url": "https://github.com/apache/superset"}
+    )
+    assert (r.status_code, _code(r)) == (422, "not_your_repo")
+
+
+async def test_clearing_the_link_clears_the_licence(auth_client, db_session, github):
+    await signup(auth_client)
+    await connect_github(db_session)
+    github.add(repo(license_spdx="MIT"))
+    await auth_client.post(MINE, json=body(github_url="https://github.com/octocat/Hello-World"))
+    r = await auth_client.patch(f"{MINE}/weed-finder", json={"github_url": ""})
+    assert (r.json()["github_url"], r.json()["license"]) == (None, None)
+
+
+async def test_link_without_connected_github_is_refused_on_save(auth_client, github):
+    await signup(auth_client)
+    r = await auth_client.post(MINE, json=body(github_url="https://github.com/octocat/Hello-World"))
+    assert (r.status_code, _code(r)) == (422, "github_not_connected")
+
+
+async def test_edit_with_a_new_link_and_no_media_spends_no_github_call(
+    auth_client, db_session, github
+):
+    await signup(auth_client)
+    await connect_github(db_session)
+    await auth_client.post(MINE, json=body())
+    r = await auth_client.patch(
+        f"{MINE}/weed-finder",
+        json={"github_url": "https://github.com/apache/superset", "video_url": "", "images": []},
+    )
+    assert (r.status_code, _code(r), github.calls) == (422, "media_required", 0)

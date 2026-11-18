@@ -91,7 +91,25 @@
     "deleteConfirm": "Yes, delete",
     "deleting": "Deleting...",
     "keep": "No, keep it",
-    "addressKept": "The address stays the same: {address}"
+    "addressKept": "The address stays the same: {address}",
+    "step1": "GitHub link",
+    "step2": "Details and demo",
+    "linkLabel": "GitHub repository link",
+    "linkHelp": "A public repository you own or contributed to. Name, description, tech stack and licence are read from GitHub.",
+    "continue": "Continue",
+    "checking": "Checking...",
+    "manual": "Fill in by hand without GitHub",
+    "connectTitle": "Connect your GitHub account first",
+    "connectText": "Your GitHub account is needed to check that the repository is yours. Come back here after connecting.",
+    "connectButton": "Connect in Settings",
+    "ownerBanner": "GitHub connected: {login}. You own this repository. Name, description and tech stack came from GitHub; check them.",
+    "contributorBanner": "GitHub connected: {login}. You contributed to this repository. Name, description and tech stack came from GitHub; check them.",
+    "otherRepo": "Another repository",
+    "fromGithub": "From GitHub",
+    "license": "Licence",
+    "licenseFromGithub": "{license} (from GitHub)",
+    "licenseNone": "Not specified",
+    "licenseOnSave": "Read from GitHub when you save"
   },
   "EditorErrors": {
     "invalid_title": "The name must be 1 to 80 characters.",
@@ -114,6 +132,10 @@
     "slug_taken": "Sent twice at the same moment. Please try again.",
     "unreachable": "Cannot reach the server. Please try again in a moment.",
     "generic": "Could not save. Please try again.",
-    "image_too_many_pixels": "The image is too large: at most 40 megapixels."
+    "image_too_many_pixels": "The image is too large: at most 40 megapixels.",
+    "github_not_connected": "Connect your GitHub account in Settings first.",
+    "not_your_repo": "This repository is not yours: you are neither its owner nor one of its contributors.",
+    "github_repo_not_found": "Repository not found or private.",
+    "github_unavailable": "GitHub is not answering right now. Please try again in a moment."
   }
 }

@@ -91,7 +91,25 @@
     "deleteConfirm": "Ha, oʻchirish",
     "deleting": "Oʻchirilmoqda...",
     "keep": "Yoʻq, qoldirish",
-    "addressKept": "Manzil oʻzgarmaydi: {address}"
+    "addressKept": "Manzil oʻzgarmaydi: {address}",
+    "step1": "GitHub havolasi",
+    "step2": "Maʼlumotlar va demo",
+    "linkLabel": "GitHub repozitoriy havolasi",
+    "linkHelp": "Siz egasi yoki hissa qoʻshgan ochiq repozitoriy. Nom, tavsif, texnologiyalar va litsenziya GitHubʼdan olinadi.",
+    "continue": "Davom etish",
+    "checking": "Tekshirilmoqda...",
+    "manual": "GitHubʼsiz qoʻlda toʻldirish",
+    "connectTitle": "Avval GitHub hisobingizni ulang",
+    "connectText": "Repozitoriy sizniki ekanini tekshirish uchun GitHub hisobingiz kerak. Ulangandan keyin shu yerga qaytib keling.",
+    "connectButton": "Sozlamalarda ulash",
+    "ownerBanner": "GitHub ulandi: {login}. Siz bu repozitoriyning egasisiz. Nom, tavsif va texnologiyalar GitHubʼdan olindi; tekshirib chiqing.",
+    "contributorBanner": "GitHub ulandi: {login}. Siz bu repozitoriyga hissa qoʻshgansiz. Nom, tavsif va texnologiyalar GitHubʼdan olindi; tekshirib chiqing.",
+    "otherRepo": "Boshqa repozitoriy",
+    "fromGithub": "GitHubʼdan",
+    "license": "Litsenziya",
+    "licenseFromGithub": "{license} (GitHubʼdan olindi)",
+    "licenseNone": "Koʻrsatilmagan",
+    "licenseOnSave": "Saqlanganda GitHubʼdan oʻqiladi"
   },
   "EditorErrors": {
     "invalid_title": "Nom 1 dan 80 belgigacha boʻlsin.",
@@ -114,6 +132,10 @@
     "slug_taken": "Bir vaqtda ikki marta yuborildi. Qayta urinib koʻring.",
     "unreachable": "Serverga ulanib boʻlmadi. Birozdan keyin qayta urinib koʻring.",
     "generic": "Saqlab boʻlmadi. Qayta urinib koʻring.",
-    "image_too_many_pixels": "Rasm oʻlchami juda katta: 40 megapikseldan oshmasin."
+    "image_too_many_pixels": "Rasm oʻlchami juda katta: 40 megapikseldan oshmasin.",
+    "github_not_connected": "Avval GitHub hisobingizni Sozlamalarda ulang.",
+    "not_your_repo": "Bu repozitoriy sizniki emas: siz uning egasi ham, hissa qoʻshganlardan biri ham emassiz.",
+    "github_repo_not_found": "Repozitoriy topilmadi yoki yopiq (private).",
+    "github_unavailable": "GitHub hozir javob bermayapti. Birozdan keyin qayta urinib koʻring."
   }
 }

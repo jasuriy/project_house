@@ -12,6 +12,8 @@ describe("projectErrorField", () => {
     ["invalid_field", "field"],
     ["invalid_tech_stack", "tech_stack"],
     ["invalid_github_url", "github_url"],
+    ["not_your_repo", "github_url"],
+    ["github_unavailable", "github_url"],
     ["invalid_live_url", "live_url"],
     ["invalid_role", "role"],
     ["invalid_video_url", "video_url"],

@@ -200,6 +200,7 @@ class EditableProject(BaseModel):
     live_url: str | None
     role: str | None
     video_url: str | None
+    license: str | None
     images: list[EditableImage]
 
     @classmethod
@@ -218,7 +219,27 @@ class EditableProject(BaseModel):
             live_url=project.live_url,
             role=project.role,
             video_url=project.demo_video_url,
+            license=project.license,
             images=[
                 EditableImage(id=m.id, url=media_url(m)) for m in project.media if m.kind == "image"
             ],
         )
+
+
+class ImportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    github_url: str
+
+
+class ImportPreview(BaseModel):
+    """What the add form starts from after the ownership check (every value fits the form)."""
+
+    title: str
+    short_description: str
+    tech_stack: list[str]
+    live_url: str
+    github_url: str
+    license: str | None
+    relation: Literal["owner", "contributor"]
+    github_login: str

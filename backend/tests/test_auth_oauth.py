@@ -377,7 +377,7 @@ async def test_logged_in_user_connects_a_new_identity_to_their_own_account(
     stub.google["email"] = provider_email
     response = await _login_via(auth_client, stub, "google")
     assert response.status_code == 302
-    assert response.headers["location"] == PUBLIC
+    assert response.headers["location"] == f"{PUBLIC}/settings?connected=google"
     assert auth_client.cookies.get("ph_session") == token  # still the same session
     assert await _count(db_session, User) == 1
     identity = await db_session.scalar(
@@ -696,7 +696,7 @@ async def test_connecting_a_different_provider_still_works_after_one_is_connecte
     await _signup_verified(auth_client, email_sender)
     await _login_via(auth_client, stub, "github")
     response = await _login_via(auth_client, stub, "google")
-    assert response.headers["location"] == PUBLIC
+    assert response.headers["location"] == f"{PUBLIC}/settings?connected=google"
     me = (await auth_client.get(f"{BASE}/me")).json()
     assert me["providers"] == ["email", "github", "google"]
 
@@ -729,14 +729,14 @@ async def test_connect_is_refused_while_the_email_is_unverified_and_allowed_afte
     verify = await auth_client.post(f"{BASE}/email/verify", json={"token": verify_token})
     assert verify.status_code == 204
     allowed = await _login_via(auth_client, stub, "github")
-    assert allowed.headers["location"] == PUBLIC
+    assert allowed.headers["location"] == f"{PUBLIC}/settings?connected=github"
     assert (await auth_client.get(f"{BASE}/me")).json()["providers"] == ["email", "github"]
 
 
 async def test_a_user_without_an_email_identity_may_connect(auth_client, stub, db_session):
     await _login_via(auth_client, stub, "github")  # account created through GitHub only
     response = await _login_via(auth_client, stub, "google")
-    assert response.headers["location"] == PUBLIC
+    assert response.headers["location"] == f"{PUBLIC}/settings?connected=google"
     assert (await auth_client.get(f"{BASE}/me")).json()["providers"] == ["github", "google"]
 
 

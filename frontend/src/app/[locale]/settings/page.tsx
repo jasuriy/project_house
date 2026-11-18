@@ -49,6 +49,8 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
   const errorCode = typeof query.error === "string" ? query.error : null;
   const providerName =
     PROVIDERS.find((p) => p.key === query.provider)?.name ?? PROVIDERS[0].name;
+  // Back from connecting a provider (backend: /settings?connected=<provider>).
+  const connectedName = PROVIDERS.find((p) => p.key === query.connected)?.name ?? null;
   const enabledSet = new Set(enabled.ok ? enabled.data.providers : []);
   // Connected providers always show; the others only when the backend has them switched on.
   const rows = PROVIDERS.filter((p) => user.providers.includes(p.key) || enabledSet.has(p.key));
@@ -57,6 +59,7 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
     <div className="mx-auto grid w-full max-w-[640px] gap-5 rounded-card border border-border bg-card p-5 md:gap-6 md:p-8 lg:mt-7">
       <h1 className="text-h2 font-bold tracking-[-0.015em] text-fg">{t("title")}</h1>
       {errorCode && <Banner tone="warn">{te(authErrorKey(errorCode), { provider: providerName })}</Banner>}
+      {connectedName && <Banner tone="ok">{t("connectedBanner", { provider: connectedName })}</Banner>}
 
       <section>
         <h2 className="mb-1 text-lead font-semibold text-fg">{t("profile")}</h2>
