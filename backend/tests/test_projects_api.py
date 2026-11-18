@@ -158,8 +158,12 @@ async def test_card_shape_for_demo_project(client, db_session):
             demo_author="jacobgil",
             demo_author_url="https://github.com/jacobgil",
             published_at=_day(4),
-            # Position order differs from insert order: the cover is position 0.
-            media=[media("image", "https://x/second.png", 1), media("video", "https://x/v", 0)],
+            # Position order differs from insert order: the cover is the first pictured item by
+            # position (a YouTube video has a thumbnail).
+            media=[
+                media("image", "https://x/second.png", 1),
+                media("video", "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 0),
+            ],
         ),
     )
     item = (await client.get("/api/v1/projects")).json()["items"][0]
@@ -170,7 +174,7 @@ async def test_card_shape_for_demo_project(client, db_session):
         "one_line_problem": "Problem.",
         "field": "cv-ml",
         "tech_stack": ["Py", "C++", "CUDA"],
-        "cover": {"kind": "video", "url": "https://x/v"},
+        "cover": {"kind": "video", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
         "author": {"kind": "demo", "name": "jacobgil", "url": "https://github.com/jacobgil"},
         "published_at": "2026-11-05T00:00:00Z",
     }

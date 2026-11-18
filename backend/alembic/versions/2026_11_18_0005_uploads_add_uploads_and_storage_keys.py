@@ -39,12 +39,21 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_uploads_owner_id"), "uploads", ["owner_id"], unique=False)
     op.add_column("project_media", sa.Column("storage_key", sa.Text(), nullable=True))
+    op.alter_column("project_media", "url", existing_type=sa.Text(), nullable=True)
+    op.create_check_constraint(
+        op.f("ck_project_media_url_or_key"),
+        "project_media",
+        "url IS NOT NULL OR storage_key IS NOT NULL",
+    )
     op.add_column("users", sa.Column("avatar_key", sa.Text(), nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     op.drop_column("users", "avatar_key")
+    op.drop_constraint(op.f("ck_project_media_url_or_key"), "project_media", type_="check")
+    op.execute("DELETE FROM project_media WHERE url IS NULL")
+    op.alter_column("project_media", "url", existing_type=sa.Text(), nullable=False)
     op.drop_column("project_media", "storage_key")
     op.drop_index(op.f("ix_uploads_owner_id"), table_name="uploads")
     op.drop_table("uploads")

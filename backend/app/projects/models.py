@@ -88,7 +88,11 @@ Index("ix_projects_feed", Project.published_at.desc(), Project.id.desc())
 
 class ProjectMedia(Base):
     __tablename__ = "project_media"
-    __table_args__ = (CheckConstraint("kind IN ('image', 'video')", name="kind"),)
+    __table_args__ = (
+        CheckConstraint("kind IN ('image', 'video')", name="kind"),
+        # External media (video links, the samples) have a URL; images we store have a key.
+        CheckConstraint("url IS NOT NULL OR storage_key IS NOT NULL", name="url_or_key"),
+    )
     __mapper_args__: ClassVar[dict[str, Any]] = {"eager_defaults": True}
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -96,7 +100,7 @@ class ProjectMedia(Base):
         ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
     kind: Mapped[str] = mapped_column(Text)
-    url: Mapped[str] = mapped_column(Text)
+    url: Mapped[str | None] = mapped_column(Text)
     position: Mapped[int] = mapped_column(Integer)
     alt: Mapped[str | None] = mapped_column(Text)
     # Set for images we store (app/media/storage.py); NULL for external URLs (the samples).

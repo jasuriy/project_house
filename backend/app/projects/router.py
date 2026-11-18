@@ -3,10 +3,18 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import current_developer
 from app.core.db import get_session
-from app.projects import service
+from app.projects import editing, service
 from app.projects.fields import FieldName
-from app.projects.schemas import FeedPage, ProjectDetail
+from app.projects.schemas import (
+    EditableProject,
+    FeedPage,
+    ProjectDetail,
+    ProjectInput,
+    ProjectUpdate,
+)
+from app.users.models import User
 
 router = APIRouter(tags=["projects"])
 
@@ -14,6 +22,7 @@ DEFAULT_LIMIT = 24
 MAX_LIMIT = 60
 
 Session = Annotated[AsyncSession, Depends(get_session)]
+Developer = Annotated[User, Depends(current_developer)]
 
 
 @router.get("/projects")
@@ -44,3 +53,28 @@ async def list_user_projects(
 @router.get("/users/{username}/projects/{slug}")
 async def get_user_project(username: str, slug: str, session: Session) -> ProjectDetail:
     return ProjectDetail.from_project(await service.get_user_project(session, username, slug))
+
+
+# A developer's own projects (add-project design, part 1). Another user's slug is 404.
+
+
+@router.post("/me/projects", status_code=201)
+async def create_project(data: ProjectInput, user: Developer, session: Session) -> ProjectDetail:
+    return ProjectDetail.from_project(await editing.create_project(session, user, data))
+
+
+@router.get("/me/projects/{slug}")
+async def get_own_project(slug: str, user: Developer, session: Session) -> EditableProject:
+    return EditableProject.from_project(await editing.own_project(session, user, slug))
+
+
+@router.patch("/me/projects/{slug}")
+async def update_project(
+    slug: str, data: ProjectUpdate, user: Developer, session: Session
+) -> ProjectDetail:
+    return ProjectDetail.from_project(await editing.update_project(session, user, slug, data))
+
+
+@router.delete("/me/projects/{slug}", status_code=204)
+async def delete_project(slug: str, user: Developer, session: Session) -> None:
+    await editing.delete_project(session, user, slug)

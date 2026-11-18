@@ -1,10 +1,12 @@
 from datetime import datetime
 from typing import Literal, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
+from app.media import storage
 from app.projects.fields import FieldName
-from app.projects.models import Project
+from app.projects.models import Project, ProjectMedia
+from app.projects.video import youtube_id
 
 CARD_TECH_STACK_LIMIT = 3
 
@@ -27,6 +29,21 @@ class Author(BaseModel):
     kind: Literal["demo", "user"]
     name: str
     url: str
+
+
+def media_url(media: ProjectMedia) -> str:
+    """Stored images get their URL from the storage key; external media keep theirs."""
+    return storage.url(media.storage_key) if media.storage_key else media.url or ""
+
+
+def _cover(project: Project) -> Cover | None:
+    """The first media item with a picture (an image, or a YouTube video's thumbnail); a
+    project with neither (a Loom-only one, an mp4 sample) shows its first item."""
+    if not project.media:
+        return None
+    pictured = (m for m in project.media if m.kind == "image" or youtube_id(media_url(m)))
+    first = next(pictured, project.media[0])
+    return Cover(kind=first.kind, url=media_url(first))  # type: ignore[arg-type]
 
 
 def _path(project: Project) -> str:
@@ -58,7 +75,6 @@ class ProjectCard(BaseModel):
     @classmethod
     def from_project(cls, project: Project) -> Self:
         """`project.media` and (for owned rows) `project.owner` must be loaded."""
-        first = project.media[0] if project.media else None
         return cls(
             slug=project.slug,
             path=_path(project),
@@ -66,7 +82,7 @@ class ProjectCard(BaseModel):
             one_line_problem=project.one_line_problem,
             field=project.field,  # type: ignore[arg-type]
             tech_stack=project.tech_stack[:CARD_TECH_STACK_LIMIT],
-            cover=Cover(kind=first.kind, url=first.url) if first else None,  # type: ignore[arg-type]
+            cover=_cover(project),
             author=_author(project),
             published_at=project.published_at,
         )
@@ -110,7 +126,7 @@ class ProjectDetail(BaseModel):
             license=project.license,
             role=project.role,
             media=[
-                MediaItem(kind=m.kind, url=m.url, position=m.position, alt=m.alt)  # type: ignore[arg-type]
+                MediaItem(kind=m.kind, url=media_url(m), position=m.position, alt=m.alt)  # type: ignore[arg-type]
                 for m in project.media
             ],
             author=_author(project),
@@ -121,3 +137,86 @@ class ProjectDetail(BaseModel):
 class FeedPage(BaseModel):
     items: list[ProjectCard]
     next_cursor: str | None
+
+
+class ImageRef(BaseModel):
+    """One image of the form, in order: a new upload or an image the project already has."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    upload: str | None = None
+    media: int | None = None
+
+
+class ProjectUpdate(BaseModel):
+    """PATCH /me/projects/{slug}: any subset. Values are checked in app/projects/editing.py, so
+    every failure has its own code; `images`, when sent, is the whole new image list."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = None
+    one_line_problem: str | None = None
+    short_description: str | None = None
+    result: str | None = None
+    field: str | None = None
+    tech_stack: list[str] | None = None
+    github_url: str | None = None
+    live_url: str | None = None
+    role: str | None = None
+    video_url: str | None = None
+    images: list[ImageRef] | None = None
+
+
+class ProjectInput(ProjectUpdate):
+    """POST /me/projects: the required fields must be present (their values are checked later)."""
+
+    title: str
+    one_line_problem: str
+    short_description: str
+    field: str
+    tech_stack: list[str]
+
+
+class EditableImage(BaseModel):
+    id: int
+    url: str
+
+
+class EditableProject(BaseModel):
+    """GET /me/projects/{slug}: what the edit form starts from."""
+
+    slug: str
+    path: str
+    is_demo: bool
+    title: str
+    one_line_problem: str
+    short_description: str
+    result: str | None
+    field: FieldName
+    tech_stack: list[str]
+    github_url: str | None
+    live_url: str | None
+    role: str | None
+    video_url: str | None
+    images: list[EditableImage]
+
+    @classmethod
+    def from_project(cls, project: Project) -> Self:
+        return cls(
+            slug=project.slug,
+            path=_path(project),
+            is_demo=project.is_demo,
+            title=project.title,
+            one_line_problem=project.one_line_problem,
+            short_description=project.short_description,
+            result=project.result,
+            field=project.field,  # type: ignore[arg-type]
+            tech_stack=project.tech_stack,
+            github_url=project.github_url,
+            live_url=project.live_url,
+            role=project.role,
+            video_url=project.demo_video_url,
+            images=[
+                EditableImage(id=m.id, url=media_url(m)) for m in project.media if m.kind == "image"
+            ],
+        )

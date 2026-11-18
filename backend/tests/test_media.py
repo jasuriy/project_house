@@ -1,10 +1,8 @@
 """Image uploads (POST /api/v1/me/uploads), disk storage and the media route."""
 
-import io
 import struct
 import zlib
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -14,24 +12,11 @@ from app.core.config import get_settings
 from app.core.errors import AppError
 from app.media.models import Upload
 from app.media.service import consume_uploads
-from tests.auth_helpers import signup_body
+from tests.media_helpers import UPLOADS, image_bytes, signup
 
-pytest_plugins = ["tests.auth_fixtures"]
+pytest_plugins = ["tests.auth_fixtures", "tests.media_fixtures"]
 
-UPLOADS = "/api/v1/me/uploads"
 LIMIT = 5 * 1024 * 1024
-
-
-@pytest.fixture(autouse=True)
-def media_root(tmp_path, monkeypatch) -> Path:
-    monkeypatch.setattr(get_settings(), "media_root", str(tmp_path))
-    return tmp_path
-
-
-def image_bytes(fmt: str = "PNG", size: tuple[int, int] = (40, 30), **save) -> bytes:
-    buffer = io.BytesIO()
-    Image.new("RGB", size, (200, 30, 30)).save(buffer, fmt, **save)
-    return buffer.getvalue()
 
 
 def png_claiming(width: int, height: int) -> bytes:
@@ -43,10 +28,7 @@ def png_claiming(width: int, height: int) -> bytes:
 
 
 async def _signup(client, username: str = "bek", account_type: str = "developer") -> None:
-    body = signup_body(
-        username=username, email=f"{username}@example.com", account_type=account_type
-    )
-    assert (await client.post("/api/v1/auth/signup", json=body)).status_code == 201
+    await signup(client, username, account_type)
 
 
 async def _upload(client, data: bytes, content_type: str = "image/png"):
