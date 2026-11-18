@@ -68,8 +68,9 @@ export function ProjectView({
 
       {/* Desktop: media, Loyiha haqida and the comments on the left, the panel on the right across
           all three rows (the last row takes any extra height, so no gap opens under the text).
-          Smaller screens: one column in source order. */}
-      <div className="grid items-start gap-4 lg:grid-cols-[768px_1fr] lg:grid-rows-[auto_auto_1fr] lg:gap-x-8 lg:gap-y-6">
+          Smaller screens: one column in source order. The media column is 768 px when there is
+          room and narrower below about 1130 px, so the panel always keeps 320 px. */}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,768px)_minmax(320px,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-8 lg:gap-y-6">
         <div className="min-w-0">
           <MediaPlayer media={project.media} title={project.title} />
         </div>

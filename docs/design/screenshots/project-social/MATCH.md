@@ -7,7 +7,8 @@ Checked on the branch servers (backend 8002, frontend 3002, database `projecthou
 | Screen | Design | Ours | Match |
 |---|---|---|---|
 | Desktop 1440, signed in | design-project-social-desktop.png | ours-1440.png, ours-signed-in-1440.png | yes: comments under Loyiha haqida on the left; heart + Saqlash under the author; Shikoyat qilish ends the links row |
-| Tablet 768 | design-project-social-tablet.png | ours-768.png | yes for the page body (one column: media, panel, Loyiha haqida, comments). The header overflows by 33 px when signed in: an older header bug, not from this branch (DEFERRED, see below) |
+| Tablet 768 | design-project-social-tablet.png | ours-768.png, ours-header-768.png | yes: one column (media, panel, Loyiha haqida, comments); the header shows the photo instead of the name, as the tablet mockup does (fixed here, see below) |
+| 1024 | (between the drawn widths) | ours-1024.png | yes: the media column narrows to 577 px so the panel keeps 320 px (fixed here, see below) |
 | Phone 390 / 360 | design-project-social-phone.png | ours-390.png, ours-360.png | yes: heart and Saqlash split the row; no sideways scroll; tap targets 44 px |
 | Logged out | design-project-social-phone.png (right) | ours-guest-1440.png | yes: counts shown, "Kiring, izoh yozish uchun." replaces the write box |
 | Report dialog | design-project-report-desktop.png | ours-report-1440.png | yes: four reasons, optional note with 0 / 500 counter, Bekor qilish + Yuborish |
@@ -47,5 +48,16 @@ Found and fixed during the check: React hydration error #418. The comment date w
 machine prints "18 noyabr 2026". This also changes the published date on project pages from
 "17-noyabr, 2026" to "17 noyabr 2026" (the mockup's form).
 
-DEFERRED: the signed-in header at 768 px is 33 px too wide with a long name
-("Madina Yusupova" + Sozlamalar + Chiqish), on every page.
+Older layout bugs found by a sweep (3 pages x 9 widths 360-1440 x uz/ru/en x signed in and out,
+measured while loading and after) and fixed here, as Bek chose:
+
+- Signed-in header at 768 px was 33 px too wide with a long name ("Madina Yusupova" + Sozlamalar +
+  Chiqish), on every page. From 768 to 1023 px it now shows the person's photo (linked to their
+  profile, labelled with their name), as the tablet mockup does; the name is back from 1024 px.
+- Project page at 1024-1130 px scrolled sideways (up to 93 px): the media column was a fixed 768 px.
+  It is now at most 768 px and the panel at least 320 px; at 1280 px and up nothing changes
+  (768 + 480 px at 1440).
+- Phone header at 360 px was 17 px too wide for a moment while the account loaded: the placeholder
+  was 112 px, the real icons 92 px. The placeholder is now 92 px on a phone.
+
+After the fixes: 162 of 162 checks with no sideways scroll.
