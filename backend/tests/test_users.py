@@ -50,6 +50,8 @@ def test_reserved_list_matches_architecture():
         "reset-password",
         "verify-email",
         "onboarding",
+        "saved",
+        "liked",
     ]
     assert set(RESERVED_USERNAMES) == set(expected)
 

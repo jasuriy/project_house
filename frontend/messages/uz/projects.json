@@ -8,7 +8,8 @@
     "loadMore": "Yana koʻrsatish",
     "loading": "Yuklanmoqda",
     "demo": "Namuna",
-    "video": "Video"
+    "video": "Video",
+    "likes": "{count} yoqtirish"
   },
   "Project": {
     "breadcrumb": "Joylashuv",
@@ -44,7 +45,8 @@
     "editProfile": "Profilni tahrirlash",
     "privacy": "Telefon va email ochiq koʻrsatilmaydi; bogʻlanish xabarlar orqali.",
     "empty": "Hali loyiha yoʻq.",
-    "profileOf": "Profil"
+    "profileOf": "Profil",
+    "likesStat": "yoqtirish"
   },
   "Editor": {
     "title": "Loyiha qoʻshish",
@@ -137,5 +139,61 @@
     "not_your_repo": "Bu repozitoriy sizniki emas: siz uning egasi ham, hissa qoʻshganlardan biri ham emassiz.",
     "github_repo_not_found": "Repozitoriy topilmadi yoki yopiq (private).",
     "github_unavailable": "GitHub hozir javob bermayapti. Birozdan keyin qayta urinib koʻring."
+  },
+  "Social": {
+    "like": "Yoqtirish ({count})",
+    "save": "Saqlash",
+    "saved": "Saqlangan",
+    "report": "Shikoyat qilish",
+    "comments": "Izohlar",
+    "commentLabel": "Izohingiz",
+    "commentPlaceholder": "Izoh yozing",
+    "send": "Yuborish",
+    "sending": "Yuborilmoqda",
+    "signIn": "<link>Kiring</link>, izoh yozish uchun.",
+    "delete": "Oʻchirish",
+    "deleteAsk": "Izoh oʻchirilsinmi?",
+    "deleteYes": "Ha, oʻchirish",
+    "deleteNo": "Yoʻq",
+    "loadMore": "Yana izohlar",
+    "empty": "Hali izoh yoʻq. Birinchi boʻling.",
+    "loadFailed": "Izohlarni yuklab boʻlmadi.",
+    "reportProject": "\"{title}\" loyihasi. Shikoyatni faqat moderator koʻradi.",
+    "reportComment": "{name} izohi. Shikoyatni faqat moderator koʻradi.",
+    "reason": "Sabab",
+    "reasons": {
+      "spam": "Spam yoki reklama",
+      "not_own_work": "Bu muallifning oʻz ishi emas",
+      "offensive": "Haqoratli",
+      "other": "Boshqa sabab"
+    },
+    "note": "Izoh",
+    "optional": "(ixtiyoriy)",
+    "cancel": "Bekor qilish",
+    "submit": "Yuborish",
+    "sent": "Rahmat. Shikoyatingiz yuborildi.",
+    "close": "Yopish"
+  },
+  "SocialErrors": {
+    "invalid_comment": "Izoh 1 dan 1000 belgigacha boʻladi.",
+    "comment_not_found": "Bu izoh endi yoʻq.",
+    "invalid_report": "Sababni tanlang; izoh 500 belgigacha boʻladi.",
+    "project_not_found": "Bu loyiha endi yoʻq.",
+    "not_authenticated": "Qaytadan kiring.",
+    "unreachable": "Server bilan aloqa yoʻq. Qayta urinib koʻring.",
+    "generic": "Nimadir xato ketdi. Qayta urinib koʻring."
+  },
+  "Mine": {
+    "saved": "Saqlanganlar",
+    "liked": "Yoqtirganlarim",
+    "lists": "Roʻyxatlaringiz",
+    "only": "Faqat siz koʻrasiz.",
+    "savedOrder": "Oxirgi saqlaganingiz birinchi.",
+    "likedOrder": "Oxirgi yoqtirganingiz birinchi.",
+    "savedEmptyTitle": "Hali hech narsa saqlamadingiz",
+    "savedEmptyText": "Loyiha sahifasidagi Saqlash tugmasi loyihani shu yerga qoʻshadi.",
+    "likedEmptyTitle": "Hali hech narsani yoqtirmadingiz",
+    "likedEmptyText": "Loyiha sahifasidagi yurakcha loyihani shu yerga qoʻshadi.",
+    "toFeed": "Lentaga oʻtish"
   }
 }

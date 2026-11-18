@@ -1,6 +1,7 @@
 import { Plus, Settings } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
+import { Avatar } from "@/components/Avatar";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LogoutButton } from "@/components/LogoutButton";
 import { NavLink } from "@/components/NavLink";
@@ -39,9 +40,22 @@ async function UserSlot() {
           <span className="hidden lg:inline">{t("addProject")}</span>
         </Link>
       )}
+      {/* Tablet: the photo, as in the mockup (the name, Sozlamalar and Chiqish do not fit in 768 px
+          with a long name). Desktop: the name. */}
       <Link
         href={`/${user.username}`}
-        className="hidden max-w-48 truncate rounded-control text-ui font-semibold text-fg hover:text-primary md:inline"
+        aria-label={user.display_name}
+        className="hidden rounded-full md:inline-flex lg:hidden"
+      >
+        <Avatar
+          name={user.display_name}
+          src={user.avatar_url}
+          className="size-10 border border-border bg-muted text-small font-semibold text-fg"
+        />
+      </Link>
+      <Link
+        href={`/${user.username}`}
+        className="hidden max-w-48 truncate rounded-control text-ui font-semibold text-fg hover:text-primary lg:inline"
       >
         {user.display_name}
       </Link>
@@ -85,8 +99,10 @@ export async function SiteHeader() {
           >
             <LanguageSwitcher />
           </Suspense>
+          {/* The placeholder is no wider than the phone's add + settings icons (44 + 4 + 44 px),
+              or the 360 px header scrolls sideways while the account loads. */}
           <Suspense
-            fallback={<span aria-hidden className="inline-block h-11 w-28" />}
+            fallback={<span aria-hidden className="inline-block h-11 w-[92px] md:w-28" />}
           >
             <UserSlot />
           </Suspense>

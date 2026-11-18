@@ -2,24 +2,41 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { formatDate } from "@/lib/format";
 import { safeExternalUrl } from "@/lib/safe-url";
-import type { ProjectDetail } from "@/lib/types";
+import type { CommentPage, ProjectDetail } from "@/lib/types";
 import { MediaPlayer } from "./MediaPlayer";
 import { Avatar } from "@/components/Avatar";
 import { DeleteProject } from "@/components/editor/DeleteProject";
+import { Comments } from "@/components/social/Comments";
+import { LikeButton, SaveButton } from "@/components/social/MarkButtons";
+import { ReportDialog } from "@/components/social/ReportDialog";
 import { ShareButton } from "./ShareButton";
 
 const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const;
 
-/** The project page body, laid out as mockup screen 2 ("Loyiha sahifasi"). */
-/** `viewer` is the signed-in username: the owner gets Tahrirlash, or O'chirish for a sample. */
-export function ProjectView({ project, viewer }: { project: ProjectDetail; viewer: string | null }) {
+/**
+ * The project page body, laid out as mockup screens 2 and 2b. `viewer` is the signed-in username:
+ * the owner gets Tahrirlash (or Oʻchirish for a sample) and no Shikoyat qilish. `comments` is the
+ * first page of comments, null when it could not be loaded.
+ */
+export function ProjectView({
+  project,
+  viewer,
+  comments,
+}: {
+  project: ProjectDetail;
+  viewer: string | null;
+  comments: CommentPage | null;
+}) {
   const t = useTranslations("Project");
+  const ts = useTranslations("Social");
   const tf = useTranslations("Fields");
   const tn = useTranslations("Nav");
   const locale = useLocale();
   const fieldLabel = tf(project.field);
   const authorUrl = project.author.kind === "demo" ? safeExternalUrl(project.author.url) : null;
   const isOwner = viewer !== null && project.author.kind === "user" && project.author.url === `/${viewer}`;
+  // Logged out, the heart, Saqlash, Shikoyat and the write box go to login and come back here.
+  const loginHref = viewer === null ? `/login?next=${encodeURIComponent(project.path)}` : null;
 
   const links = [
     { href: safeExternalUrl(project.github_url), label: t("github") },
@@ -49,16 +66,16 @@ export function ProjectView({ project, viewer }: { project: ProjectDetail; viewe
         </ol>
       </nav>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[768px_1fr] lg:gap-8">
+      {/* Desktop: media, Loyiha haqida and the comments on the left, the panel on the right across
+          all three rows (the last row takes any extra height, so no gap opens under the text).
+          Smaller screens: one column in source order. The media column is 768 px when there is
+          room and narrower below about 1130 px, so the panel always keeps 320 px. */}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,768px)_minmax(320px,1fr)] lg:grid-rows-[auto_auto_1fr] lg:gap-x-8 lg:gap-y-6">
         <div className="min-w-0">
           <MediaPlayer media={project.media} title={project.title} />
-          <section className="mt-6 hidden lg:block">
-            <h2 className="text-h3 font-semibold text-fg">{t("about")}</h2>
-            <p className="mt-2 max-w-[75ch] text-body text-fg">{project.short_description}</p>
-          </section>
         </div>
 
-        <article className="grid gap-4 rounded-card border border-border bg-card p-5.5">
+        <article className="grid gap-4 rounded-card border border-border bg-card p-5.5 lg:col-start-2 lg:row-span-3 lg:row-start-1">
           <h1 className="text-h1 leading-[1.15] font-bold tracking-[-0.02em] text-fg">{project.title}</h1>
           <p className="text-lead text-fg">{project.one_line_problem}</p>
 
@@ -124,6 +141,11 @@ export function ProjectView({ project, viewer }: { project: ProjectDetail; viewe
             </div>
           </div>
 
+          <div className="flex gap-2">
+            <LikeButton projectId={project.id} liked={project.liked} count={project.like_count} loginHref={loginHref} />
+            <SaveButton projectId={project.id} saved={project.saved} loginHref={loginHref} />
+          </div>
+
           <div className="flex flex-wrap items-center gap-x-4.5 gap-y-1 text-small">
             {links.map((link) => (
               <a
@@ -144,6 +166,14 @@ export function ProjectView({ project, viewer }: { project: ProjectDetail; viewe
             {isOwner && project.is_demo && viewer && (
               <DeleteProject slug={project.slug} title={project.title} username={viewer} look="link" />
             )}
+            {!isOwner && (
+              <ReportDialog
+                target={{ project_id: project.id }}
+                description={ts("reportProject", { title: project.title })}
+                loginHref={loginHref}
+                triggerClassName="inline-flex min-h-11 items-center rounded-control text-small text-mute hover:underline md:min-h-0"
+              />
+            )}
           </div>
 
           {project.author.kind === "demo" && (
@@ -151,10 +181,20 @@ export function ProjectView({ project, viewer }: { project: ProjectDetail; viewe
           )}
         </article>
 
-        <section className="lg:hidden">
+        <section className="lg:col-start-1">
           <h2 className="text-h3 font-semibold text-fg">{t("about")}</h2>
-          <p className="mt-2 text-body text-fg">{project.short_description}</p>
+          <p className="mt-2 max-w-[75ch] text-body text-fg">{project.short_description}</p>
         </section>
+
+        <div className="mt-3 min-w-0 lg:col-start-1 lg:mt-1">
+          <Comments
+            projectId={project.id}
+            initial={comments}
+            count={project.comment_count}
+            viewer={viewer}
+            loginHref={loginHref}
+          />
+        </div>
       </div>
     </>
   );

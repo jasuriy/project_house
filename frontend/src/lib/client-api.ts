@@ -22,6 +22,11 @@ export function clientGet<T>(path: string): Promise<ApiResult<T>> {
   return request<T>(path, { method: "GET" });
 }
 
+/** PUT without a body (like, save). Never throws. 204 gives `{ ok: true, data: null }`. */
+export function clientPut(path: string): Promise<ApiResult<null>> {
+  return request<null>(path, { method: "PUT" });
+}
+
 /** DELETE. Never throws. 204 gives `{ ok: true, data: null }`. */
 export function clientDelete(path: string): Promise<ApiResult<null>> {
   return request<null>(path, { method: "DELETE" });

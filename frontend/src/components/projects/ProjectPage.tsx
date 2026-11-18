@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import type { ApiResult } from "@/lib/api";
+import { getComments } from "@/lib/projects";
 import { getCurrentUser } from "@/lib/session";
 import type { ProjectDetail } from "@/lib/types";
 import { ProjectView } from "./ProjectView";
@@ -26,8 +27,17 @@ export async function ProjectPage({ result }: { result: ApiResult<ProjectDetail>
       </div>
     );
   }
-  const viewer = await getCurrentUser(); // cached per request: the header already asked
-  return <ProjectView project={result.data} viewer={viewer?.username ?? null} />;
+  const [viewer, comments] = await Promise.all([
+    getCurrentUser(), // cached per request: the header already asked
+    getComments(result.data.id),
+  ]);
+  return (
+    <ProjectView
+      project={result.data}
+      viewer={viewer?.username ?? null}
+      comments={comments.ok ? comments.data : null}
+    />
+  );
 }
 
 export function projectMetadata(result: ApiResult<ProjectDetail>): Metadata {

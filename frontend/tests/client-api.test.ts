@@ -110,3 +110,12 @@ describe("clientPost", () => {
     });
   });
 });
+
+describe("clientPut", () => {
+  it("PUTs without a body and maps 204 to null", async () => {
+    const { clientPut } = await import("@/lib/client-api");
+    const fetchMock = stubFetch(async () => new Response(null, { status: 204 }));
+    expect(await clientPut("/api/v1/me/likes/7")).toEqual({ ok: true, data: null });
+    expect(fetchMock.mock.calls[0][1]?.method).toBe("PUT");
+  });
+});

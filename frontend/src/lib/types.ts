@@ -49,6 +49,7 @@ export type Author = {
 };
 
 export type ProjectCard = {
+  id: number;
   slug: string;
   path: string;
   title: string;
@@ -58,9 +59,11 @@ export type ProjectCard = {
   cover: Cover | null;
   author: Author;
   published_at: string;
+  like_count: number;
 };
 
 export type ProjectDetail = {
+  id: number;
   slug: string;
   path: string;
   is_demo: boolean;
@@ -78,7 +81,30 @@ export type ProjectDetail = {
   media: MediaItem[];
   author: Author;
   published_at: string;
+  like_count: number;
+  comment_count: number;
+  /** For the visitor; false for a guest. */
+  liked: boolean;
+  saved: boolean;
 };
+
+/** One comment: GET /api/v1/projects/{id}/comments (backend app/social/schemas.py). */
+export type Comment = {
+  id: number;
+  body: string;
+  created_at: string;
+  author: { name: string; url: string; avatar_url: string | null };
+  /** True for the comment's author and the project's owner. */
+  can_delete: boolean;
+};
+
+export type CommentPage = {
+  items: Comment[];
+  next_cursor: string | null;
+};
+
+export type ReportReason = "spam" | "not_own_work" | "offensive" | "other";
+export const REPORT_REASONS: ReportReason[] = ["spam", "not_own_work", "offensive", "other"];
 
 /** One image of the add/edit form: GET /api/v1/me/projects/{slug} `images`. */
 export type EditableImage = { id: number; url: string };
@@ -137,7 +163,7 @@ export type UserPublic = {
 };
 
 /** The profile page: GET /api/v1/users/{username}. */
-export type Profile = UserPublic & { project_count: number };
+export type Profile = UserPublic & { project_count: number; like_total: number };
 
 /** The signed-in user: GET /api/v1/auth/me. */
 export type Account = UserPublic & {

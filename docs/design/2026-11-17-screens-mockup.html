@@ -109,6 +109,40 @@ section.scr { display: grid; gap: 12px; scroll-margin-top: 16px; }
 .m .acts { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .m .links { display: flex; gap: 18px; font-size: 14px; }
 .m .links a { color: var(--primary); }
+/* 2b / 2c: likes, saves, comments, reports */
+.m .social { display: flex; gap: 8px; }
+.m .btn svg { width: 18px; height: 18px; }
+.m .btn.liked { color: var(--danger); }
+.m .btn.liked svg { fill: currentColor; }
+.m .links a.report { color: var(--mute); }
+.m .about h3, .m .cmts h3 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
+.m .about p { margin: 0; font-size: 16px; line-height: 1.55; max-width: 75ch; }
+.m .cmts { display: grid; gap: 14px; margin-top: 28px; }
+.m .cmts h3 { margin: 0; }
+.m .cmts h3 span { color: var(--mute); font-weight: 500; }
+.m .compose { display: grid; gap: 8px; }
+.m .compose .input.area { min-height: 76px; color: var(--mute); }
+.m .compose .under { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--mute); }
+.m .cmt { display: grid; grid-template-columns: 36px 1fr; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+.m .cmt .av { width: 36px; height: 36px; font-size: 12px; }
+.m .cmt .top { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+.m .cmt .top b { font-weight: 600; }
+.m .cmt .top time { color: var(--mute); font-size: 13px; }
+.m .cmt p { margin: 2px 0 0; font-size: 15px; line-height: 1.5; }
+.m .cmt .cacts { display: flex; gap: 14px; margin-top: 4px; font-size: 13px; }
+.m .cmt .cacts a { color: var(--mute); }
+.m .cmt .cacts a.del { color: var(--danger); }
+.m .cmt .ask { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 14px; flex-wrap: wrap; }
+.m .signin { margin: 0; font-size: 15px; padding: 14px; border: 1px dashed var(--border); border-radius: 10px; color: var(--mute); }
+.m .signin a { color: var(--primary); font-weight: 600; }
+.m .radios { display: grid; gap: 8px; font-size: 15px; }
+.m .radios label { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.m .radios label.on { border-color: var(--primary); background: var(--accent-soft); }
+.m .radios i { width: 16px; height: 16px; border-radius: 999px; border: 2px solid var(--mute); flex: none; box-sizing: border-box; }
+.m .radios label.on i { border: 5px solid var(--primary); }
+.m .dialog.report { width: 460px; top: 120px; }
+.m.p .dialog.report { width: calc(100% - 32px); top: 60px; }
+.m.p .social .btn { flex: 1; }
 
 /* profile */
 .m .prof { display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start; }
@@ -124,6 +158,12 @@ section.scr { display: grid; gap: 12px; scroll-margin-top: 16px; }
 .m .tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
 .m .tabs a { padding: 10px 0; font-size: 15px; color: var(--mute); }
 .m .tabs a.on { color: var(--fg); font-weight: 600; box-shadow: inset 0 -2px 0 var(--primary); }
+/* 3c / 3d: your own profile, Saqlanganlar and Yoqtirganlarim */
+.m .mine { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.m .mine .btn svg { width: 17px; height: 17px; }
+.m .only { margin: 4px 0 0; font-size: 14px; color: var(--mute); }
+.m .emptybox { border: 1px dashed var(--border); border-radius: 12px; padding: 28px 20px; text-align: center; display: grid; gap: 10px; justify-items: center; color: var(--mute); }
+.m .emptybox b { color: var(--fg); font-size: 17px; }
 
 /* add project */
 .m .formgrid { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: start; }
@@ -344,6 +384,46 @@ const project = t => {
   return `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="crumb">Lenta / Kompyuter koʻrishi / Paxta dalasida begona oʻt aniqlash</div><div class="split"><div>${ph(110, "lg", "1:48", 24)}<div class="thumbs">${th}</div></div>${panel}</div></div></div>`;
 };
 
+// ---- 2b / 2c: likes, saves, comments, report ----
+const HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
+const MARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"/></svg>';
+const social = liked => `<div class="social"><button class="btn ghost${liked ? " liked" : ""}" type="button" aria-pressed="${liked}">${HEART}${liked ? 215 : 214}</button><button class="btn ghost" type="button" aria-pressed="false">${MARK}Saqlash</button></div>`;
+const socialLinks = `<div class="links"><a>GitHub</a><a>Demo video</a><a>Ulashish</a><a class="report">Shikoyat qilish</a></div>`;
+const about = `<section class="about"><h3>Loyiha haqida</h3><p>Dron suratlarida begona oʻtni topadigan model. Fermer xaritada qaysi qatorlarga sepish kerakligini koʻradi va gerbitsidni faqat oʻsha joyga sepadi.</p></section>`;
+const CMTS = [
+  { av: "DK", n: "Dilnoza Karimova", d: "2 kun oldin", b: "Natija ajoyib. Dron qaysi balandlikda uchgan?", own: false },
+  { av: "AR", n: "Aziz Rahimov", d: "1 kun oldin", b: "Rahmat! 15 metrdan, har bir surat 4K.", own: true },
+  { av: "BA", n: "Bobur Aliyev", d: "5 soat oldin", b: "Maʼlumotlar toʻplamini ham ochiq qilasizmi?", own: false }
+];
+const cmt = (c, signedIn, ask) => `<div class="cmt"><span class="av">${c.av}</span><div><div class="top"><b>${c.n}</b><time>${c.d}</time></div><p>${esc(c.b)}</p>${ask
+  ? `<div class="ask">Izoh oʻchirilsinmi?<button class="btn solid-danger sm" type="button">Ha, oʻchirish</button><button class="btn ghost sm" type="button">Yoʻq</button></div>`
+  : `<div class="cacts">${c.own && signedIn ? `<a class="del">Oʻchirish</a>` : `<a>Shikoyat qilish</a>`}</div>`}</div></div>`;
+const comments = (signedIn, ask) => `<section class="cmts"><h3>Izohlar <span>3</span></h3>${signedIn
+  ? `<div class="compose"><div class="input area">Izoh yozing</div><div class="under"><span>0 / 1000</span><button class="btn sm" type="button">Yuborish</button></div></div>`
+  : `<p class="signin"><a>Kiring</a>, izoh yozish uchun.</p>`}${CMTS.map((c, i) => cmt(c, signedIn, ask && i === 1)).join("")}</section>`;
+const thumbs = () => [0, 1, 2, 3, 4].map(i => `<div class="ph${i ? "" : " cur"}" style="background: linear-gradient(135deg, hsl(${110 + i * 8} 40% ${24 + i * 5}%), hsl(${140 + i * 8} 45% ${36 + i * 4}%))"></div>`).join("");
+const socialBody = t => {
+  const b = ppBlocks;
+  const panel = `<div class="panel pp">${b.head}${b.result}${b.chips}${b.kv}<div class="hr"></div>${b.author}${social(true)}${socialLinks}</div>`;
+  return `${nav("", t)}<div class="main"><div class="crumb">Lenta / Kompyuter koʻrishi / Paxta dalasida begona oʻt aniqlash</div>${t
+    ? `<div class="split"><div>${ph(110, "lg", "1:48", 24)}<div class="thumbs">${thumbs()}</div></div>${panel}<div>${about}${comments(true, true)}</div></div>`
+    : `<div class="split"><div>${ph(110, "lg", "1:48", 24)}<div class="thumbs">${thumbs()}</div><div style="margin-top:24px">${about}</div>${comments(true, true)}</div>${panel}</div>`}</div>`;
+};
+const projectSocial = t => `<div class="${M(t)}">${socialBody(t)}</div>`;
+const reportDialog = `<div class="dialog report" role="dialog" aria-label="Shikoyat qilish"><h3>Shikoyat qilish</h3><p>"Paxta dalasida begona oʻt aniqlash" loyihasi. Shikoyatni faqat moderator koʻradi.</p>
+  <div class="radios"><label><i></i>Spam yoki reklama</label><label class="on"><i></i>Bu muallifning oʻz ishi emas</label><label><i></i>Haqoratli</label><label><i></i>Boshqa sabab</label></div>
+  <div class="field"><label>Izoh <span class="muted" style="font-weight:400">(ixtiyoriy)</span></label><div class="input area" style="min-height:72px">Asl loyiha: github.com/...</div><span class="help">24 / 500</span></div>
+  <div class="row"><button class="btn ghost" type="button">Bekor qilish</button><button class="btn" type="button">Yuborish</button></div></div>`;
+const projectReport = t => `<div class="${M(t)}" style="position:relative"><div class="dim">${socialBody(t)}</div>${reportDialog}</div>`;
+const projectSocialP = signedIn => () => `<div class="m p">${topBack("Loyiha", `<span class="ic">${I.share}</span>`)}
+  <div class="demo-edge">${ph(110, "lg", "1:48", 24)}</div>
+  <div class="content">
+    ${ppBlocks.head}${ppBlocks.author}${social(signedIn)}${socialLinks}
+    ${comments(signedIn, false)}
+  </div>
+</div>`;
+const projectReportP = () => `<div class="m p" style="position:relative"><div class="dim">${topBack("Loyiha", "")}<div class="demo-edge">${ph(110, "lg", "1:48", 24)}</div><div class="content">${ppBlocks.head}${ppBlocks.result}${ppBlocks.chips}</div></div>${reportDialog}</div>`;
+
 const profSide = (t, who) => {
   const isDev = who === "dev";
   const av = isDev ? `<div class="bigav">AR</div>` : `<div class="bigav" style="background: linear-gradient(135deg, #d6ebf8, #a9d4f0)">DK</div>`;
@@ -358,6 +438,22 @@ const profSide = (t, who) => {
 };
 const profile = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${profSide(t, "dev")}<div><div class="tabs"><a class="on">Loyihalar (6)</a><a>Haqida</a></div><div class="grid" style="grid-template-columns: repeat(${t ? 2 : 3}, 1fr)">${(t ? AZIZ.slice(0, 4) : AZIZ).map(card).join("")}</div></div></div></div></div>`;
 const company = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${profSide(t, "co")}<div class="panel" style="display:grid;gap:10px"><h3 style="margin:0;font-size:18px">Kompaniya haqida</h3><p style="margin:0">Nova Systems logistika va qishloq xoʻjaligi uchun kompyuter koʻrishi yechimlarini ishlab chiqadi. Talabalar uchun yozgi amaliyot va junior oʻrinlar ochiq.</p><p class="muted" style="margin:0;font-size:14px">Kompaniya hisobi bitta odamga tegishli (Phase 1). Kompaniya sahifalari keyingi bosqichda.</p></div></div></div></div>`;
+
+// ---- 3c / 3d: your own profile; Saqlanganlar and Yoqtirganlarim ----
+const mineBtns = `<div class="mine"><button class="btn ghost" type="button">${MARK}Saqlanganlar</button><button class="btn ghost" type="button">${HEART}Yoqtirganlarim</button></div>`;
+const ownSide = t => profSide(t, "dev")
+  .replace('<button class="btn" type="button">Xabar yozish</button>', '<button class="btn" type="button">Profilni tahrirlash</button>')
+  .replace(/(<div class="acts"[^>]*>.*?<\/div>)/, `$1${t ? "" : mineBtns}`)
+  .replace(/(<\/div>)$/, t ? `<div style="grid-column:2">${mineBtns}</div>$1` : "$1");
+const ownProfile = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${ownSide(t)}<div><div class="tabs"><a class="on">Loyihalar (6)</a><a>Haqida</a></div><div class="grid" style="grid-template-columns: repeat(${t ? 2 : 3}, 1fr)">${(t ? AZIZ.slice(0, 4) : AZIZ.slice(0, 3)).map(card).join("")}</div></div></div></div></div>`;
+const listHead = which => `<h2 class="h1">${which === "saved" ? "Saqlanganlar" : "Yoqtirganlarim"}</h2><p class="only">Faqat siz koʻrasiz. ${which === "saved" ? "Oxirgi saqlaganingiz birinchi." : "Oxirgi yoqtirganingiz birinchi."}</p><div class="tabs" style="margin-top:14px"><a${which === "saved" ? ' class="on"' : ""}>Saqlanganlar</a><a${which === "liked" ? ' class="on"' : ""}>Yoqtirganlarim</a></div>`;
+const savedList = t => `<div class="${M(t)}">${nav("", t)}<div class="main">${listHead("saved")}<div class="grid" style="grid-template-columns: repeat(${t ? 2 : 4}, 1fr)">${(t ? FEED.slice(0, 4) : FEED.slice(0, 8)).map(card).join("")}</div></div></div>`;
+const emptyBox = which => `<div class="emptybox"><b>${which === "saved" ? "Hali hech narsa saqlamadingiz" : "Hali hech narsani yoqtirmadingiz"}</b><span>${which === "saved" ? "Loyiha sahifasidagi Saqlash tugmasi loyihani shu yerga qoʻshadi." : "Loyiha sahifasidagi yurakcha loyihani shu yerga qoʻshadi."}</span><button class="btn ghost" type="button">Lentaga oʻtish</button></div>`;
+const ownProfileP = () => profileP("dev")
+  .replace('<button class="btn" type="button">Xabar yozish</button>', '<button class="btn" type="button">Profilni tahrirlash</button>')
+  .replace('<div class="tabs" style="margin:0">', `${mineBtns}<div class="tabs" style="margin:0">`);
+const savedListP = () => `<div class="m p">${topBack("Saqlanganlar")}<div class="content"><p class="only" style="margin:0">Faqat siz koʻrasiz. Oxirgi saqlaganingiz birinchi.</p><div class="tabs" style="margin:0"><a class="on">Saqlanganlar</a><a>Yoqtirganlarim</a></div>${card(FEED[0])}${card(FEED[1])}</div></div>`;
+const likedEmptyP = () => `<div class="m p">${topBack("Yoqtirganlarim")}<div class="content"><p class="only" style="margin:0">Faqat siz koʻrasiz. Oxirgi yoqtirganingiz birinchi.</p><div class="tabs" style="margin:0"><a>Saqlanganlar</a><a class="on">Yoqtirganlarim</a></div>${emptyBox("liked")}</div></div>`;
 
 const add = t => `<div class="${M(t)}">${nav("", t)}<div class="main">
   <h2 class="h1">Loyiha qoʻshish</h2>
@@ -458,8 +554,12 @@ const editDelete = t => `<div class="${M(t)}" style="position:relative">${nav(""
 const SCREENS = [
   { id: "feed", h: "1. Lenta (feed)", d: "Newest first, filter by field (spec D7). Each card: demo, title, one-line problem, tech, author.", dt: "Two columns. Feed and Explore move from the top bar into tabs; the field filters scroll sideways; sort sits next to the heading.", url: "projecthouse.uz", html: feed },
   { id: "project", h: "2. Loyiha sahifasi (project page)", d: "Everything a recruiter needs on the first screen, with a Report link (spec section 10).", dt: "Demo on top, full width. Under it: title, problem, result, tech, and the author with Message on one row, so they stay near the top. Details follow.", url: "projecthouse.uz/aziz-rahimov/paxta-begona-ot", html: project },
+  { id: "project-social", h: "2b. Yoqtirish, saqlash, izohlar (likes, saves, comments)", d: "The heart with its count and Saqlash sit under the author; Shikoyat qilish ends the links row (not shown to the owner). Comments sit under Loyiha haqida, oldest first: a write box with a counter; your own comment has Oʻchirish (asks once, in place), others have Shikoyat qilish. The project owner can delete any comment.", dt: "One column: demo, the panel, then Loyiha haqida and the comments.", url: "projecthouse.uz/aziz-rahimov/paxta-begona-ot", html: projectSocial },
+  { id: "project-report", h: "2c. Shikoyat qilish (report dialog)", d: "One dialog for projects and comments: one of four reasons and an optional note up to 500 characters. After Yuborish the dialog says that the report was sent; reporting twice says the same.", dt: "The same dialog over the page.", url: "projecthouse.uz/aziz-rahimov/paxta-begona-ot", html: projectReport },
   { id: "profile", h: "3. Profil (developer profile)", d: "Who the person is, open to work, Message and Share. Phone and email are never shown. No Follow button in Phase 1.", dt: "The side column becomes a header card across the top; projects in two columns.", url: "projecthouse.uz/aziz-rahimov", html: profile },
   { id: "profile-company", h: "3b. Profil (company account)", d: "One person per company account in Phase 1 (spec D14); the verified badge is set by the admin.", dt: "Same header card as the developer profile, then About.", url: "projecthouse.uz/dilnoza-karimova", html: company },
+  { id: "own-profile", h: "3c. Oʻz profilingiz (your own profile)", d: "Only on your own profile: Profilni tahrirlash and Ulashish, then Saqlanganlar and Yoqtirganlarim. Nobody else sees these two buttons.", dt: "The header card; the two buttons under the stats in the second column.", url: "projecthouse.uz/aziz-rahimov", html: ownProfile },
+  { id: "saved-list", h: "3d. Saqlanganlar / Yoqtirganlarim (your saved and liked projects)", d: "Your own lists, only after login and only yours: the feed's cards, the last saved (or liked) first, Yana koʻrsatish at the end. The tabs switch between the two lists. Empty: one line on how to fill it and a way back to the feed.", dt: "Two columns of cards.", url: "projecthouse.uz/saved", html: savedList },
   { id: "add-step1", h: "4a. Loyiha qoʻshish: GitHub havolasi (add project, step 1)", d: "Paste your own repository link; the details are read from GitHub after the ownership check. Hardware or research projects use 'fill in by hand'.", dt: "The same panel, full width.", url: "projecthouse.uz/new", html: addStep1(true) },
   { id: "add-connect", h: "4a-2. GitHub ulanmagan (GitHub not connected)", d: "Without a connected GitHub account the link cannot be checked: the box sends you to Settings; filling in by hand still works.", dt: "The same box, full width.", url: "projecthouse.uz/new", html: addStep1(false) },
   { id: "add", h: "4. Loyiha qoʻshish (add project)", d: "Step 2 of 3 after the GitHub link: ownership confirmed, AI-filled fields marked, live preview of the feed card and Telegram link.", dt: "One column. The preview moves below the form, feed card and Telegram link side by side, then the buttons.", url: "projecthouse.uz/new", html: add },
@@ -559,8 +659,12 @@ const msgConvP = () => `<div class="m p">${topBack("Dilnoza Karimova", `<span cl
 const PHONE = {
   feed: [["Lenta", feedP]],
   project: [["Loyiha sahifasi", projectP]],
+  "project-social": [["Kirgan holda", projectSocialP(true)], ["Kirmagan holda", projectSocialP(false)]],
+  "project-report": [["Shikoyat oynasi", projectReportP]],
   profile: [["Dasturchi profili", () => profileP("dev")]],
   "profile-company": [["Kompaniya profili", () => profileP("co")]],
+  "own-profile": [["Oʻz profilingiz", ownProfileP]],
+  "saved-list": [["Saqlanganlar", savedListP], ["Boʻsh holat", likedEmptyP]],
   "add-step1": [["1-qadam", addStep1P(true)]],
   "add-connect": [["GitHub ulanmagan", addStep1P(false)]],
   add: [["2-qadam, birinchi ekran", addP]],
@@ -571,8 +675,12 @@ const PHONE = {
 const PDESC = {
   feed: "One column. Bottom tab bar with five items; Add is the blue plus in the middle. Filters scroll sideways; sort is an icon.",
   project: "Demo edge to edge, then title, problem, result, tech and the author. The tab bar is replaced by a fixed bar with Message and Save, so Message is always one tap away.",
+  "project-social": "Heart and Saqlash share one row at full width (result, tech and Loyiha haqida are left out of this drawing to show the comments). Logged out: the counts show and a Kiring link replaces the write box; heart, Saqlash and Shikoyat also go to login and come back.",
+  "project-report": "The dialog almost full width.",
   profile: "Header stacked: photo and name, open to work, facts, stats, then Message and Share at full width. Projects in one column below.",
   "profile-company": "Same header, then About.",
+  "own-profile": "Saqlanganlar and Yoqtirganlarim side by side under the main buttons.",
+  "saved-list": "One column of cards; the empty state on the right.",
   "add-step1": "One field, Continue at full width, the by-hand link under it.",
   "add-connect": "The box with the Settings button at full width, the by-hand link under it.",
   add: "One field per row, a progress bar for the 3 steps, and a fixed bar with Continue and Preview at the bottom.",

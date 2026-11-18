@@ -8,13 +8,29 @@ export function initials(name: string): string {
     .join("");
 }
 
-/** "17 November 2026" in the interface language; "" for an unparsable date. */
+const MONTHS: Record<string, string[]> = {
+  uz: ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"],
+  ru: ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"],
+  en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+};
+
+// Uzbekistan is UTC+5 all year (no daylight saving time).
+const TASHKENT_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+/**
+ * "17 noyabr 2026" / "17 ноября 2026 г." / "November 17, 2026"; "" for an unparsable date.
+ * Our own month names and a fixed time zone, not Intl: the server and every browser must print
+ * the same text (some browsers have no Uzbek month names), or a client component's text would
+ * not match the server's HTML.
+ */
 export function formatDate(iso: string, locale: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
+  const time = Date.parse(iso);
+  if (Number.isNaN(time)) return "";
+  const local = new Date(time + TASHKENT_OFFSET_MS);
+  const day = local.getUTCDate();
+  const year = local.getUTCFullYear();
+  const month = local.getUTCMonth();
+  if (locale === "uz") return `${day} ${MONTHS.uz[month]} ${year}`;
+  if (locale === "ru") return `${day} ${MONTHS.ru[month]} ${year} г.`;
+  return `${MONTHS.en[month]} ${day}, ${year}`;
 }

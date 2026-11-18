@@ -64,6 +64,7 @@ def _author(project: Project) -> Author:
 
 
 class ProjectCard(BaseModel):
+    id: int
     slug: str
     path: str
     title: str
@@ -73,11 +74,13 @@ class ProjectCard(BaseModel):
     cover: Cover | None
     author: Author
     published_at: datetime
+    like_count: int
 
     @classmethod
-    def from_project(cls, project: Project) -> Self:
+    def from_project(cls, project: Project, *, like_count: int = 0) -> Self:
         """`project.media` and (for owned rows) `project.owner` must be loaded."""
         return cls(
+            id=project.id,
             slug=project.slug,
             path=_path(project),
             title=project.title,
@@ -87,10 +90,12 @@ class ProjectCard(BaseModel):
             cover=_cover(project),
             author=_author(project),
             published_at=project.published_at,
+            like_count=like_count,
         )
 
 
 class ProjectDetail(BaseModel):
+    id: int
     slug: str
     path: str
     is_demo: bool
@@ -108,11 +113,25 @@ class ProjectDetail(BaseModel):
     media: list[MediaItem]
     author: Author
     published_at: datetime
+    like_count: int
+    comment_count: int
+    # For the viewer; False for a guest.
+    liked: bool
+    saved: bool
 
     @classmethod
-    def from_project(cls, project: Project) -> Self:
+    def from_project(
+        cls,
+        project: Project,
+        *,
+        like_count: int = 0,
+        comment_count: int = 0,
+        liked: bool = False,
+        saved: bool = False,
+    ) -> Self:
         """`project.media` and (for owned rows) `project.owner` must be loaded."""
         return cls(
+            id=project.id,
             slug=project.slug,
             path=_path(project),
             is_demo=project.is_demo,
@@ -133,6 +152,10 @@ class ProjectDetail(BaseModel):
             ],
             author=_author(project),
             published_at=project.published_at,
+            like_count=like_count,
+            comment_count=comment_count,
+            liked=liked,
+            saved=saved,
         )
 
 

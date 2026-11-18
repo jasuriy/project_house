@@ -167,6 +167,7 @@ async def test_card_shape_for_demo_project(client, db_session):
         ),
     )
     item = (await client.get("/api/v1/projects")).json()["items"][0]
+    assert isinstance(item.pop("id"), int)
     assert item == {
         "slug": "cam",
         "path": "/demo/cam",
@@ -182,6 +183,7 @@ async def test_card_shape_for_demo_project(client, db_session):
             "avatar_url": None,
         },
         "published_at": "2026-11-05T00:00:00Z",
+        "like_count": 0,
     }
 
 
@@ -238,7 +240,10 @@ async def test_demo_detail_200_with_ordered_media_and_full_stack(client, db_sess
     assert body["result"] == "Fast."
     assert body["role"] is None
     assert body["is_demo"] is True
-    assert "id" not in body and "owner_id" not in body
+    # The numeric id is public (the like and save calls use it); the owner's id is not.
+    assert isinstance(body["id"], int)
+    assert "owner_id" not in body
+    assert (body["like_count"], body["liked"], body["saved"]) == (0, False, False)
 
 
 async def test_detail_returns_live_url_or_null(client, db_session):
