@@ -18,6 +18,11 @@
 - Never store or use the user's GitHub OAuth token. Optional `GITHUB_API_TOKEN` setting sent as bearer when set.
 - Import pre-fill: title = repo name; short_description = repo description; tech_stack = up to 5 languages by size; live_url = homepage if http(s); github_url = canonical `html_url`; license = SPDX name or null; relation; github_login.
 - A save re-checks when the canonical sent `github_url` differs from the stored one; clearing the link clears the licence.
+- Link normalisation (one function, used by import, create, edit and the canonical compare): add a missing `https://`; accept `github.com` and `www.github.com`, any letter case; strip a trailing `/` and `.git`; take only `owner/repo` from deeper paths (`/tree/main`, `#readme`, `?tab=...`); anything else is `invalid_github_url`.
+- Pre-fill must pass the form's own rules: title cut to 80; description cut to 1000; tags each cut to 30, at most 5; live_url only if http(s) and at most 200, else empty.
+- Order of work: every cheap check first (formats, lengths, sample rule), GitHub last; no database transaction open across GitHub calls (read, end the transaction, call GitHub, then write).
+- The GitHub client is created and closed per request (an `async with` inside a yield dependency).
+- Test fakes are built from real GitHub responses recorded once (tagged [V] in the test file).
 - No new dependencies; tests never call the network.
 - uz / ru / en texts with the modifier letters; no emoji; desktop 1440 matches the drawing closely, tablet second, phone "does not break" (360/390).
 
@@ -41,7 +46,10 @@
 - Produces: `class GitHubClient` with `async repo(owner, name) -> RepoInfo`, `async languages(owner, name) -> dict[str, int]`, `async contributor_ids(owner, name) -> set[int] | None` (None = list unavailable, "too large"); `get_github() -> GitHubClient` (FastAPI dependency); `parse_github_url(url: str) -> tuple[str, str] | None`; `async check_ownership(session, user, github, url) -> Ownership(repo: RepoInfo, relation: Literal["owner","contributor"], login: str)`; `POST /api/v1/me/projects/import` -> `ImportPreview`.
 - `RepoInfo`: `id, owner_id, owner_login, name, html_url, fork, description, homepage, license_spdx` (from `license.spdx_id`, `None` when absent or `NOASSERTION`).
 
+- [ ] **Step 0: Record real GitHub responses** (unauthenticated, about 6 calls): `/users/octocat`, `/repos/octocat/Hello-World`, its `/contributors` and `/languages`, a missing repo (404), and the rate-limit headers; note them as [V] in `tests/github_fake.py`.
 - [ ] **Step 1: Failing tests** (fake client via dependency override; GitHub identity added with the existing auth fixtures/service):
+  - `test_link_normalisation` parametrized: `github.com/a/b`, `https://www.github.com/A/B/`, `https://github.com/a/b.git`, `https://github.com/a/b/tree/main`, `https://github.com/a/b#readme` -> `("a","b")` (case kept for the API call, compared case-insensitively); `https://gitlab.com/a/b`, `https://github.com/a` -> None.
+  - `test_import_prefill_respects_form_limits`: a 100-character repo name -> title of 80; homepage `""` or `ftp://x` or 300 characters -> live_url empty.
   - `test_import_own_repo_prefills`: owner match -> 200 with title, description, top-5 languages by size, homepage, canonical url, licence, `relation == "owner"`.
   - `test_import_contributor_repo`: owner differs, id in contributors -> `relation == "contributor"`.
   - `test_import_someone_elses_repo_is_refused` -> 422 `not_your_repo`.
@@ -53,7 +61,7 @@
   - `test_import_bad_link` -> 422 `invalid_github_url`; `test_import_company_403`.
   - Client unit tests with `httpx.MockTransport` (no network): 301 followed, contributors 204 -> empty set, 403 rate-limit -> unavailable, 403 too-large -> None, 404 -> not found, timeout -> unavailable, bearer header sent only when the token is set.
 - [ ] **Step 2: Run** `pytest tests/test_github_import.py -q` -> FAIL.
-- [ ] **Step 3: Implement.** `parse_github_url` reuses part 1's GitHub link rule (`editing._github`); one shared `httpx.AsyncClient` per client instance with `follow_redirects=True`, `timeout=10`, `User-Agent: ProjectHouse`, `Accept: application/vnd.github+json`.
+- [ ] **Step 3: Implement.** `parse_github_url` is the normalisation above (part 1's `_github` then accepts the canonical form); the client wraps an `httpx.AsyncClient` with `follow_redirects=True`, `timeout=10`, `User-Agent: ProjectHouse`, `Accept: application/vnd.github+json`, opened and closed per request by `get_github()`.
 - [ ] **Step 4: Run** the backend gate (`pytest -q`, `ruff check .`, `ruff format --check .`) -> pass.
 - [ ] **Step 5: Commit** `feat(backend): GitHub import with the ownership check`
 
@@ -74,6 +82,7 @@
   - `test_same_link_written_differently_is_not_rechecked` (Review Focus 5): trailing slash / `www.` / case.
   - `test_clearing_the_link_clears_the_licence`.
   - Part 1 tests that set `github_url` use a fake that owns those repos (update their setup, not their assertions).
+  - `test_bad_title_spends_no_github_call`: invalid title plus someone else's repo link -> `invalid_title`, fake call count 0.
   - OAuth: `test_connect_returns_to_settings_with_connected` -> 302 to `/settings?connected=github`.
 - [ ] **Step 2-4:** run (FAIL), implement, backend gate -> pass.
 - [ ] **Step 5: Commit** `feat(backend): every GitHub link is checked on save; connect returns to Settings`
