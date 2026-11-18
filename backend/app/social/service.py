@@ -1,17 +1,21 @@
 """Likes, saves, comments and reports (spec step 4)."""
 
-from sqlalchemy import delete, func, select, tuple_
+from sqlalchemy import delete, func, select, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.errors import AppError
 from app.core.pagination import decode_cursor, encode_cursor
+from app.media import storage
 from app.projects.models import Project
 from app.projects.schemas import FeedPage, ProjectCard
-from app.social.models import ProjectLike, ProjectSave
+from app.social.models import REPORT_REASONS, Comment, ProjectLike, ProjectSave, Report
+from app.social.schemas import CommentAuthor, CommentOut, CommentPage, ReportInput
+from app.users.models import User
 
 MARKS = {"likes": ProjectLike, "saves": ProjectSave}
+MAX_COMMENT, MAX_NOTE = 1000, 500
 
 
 async def like_counts(session: AsyncSession, project_ids: list[int]) -> dict[int, int]:
@@ -103,3 +107,158 @@ async def my_list(
         items=[ProjectCard.from_project(p, like_count=counts.get(p.id, 0)) for p, _ in page],
         next_cursor=next_cursor,
     )
+
+
+# ---- comments ------------------------------------------------------------------------------
+
+
+async def _project(session: AsyncSession, project_id: int) -> Project:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise AppError(404, "project_not_found", "Project not found")
+    return project
+
+
+def _comment_body(value: str) -> str:
+    body = value.strip()
+    if not body or len(body) > MAX_COMMENT or "\x00" in body:
+        raise AppError(422, "invalid_comment", "A comment is 1 to 1000 characters")
+    return body
+
+
+def _comment_out(comment: Comment, author: User, can_delete: bool) -> CommentOut:
+    avatar = storage.url(author.avatar_key) if author.avatar_key else None
+    return CommentOut(
+        id=comment.id,
+        body=comment.body,
+        created_at=comment.created_at,
+        author=CommentAuthor(
+            name=author.display_name, url=f"/{author.username}", avatar_url=avatar
+        ),
+        can_delete=can_delete,
+    )
+
+
+def _may_delete(viewer_id: int | None, author_id: int, project_owner_id: int | None) -> bool:
+    """The author, or the project's owner (an ownerless sample has none)."""
+    return viewer_id is not None and viewer_id in (author_id, project_owner_id)
+
+
+async def comment_count(session: AsyncSession, project_id: int) -> int:
+    count = await session.scalar(select(func.count()).where(Comment.project_id == project_id))
+    return count or 0
+
+
+async def list_comments(
+    session: AsyncSession,
+    project_id: int,
+    viewer_id: int | None,
+    *,
+    limit: int,
+    cursor: str | None,
+) -> CommentPage:
+    """Oldest first, so a conversation reads top to bottom."""
+    project = await _project(session, project_id)
+    stmt = (
+        select(Comment, User)
+        .join(User, User.id == Comment.author_id)
+        .where(Comment.project_id == project_id)
+        .order_by(Comment.created_at, Comment.id)
+        .limit(limit + 1)
+    )
+    if cursor is not None:
+        created_at, comment_id = decode_cursor(cursor)
+        stmt = stmt.where(tuple_(Comment.created_at, Comment.id) > tuple_(created_at, comment_id))
+    rows = (await session.execute(stmt)).all()
+    page, has_more = rows[:limit], len(rows) > limit
+    last = page[-1][0] if has_more else None
+    return CommentPage(
+        items=[
+            _comment_out(c, author, _may_delete(viewer_id, c.author_id, project.owner_id))
+            for c, author in page
+        ],
+        next_cursor=encode_cursor(last.created_at, last.id) if last else None,
+    )
+
+
+async def add_comment(session: AsyncSession, user: User, project_id: int, value: str) -> CommentOut:
+    body = _comment_body(value)
+    await _project(session, project_id)
+    row = (
+        await session.execute(
+            insert(Comment)
+            .values(project_id=project_id, author_id=user.id, body=body)
+            .returning(Comment.id, Comment.created_at)
+        )
+    ).one()
+    await session.commit()
+    comment = Comment(id=row.id, project_id=project_id, author_id=user.id, body=body)
+    comment.created_at = row.created_at
+    return _comment_out(comment, user, can_delete=True)
+
+
+async def delete_comment(session: AsyncSession, user: User, comment_id: int) -> None:
+    """404 for a comment you may not delete, so strangers learn nothing about it."""
+    row = (
+        await session.execute(
+            select(Comment.author_id, Project.owner_id)
+            .join(Project, Project.id == Comment.project_id)
+            .where(Comment.id == comment_id)
+        )
+    ).one_or_none()
+    if row is None or not _may_delete(user.id, row.author_id, row.owner_id):
+        raise AppError(404, "comment_not_found", "Comment not found")
+    await session.execute(delete(Comment).where(Comment.id == comment_id))
+    await session.commit()
+
+
+# ---- reports -------------------------------------------------------------------------------
+
+
+def _bad_report() -> AppError:
+    return AppError(422, "invalid_report", "Invalid report")
+
+
+def _note(value: str | None) -> str | None:
+    note = (value or "").strip()
+    if len(note) > MAX_NOTE or "\x00" in note:
+        raise _bad_report()
+    return note or None
+
+
+async def report(session: AsyncSession, user: User, data: ReportInput) -> bool:
+    """Record a report; False when this person already reported the item (no new row)."""
+    if (data.project_id is None) == (data.comment_id is None) or data.reason not in REPORT_REASONS:
+        raise _bad_report()
+    note = _note(data.note)
+    if data.comment_id is not None:
+        comment = await session.get(Comment, data.comment_id)
+        if comment is None:
+            raise AppError(404, "comment_not_found", "Comment not found")
+        kind, project_id, snapshot = "comment", comment.project_id, comment.body
+        # Matches the partial unique index uq_reports_reporter_comment.
+        conflict = (["reporter_id", "comment_id"], text("comment_id IS NOT NULL"))
+    else:
+        project = await _project(session, data.project_id)  # type: ignore[arg-type]
+        kind, project_id, snapshot = "project", project.id, project.title
+        # Matches the partial unique index uq_reports_reporter_project.
+        conflict = (
+            ["reporter_id", "project_id"],
+            text("target_kind = 'project' AND project_id IS NOT NULL"),
+        )
+    created = await session.scalar(
+        insert(Report)
+        .values(
+            reporter_id=user.id,
+            target_kind=kind,
+            project_id=project_id,
+            comment_id=data.comment_id,
+            reason=data.reason,
+            note=note,
+            snapshot=snapshot,
+        )
+        .on_conflict_do_nothing(index_elements=conflict[0], index_where=conflict[1])
+        .returning(Report.id)
+    )
+    await session.commit()
+    return created is not None

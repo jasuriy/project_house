@@ -114,13 +114,20 @@ class ProjectDetail(BaseModel):
     author: Author
     published_at: datetime
     like_count: int
+    comment_count: int
     # For the viewer; False for a guest.
     liked: bool
     saved: bool
 
     @classmethod
     def from_project(
-        cls, project: Project, *, like_count: int = 0, liked: bool = False, saved: bool = False
+        cls,
+        project: Project,
+        *,
+        like_count: int = 0,
+        comment_count: int = 0,
+        liked: bool = False,
+        saved: bool = False,
     ) -> Self:
         """`project.media` and (for owned rows) `project.owner` must be loaded."""
         return cls(
@@ -146,6 +153,7 @@ class ProjectDetail(BaseModel):
             author=_author(project),
             published_at=project.published_at,
             like_count=like_count,
+            comment_count=comment_count,
             liked=liked,
             saved=saved,
         )

@@ -18,7 +18,7 @@ from app.projects.schemas import (
     ProjectInput,
     ProjectUpdate,
 )
-from app.social.service import like_counts, viewer_state
+from app.social.service import comment_count, like_counts, viewer_state
 from app.users.models import User
 
 router = APIRouter(tags=["projects"])
@@ -33,10 +33,16 @@ Viewer = Annotated[User | None, Depends(current_user_optional)]
 
 
 async def detail(session: AsyncSession, project: Project, viewer: User | None) -> ProjectDetail:
-    """The project page: its like count and, for a signed-in viewer, whether they liked/saved it."""
-    count = (await like_counts(session, [project.id])).get(project.id, 0)
+    """The project page: its counts and, for a signed-in viewer, whether they liked/saved it."""
+    likes = (await like_counts(session, [project.id])).get(project.id, 0)
     liked, saved = await viewer_state(session, viewer.id if viewer else None, project.id)
-    return ProjectDetail.from_project(project, like_count=count, liked=liked, saved=saved)
+    return ProjectDetail.from_project(
+        project,
+        like_count=likes,
+        comment_count=await comment_count(session, project.id),
+        liked=liked,
+        saved=saved,
+    )
 
 
 @router.get("/projects")
