@@ -20,6 +20,9 @@ Differences on purpose:
   (a toggle that also changes its label is read twice by screen readers).
 - The drawing's phone frame leaves out result, tech and Loyiha haqida to fit the comments; the page
   shows them.
+- Comment dates are absolute ("18 noyabr 2026"), not relative as drawn ("2 kun oldin"): an
+  absolute date prints the same on the server and in the browser; relative text changes with the
+  clock and would bring back the hydration mismatch fixed below.
 
 Flows run in the browser:
 
@@ -29,6 +32,12 @@ Flows run in the browser:
 - Own comment: Oʻchirish -> "Izoh oʻchirilsinmi?" -> Ha, oʻchirish -> gone (DELETE 204).
 - Owner deletes another person's comment (DELETE 204).
 - Report project: Yuborish disabled until a reason is picked; focus starts on Bekor qilish; after sending, "Rahmat. Shikoyatingiz yuborildi."
+- Unlike and unsave: count 1 -> 0, both not pressed, still so after reload.
+- Report a comment (Dilshod's, as Madina): database row target_kind=comment, comment_id set,
+  project_id 29, snapshot = the comment text, reason spam.
+- Roll back: with the like/save calls forced to fail (500), heart and Saqlash went back to how they
+  were; a failed comment POST showed "Nimadir xato ketdi. Qayta urinib koʻring.", kept the text in
+  the box and left the count unchanged.
 - A fresh guest browser after Madina liked: count 1, not shown as liked (no visitor state leaks between people).
 - No console errors after the date fix below.
 
