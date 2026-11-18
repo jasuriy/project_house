@@ -176,7 +176,12 @@ new messages settings login logout signup admin explore feed search about help f
   an ownerless sample shows the original author at `/demo/<slug>` (`demo` is a reserved username).
 - Loader: `python -m app.projects.seed_demo [--owner USERNAME]` (idempotent upsert by slug;
   `--owner` gives every sample to that account, without it a row keeps its owner). Refuses to run
-  when `APP_ENV=production`.
+  when `APP_ENV=production`, unless `--allow-production` is given together with `--owner` (Bek,
+  2026-11-18: the friends' beta starts with the samples on his live account).
+- Every `/api` answer carries `Cache-Control: private, no-store` (`app/core/cache.py`; unexpected
+  500s get it in `app/core/errors.py`), so no proxy in front of the API (Vercel's CDN in the
+  deployment) can serve one person's answer to another. A route may set its own header: images
+  under `/api/v1/media/` keep `public, max-age=31536000, immutable`.
 - Images and videos are linked from their GitHub/YouTube URLs, not copied.
 
 ## 8. Testing

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEV_DATABASE_URL = "postgresql+asyncpg://projecthouse:projecthouse_dev@127.0.0.1:55432/projecthouse"
 DEV_SECRET_KEY = "dev-only-change-me"  # public placeholder; production requires its own key
@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     `database_url` and `secret_key` have a dev default only outside production; in production
     an empty or missing value fails at startup, so a dev default can never reach production.
     """
+
+    # A validation error must never print a value: the input holds every secret.
+    model_config = SettingsConfigDict(hide_input_in_errors=True)
 
     app_env: Literal["development", "test", "production"] = "development"
     database_url: str = ""
@@ -33,6 +36,15 @@ class Settings(BaseSettings):
     # Uploaded images (disk storage, app/media/storage.py). Default: backend/media, resolved from
     # this file so it never depends on the working directory.
     media_root: str = str(Path(__file__).resolve().parents[2] / "media")
+    # Where images live: "disk" (media_root, local) or "r2" (Cloudflare R2, the deployment).
+    media_backend: Literal["disk", "r2"] = "disk"
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket: str = ""
+    # Email sign-up, login, verification and reset. Off in the deployment until an email service
+    # exists (GitHub login only); the routes then answer 404 email_login_disabled.
+    email_login_enabled: bool = True
 
     @model_validator(mode="after")
     def _require_or_default_secrets(self) -> Self:

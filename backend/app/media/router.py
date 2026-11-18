@@ -3,7 +3,7 @@ from typing import Annotated
 
 import anyio
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import current_developer, current_user
@@ -71,7 +71,7 @@ async def set_avatar(
 ) -> dict[str, str]:
     """The profile photo (any account type): cropped to a 512 px square; replaces the old one."""
     webp = await to_webp(await read_image_body(request), square=AVATAR_SIDE)
-    key = await service.replace_avatar(session, user, storage.save(webp))
+    key = await service.replace_avatar(session, user, await storage.save(webp))
     return {"avatar_url": storage.url(key)}
 
 
@@ -84,16 +84,16 @@ async def delete_avatar(
 
 
 @router.get("/media/{key}")
-async def get_media(key: str) -> FileResponse:
-    file = storage.path(key)
-    if file is None or not file.is_file():
+async def get_media(key: str) -> Response:
+    data = await storage.read(key)
+    if data is None:
         raise AppError(404, "not_found", "Not found")
-    return FileResponse(
-        file,
+    return Response(
+        content=data,
         media_type="image/webp",
         headers={
             "X-Content-Type-Options": "nosniff",
-            # Keys are random and files never change: cache for a year.
+            # Keys are random and files never change: cache for a year (the CDN keeps them too).
             "Cache-Control": "public, max-age=31536000, immutable",
         },
     )

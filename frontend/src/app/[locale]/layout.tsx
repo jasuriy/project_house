@@ -2,6 +2,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
@@ -42,6 +43,7 @@ export default async function LocaleLayout({
           <main id="main" tabIndex={-1} className="page-width flex-1 pt-5 pb-7 outline-none lg:pt-7 lg:pb-9">
             {children}
           </main>
+          <SiteFooter />
         </NextIntlClientProvider>
       </body>
     </html>

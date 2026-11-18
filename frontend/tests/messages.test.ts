@@ -59,6 +59,7 @@ describe("common namespace", () => {
         "Nav.addProject",
         "Nav.addShort",
         "Nav.feed",
+        "Nav.feedback",
         "Nav.language",
         "Nav.login",
         "Nav.logout",

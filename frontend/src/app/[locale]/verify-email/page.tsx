@@ -4,7 +4,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { VerifyEmail } from "@/components/auth/VerifyEmail";
+import { redirect } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { EMAIL_LOGIN } from "@/lib/features";
 import { getCurrentUser } from "@/lib/session";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/verify-email">): Promise<Metadata> {
@@ -25,6 +27,8 @@ export default async function VerifyEmailPage({
   const raw = (await searchParams).token;
   const token = typeof raw === "string" ? raw : null;
   setRequestLocale(locale);
+  // GitHub sign-in only (the deployment): an old email link lands on the login page.
+  if (!EMAIL_LOGIN) redirect({ href: "/login", locale });
   const user = await getCurrentUser();
 
   return (

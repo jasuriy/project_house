@@ -67,7 +67,10 @@ def _generic_message(status: int) -> str:
 async def _handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
     # Never put exception text in the response; the traceback goes to the server log only.
     logger.error("Unhandled exception", exc_info=exc)
-    return error_response(500, "internal_error", "Internal server error")
+    # Set here: this handler answers outside every user middleware (NoStoreApiMiddleware too).
+    return error_response(
+        500, "internal_error", "Internal server error", {"Cache-Control": "private, no-store"}
+    )
 
 
 async def _handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:

@@ -23,7 +23,7 @@ async def _clean_old(session: AsyncSession) -> None:
     )
     await session.commit()
     for key in keys:
-        storage.delete(key)
+        await storage.delete(key)
 
 
 async def create_upload(session: AsyncSession, owner_id: int, webp: bytes) -> Upload:
@@ -33,7 +33,7 @@ async def create_upload(session: AsyncSession, owner_id: int, webp: bytes) -> Up
     )
     if (pending or 0) >= MAX_PENDING:
         raise AppError(429, "too_many_uploads", "Too many images waiting to be used")
-    upload = Upload(owner_id=owner_id, key=storage.save(webp))
+    upload = Upload(owner_id=owner_id, key=await storage.save(webp))
     session.add(upload)
     await session.commit()
     return upload
@@ -45,7 +45,7 @@ async def replace_avatar(session: AsyncSession, user: User, key: str | None) -> 
     user.avatar_key = key
     await session.commit()
     if old:
-        storage.delete(old)
+        await storage.delete(old)
     return key
 
 
@@ -65,7 +65,7 @@ async def delete_upload(session: AsyncSession, owner_id: int, upload_id: str) ->
     if key is None:
         raise AppError(404, "upload_not_found", "Upload not found")
     await session.commit()
-    storage.delete(key)
+    await storage.delete(key)
 
 
 async def consume_uploads(session: AsyncSession, owner_id: int, ids: list[str]) -> list[str]:
