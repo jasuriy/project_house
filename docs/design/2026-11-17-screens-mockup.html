@@ -421,10 +421,10 @@ const addStep1 = (connected) => (t) => `<div class="${M(t)}">${nav("", t)}<div c
   ${steps2(1)}
   <div class="panel step1" style="margin-top:20px">
     ${connected ? `
-    <div class="field"><label>GitHub repozitoriy havolasi <span class="req">*</span></label><div class="input focus">github.com/aziz-rahimov/cotton-weeds</div><span class="help">Siz egasi yoki hissa qoʻshgan ochiq repozitoriy. Nom, tavsif, texnologiyalar va litsenziya GitHub'dan olinadi.</span></div>
-    <div class="linkrow"><button class="btn" type="button">Davom etish</button><a href="#">GitHub'siz qoʻlda toʻldirish</a></div>` : `
+    <div class="field"><label>GitHub repozitoriy havolasi <span class="req">*</span></label><div class="input focus">github.com/aziz-rahimov/cotton-weeds</div><span class="help">Siz egasi yoki hissa qoʻshgan ochiq repozitoriy. Nom, tavsif, texnologiyalar va litsenziya GitHubʼdan olinadi.</span></div>
+    <div class="linkrow"><button class="btn" type="button">Davom etish</button><a href="#">GitHubʼsiz qoʻlda toʻldirish</a></div>` : `
     <div class="infobox"><b>Avval GitHub hisobingizni ulang</b><span>Repozitoriy sizniki ekanini tekshirish uchun GitHub hisobingiz kerak. Ulangandan keyin shu yerga qaytib keling.</span><span><a class="btn" href="#">Sozlamalarda ulash</a></span></div>
-    <div class="linkrow"><a href="#">GitHub'siz qoʻlda toʻldirish</a></div>`}
+    <div class="linkrow"><a href="#">GitHubʼsiz qoʻlda toʻldirish</a></div>`}
   </div>
 </div></div>`;
 
@@ -526,7 +526,7 @@ const addStep1P = (connected) => () => `<div class="m p">${topBack("Loyiha qoʻs
   <div style="display:grid;gap:6px"><span style="font-size:14px"><b>1-qadam (2 tadan):</b> GitHub havolasi</span><div class="progress"><i style="width:50%"></i></div></div>
   ${connected ? `<div class="field"><label>GitHub repozitoriy havolasi <span class="req">*</span></label><div class="input focus">github.com/aziz-rahimov/cotton-weeds</div><span class="help">Siz egasi yoki hissa qoʻshgan ochiq repozitoriy.</span></div>
   <button class="btn" type="button" style="width:100%">Davom etish</button>` : `<div class="infobox"><b>Avval GitHub hisobingizni ulang</b><span>Repozitoriy sizniki ekanini tekshirish uchun GitHub hisobingiz kerak.</span><a class="btn" href="#" style="width:100%">Sozlamalarda ulash</a></div>`}
-  <a href="#" style="color:var(--primary);font-weight:600;font-size:14px;text-align:center">GitHub'siz qoʻlda toʻldirish</a>
+  <a href="#" style="color:var(--primary);font-weight:600;font-size:14px;text-align:center">GitHubʼsiz qoʻlda toʻldirish</a>
 </div></div>`;
 
 const editP = (confirm) => `<div class="m p" style="position:relative">${topBack("Loyihani tahrirlash")}<div class="content${confirm ? " dim" : ""}" style="padding-bottom:100px">

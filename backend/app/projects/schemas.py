@@ -200,6 +200,7 @@ class EditableProject(BaseModel):
     live_url: str | None
     role: str | None
     video_url: str | None
+    license: str | None
     images: list[EditableImage]
 
     @classmethod
@@ -218,6 +219,7 @@ class EditableProject(BaseModel):
             live_url=project.live_url,
             role=project.role,
             video_url=project.demo_video_url,
+            license=project.license,
             images=[
                 EditableImage(id=m.id, url=media_url(m)) for m in project.media if m.kind == "image"
             ],

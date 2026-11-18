@@ -98,7 +98,20 @@ export type EditableProject = {
   live_url: string | null;
   role: string | null;
   video_url: string | null;
+  license: string | null;
   images: EditableImage[];
+};
+
+/** POST /api/v1/me/projects/import: the add form's pre-fill from the user's own repository. */
+export type ImportPreview = {
+  title: string;
+  short_description: string;
+  tech_stack: string[];
+  live_url: string;
+  github_url: string;
+  license: string | null;
+  relation: "owner" | "contributor";
+  github_login: string;
 };
 
 export type FeedPage = {

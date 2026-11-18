@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 
 const MAX_TAGS = 12;
 const MAX_TAG = 30;
@@ -15,6 +15,7 @@ export function TagsInput({
   tags,
   onChange,
   error,
+  labelAside,
 }: {
   label: string;
   help: string;
@@ -23,6 +24,7 @@ export function TagsInput({
   tags: string[];
   onChange: (tags: string[]) => void;
   error?: string;
+  labelAside?: ReactNode;
 }) {
   const id = useId();
   const noteId = `${id}-note`;
@@ -38,13 +40,16 @@ export function TagsInput({
 
   return (
     <div className="grid content-start gap-1.5">
-      <label htmlFor={id} className="text-small font-semibold text-fg">
-        {label}
-        <span aria-hidden className="text-danger">
-          {" "}
-          *
-        </span>
-      </label>
+      <div className="flex items-baseline gap-2">
+        <label htmlFor={id} className="text-small font-semibold text-fg">
+          {label}
+          <span aria-hidden className="text-danger">
+            {" "}
+            *
+          </span>
+        </label>
+        {labelAside}
+      </div>
       <div
         className={`flex min-h-11 flex-wrap items-center gap-2 rounded-control border bg-card px-3 py-1.5 focus-within:border-primary focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)] md:min-h-10.5 ${
           error ? "border-danger" : "border-border"

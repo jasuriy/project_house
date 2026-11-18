@@ -271,6 +271,7 @@ async def test_create_with_own_link_stores_the_canonical_link_and_licence(
         "https://github.com/octocat/Hello-World",
         "MIT",
     )
+    assert (await auth_client.get(f"{MINE}/weed-finder")).json()["license"] == "MIT"
 
 
 async def test_bad_title_spends_no_github_call(auth_client, db_session, github):

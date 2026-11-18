@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { type ReactNode, useId } from "react";
 
 /** A labelled multi-line field with the same box, focus and error look as TextField. */
 export function TextAreaField({
@@ -12,6 +12,7 @@ export function TextAreaField({
   maxLength,
   error,
   help,
+  labelAside,
 }: {
   name: string;
   label: string;
@@ -21,21 +22,25 @@ export function TextAreaField({
   maxLength: number;
   error?: string;
   help?: string;
+  labelAside?: ReactNode;
 }) {
   const id = useId();
   const noteId = `${id}-note`;
   const note = error ?? help;
   return (
     <div className="grid content-start gap-1.5">
-      <label htmlFor={id} className="text-small font-semibold text-fg">
-        {label}
-        {requiredMark && (
-          <span aria-hidden className="text-danger">
-            {" "}
-            *
-          </span>
-        )}
-      </label>
+      <div className="flex items-baseline gap-2">
+        <label htmlFor={id} className="text-small font-semibold text-fg">
+          {label}
+          {requiredMark && (
+            <span aria-hidden className="text-danger">
+              {" "}
+              *
+            </span>
+          )}
+        </label>
+        {labelAside}
+      </div>
       <div
         className={`rounded-control border bg-card focus-within:border-primary focus-within:shadow-[0_0_0_3px_var(--color-accent-soft)] ${
           error ? "border-danger" : "border-border"
