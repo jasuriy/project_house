@@ -85,12 +85,17 @@ class GitHubClient:
 
     async def contributors(self, owner: str, name: str) -> dict[int, str] | None:
         """{user id: login} of the first 100 contributors; None when GitHub will not list them
-        (a very large repository answers 403)."""
+        (a very large repository answers 403 "too large") [A: message wording from GitHub docs]."""
         response = await self._get(f"/repos/{owner}/{name}/contributors", per_page=100)
         if response.status_code == 204:  # an empty repository
             return {}
         if response.status_code == 403:
-            return None
+            # Only "too large to list" means the list is unavailable for good; any other 403 (a
+            # secondary rate limit leaves calls remaining) is GitHub being busy, not "not yours".
+            message = str(response.json().get("message", "")) if response.content else ""
+            if "too large" in message.lower():
+                return None
+            raise GitHubUnavailable
         if response.status_code != 200:
             raise GitHubUnavailable
         return {int(c["id"]): str(c.get("login") or "") for c in response.json() if "id" in c}

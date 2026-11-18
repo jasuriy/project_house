@@ -8,6 +8,7 @@ import { ProjectCard } from "@/components/projects/ProjectCard";
 import { Link, useRouter } from "@/i18n/navigation";
 import { clientPatch, clientPost } from "@/lib/client-api";
 import { sameRepository } from "@/lib/github-link";
+import { discardUpload } from "@/lib/upload";
 import { youtubeId } from "@/lib/media";
 import { type ProjectField, projectErrorField, projectErrorKey } from "@/lib/project-errors";
 import {
@@ -141,7 +142,15 @@ export function ProjectForm({
           <Banner tone="ok">
             {t(prefill.relation === "owner" ? "ownerBanner" : "contributorBanner", { login: prefill.github_login })}{" "}
             {onOtherRepo && (
-              <button type="button" onClick={onOtherRepo} className="font-semibold underline">
+              <button
+                type="button"
+                onClick={() => {
+                  // Leaving this form: free the images uploaded so far (the 12-upload cap).
+                  images.forEach((image) => image.upload && discardUpload(image.upload));
+                  onOtherRepo();
+                }}
+                className="font-semibold underline"
+              >
                 {t("otherRepo")}
               </button>
             )}

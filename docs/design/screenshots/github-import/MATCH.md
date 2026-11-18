@@ -25,7 +25,9 @@ Known differences (intended):
 | Live site | not in screen 4 | its own row under GitHub + Licence | spec field (part 1) |
 | Banner | GitHub connected + owner text | also "Boshqa repozitoriy" to go back to step 1 | a way back without reloading |
 
-Checks (browser, real GitHub API, test data): `https://github.com/octocat/Hello-World.git` accepted
+Checks (browser, real GitHub API, test data): contributor path run for real (a test account linked to
+GitHub's `Spaceghost`, a contributor of octocat/Hello-World) -> relation contributor, banner "Siz bu
+repozitoriyga hissa qo'shgansiz" (`ours-prefilled-contributor-1440.png`); `https://github.com/octocat/Hello-World.git` accepted
 and normalised; import 0.9 s; title "Hello-World", description and canonical link filled, licence
 "Ko'rsatilmagan" (the repo has none); apache/superset refused under the field ("not yours"); an
 account without GitHub sees the connect box; publishing keeps the canonical link; the edit page shows

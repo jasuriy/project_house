@@ -239,7 +239,11 @@ async def test_client_timeout_is_unavailable():
     [
         (200, [{"login": "octocat", "id": OCTOCAT, "type": "User"}], {OCTOCAT: "octocat"}),
         (204, None, {}),
-        (403, {"message": "too large"}, None),
+        (
+            403,
+            {"message": "The history or contributor list is too large to list contributors for this repository via the API."},
+            None,
+        ),
     ],
 )
 async def test_client_contributors(status, body, expected):
@@ -271,3 +275,17 @@ async def _authorization_header_sent(monkeypatch, token: str) -> str | None:
 async def test_client_sends_the_server_token_only_when_set(monkeypatch):
     assert await _authorization_header_sent(monkeypatch, "") is None
     assert await _authorization_header_sent(monkeypatch, "srv-token") == "Bearer srv-token"
+
+
+async def test_client_contributors_secondary_rate_limit_is_unavailable():
+    # A 403 that is not "too large" (GitHub's secondary rate limit leaves calls remaining) must not
+    # turn into "not your repo".
+    def handler(request):
+        return httpx.Response(
+            403,
+            headers={"x-ratelimit-remaining": "50", "retry-after": "60"},
+            json={"message": "You have exceeded a secondary rate limit."},
+        )
+
+    with pytest.raises(GitHubUnavailable):
+        await client_for(handler).contributors("a", "b")
