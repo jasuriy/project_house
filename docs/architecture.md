@@ -102,7 +102,7 @@ Integrity rules on `projects`:
   migration changing this FK to ON DELETE CASCADE. (`SET NULL` is impossible under the CHECK above.)
 
 Reserved usernames (code constant, extended as routes appear): `uz ru en api _next _vercel demo
-new messages settings login logout signup admin explore feed search about help forgot-password reset-password verify-email onboarding`.
+new messages settings login logout signup admin explore feed search about help forgot-password reset-password verify-email onboarding saved liked`.
 
 ## 5. API conventions
 

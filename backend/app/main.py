@@ -13,6 +13,7 @@ from app.core.errors import register_error_handlers
 from app.health import router as health
 from app.media import router as media_router
 from app.projects import router as projects
+from app.social import router as social
 from app.users import router as users
 
 
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
     app.include_router(projects.router, prefix="/api/v1")
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(media_router.router, prefix="/api/v1")
+    app.include_router(social.router, prefix="/api/v1")
     return app
 
 

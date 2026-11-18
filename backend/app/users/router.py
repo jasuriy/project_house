@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.errors import AppError
+from app.social.service import like_total
 from app.users import service
 from app.users.schemas import ProfileResponse, UserPublic
 
@@ -21,4 +22,5 @@ async def get_user(
     return ProfileResponse(
         **UserPublic.of(user).model_dump(),
         project_count=await service.count_projects(session, user.id),
+        like_total=await like_total(session, user.id),
     )

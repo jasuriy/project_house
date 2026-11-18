@@ -3,11 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import current_developer
+from app.auth.dependencies import current_developer, current_user_optional
 from app.core.db import get_session
 from app.projects import editing, service
 from app.projects.fields import FieldName
 from app.projects.github import GitHubClient, get_github
+from app.projects.models import Project
 from app.projects.schemas import (
     EditableProject,
     FeedPage,
@@ -17,6 +18,7 @@ from app.projects.schemas import (
     ProjectInput,
     ProjectUpdate,
 )
+from app.social.service import like_counts, viewer_state
 from app.users.models import User
 
 router = APIRouter(tags=["projects"])
@@ -27,6 +29,14 @@ MAX_LIMIT = 60
 Session = Annotated[AsyncSession, Depends(get_session)]
 Developer = Annotated[User, Depends(current_developer)]
 GitHub = Annotated[GitHubClient, Depends(get_github)]
+Viewer = Annotated[User | None, Depends(current_user_optional)]
+
+
+async def detail(session: AsyncSession, project: Project, viewer: User | None) -> ProjectDetail:
+    """The project page: its like count and, for a signed-in viewer, whether they liked/saved it."""
+    count = (await like_counts(session, [project.id])).get(project.id, 0)
+    liked, saved = await viewer_state(session, viewer.id if viewer else None, project.id)
+    return ProjectDetail.from_project(project, like_count=count, liked=liked, saved=saved)
 
 
 @router.get("/projects")
@@ -40,8 +50,8 @@ async def list_projects(
 
 
 @router.get("/projects/demo/{slug}")
-async def get_demo_project(slug: str, session: Session) -> ProjectDetail:
-    return ProjectDetail.from_project(await service.get_demo_project(session, slug))
+async def get_demo_project(slug: str, session: Session, viewer: Viewer) -> ProjectDetail:
+    return await detail(session, await service.get_demo_project(session, slug), viewer)
 
 
 @router.get("/users/{username}/projects")
@@ -55,8 +65,10 @@ async def list_user_projects(
 
 
 @router.get("/users/{username}/projects/{slug}")
-async def get_user_project(username: str, slug: str, session: Session) -> ProjectDetail:
-    return ProjectDetail.from_project(await service.get_user_project(session, username, slug))
+async def get_user_project(
+    username: str, slug: str, session: Session, viewer: Viewer
+) -> ProjectDetail:
+    return await detail(session, await service.get_user_project(session, username, slug), viewer)
 
 
 # A developer's own projects (add-project design, part 1). Another user's slug is 404.
@@ -77,7 +89,7 @@ async def import_from_github(
 async def create_project(
     data: ProjectInput, user: Developer, session: Session, github: GitHub
 ) -> ProjectDetail:
-    return ProjectDetail.from_project(await editing.create_project(session, user, data, github))
+    return await detail(session, await editing.create_project(session, user, data, github), user)
 
 
 @router.get("/me/projects/{slug}")
@@ -89,8 +101,8 @@ async def get_own_project(slug: str, user: Developer, session: Session) -> Edita
 async def update_project(
     slug: str, data: ProjectUpdate, user: Developer, session: Session, github: GitHub
 ) -> ProjectDetail:
-    return ProjectDetail.from_project(
-        await editing.update_project(session, user, slug, data, github)
+    return await detail(
+        session, await editing.update_project(session, user, slug, data, github), user
     )
 
 

@@ -6,6 +6,7 @@ from app.core.errors import AppError
 from app.core.pagination import decode_cursor, encode_cursor
 from app.projects.models import Project
 from app.projects.schemas import FeedPage, ProjectCard
+from app.social.service import like_counts
 from app.users import service as users_service
 
 # Every query names what it loads: relationships are lazy="raise" (no lazy loads under asyncio).
@@ -38,7 +39,9 @@ async def list_feed(
     rows = list(await session.scalars(stmt))
     page, has_more = rows[:limit], len(rows) > limit
     next_cursor = encode_cursor(page[-1].published_at, page[-1].id) if has_more else None
-    return FeedPage(items=[ProjectCard.from_project(p) for p in page], next_cursor=next_cursor)
+    counts = await like_counts(session, [p.id for p in page])
+    items = [ProjectCard.from_project(p, like_count=counts.get(p.id, 0)) for p in page]
+    return FeedPage(items=items, next_cursor=next_cursor)
 
 
 async def list_user_projects(

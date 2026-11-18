@@ -30,6 +30,8 @@ RESERVED_USERNAMES = frozenset(
         "reset-password",
         "verify-email",
         "onboarding",
+        "saved",
+        "liked",
     ]
 )
 

@@ -36,9 +36,10 @@ class UserPublic(BaseModel):
 
 
 class ProfileResponse(UserPublic):
-    """The public profile page: the profile plus how many projects the user has."""
+    """The public profile page: the profile, how many projects the user has and the likes they got."""
 
     project_count: int
+    like_total: int
 
 
 class LinksUpdate(BaseModel):
