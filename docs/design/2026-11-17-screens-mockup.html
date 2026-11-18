@@ -150,6 +150,11 @@ section.scr { display: grid; gap: 12px; scroll-margin-top: 16px; }
 .m .steps i { width: 28px; height: 1px; background: var(--border); display: block; }
 .m .footer-acts { display: flex; gap: 10px; justify-content: flex-end; padding-top: 6px; border-top: 1px solid var(--border); }
 .m .footer-acts .btn.danger { margin-right: auto; }
+.m .step1 { max-width: 640px; display: grid; gap: 18px; }
+.m .infobox { background: var(--accent-soft); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; font-size: 14px; }
+.m .infobox b { font-size: 15px; }
+.m .linkrow { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.m .linkrow a { color: var(--primary); font-size: 14px; font-weight: 600; }
 .m .dim { position: relative; }
 .m .dim::after { content: ""; position: absolute; inset: 0; background: rgb(12 74 110 / 0.35); }
 .m .dialog { position: absolute; z-index: 2; left: 50%; top: 180px; transform: translateX(-50%); width: 420px; background: var(--card); border-radius: 12px; padding: 24px; display: grid; gap: 12px; box-shadow: 0 12px 32px rgb(12 74 110 / 0.18); }
@@ -286,7 +291,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--page-focus); ou
     <p class="note">All people, companies and the student's projects here are made up (Aziz Rahimov, Dilnoza Karimova, Nova Systems). The feed uses projects from our temporary demo data, described in our own words. Images are drawn placeholders. Uzbek interface text is a first draft.</p>
   </div>
   <div class="switch" role="group" aria-label="Screen size"><button type="button" id="b-desktop" aria-pressed="true">Desktop</button><button type="button" id="b-tablet" aria-pressed="false">Planshet</button><button type="button" id="b-phone" aria-pressed="false">Telefon</button></div>
-  <nav class="toc" aria-label="Screens"><a href="#s-feed">1. Lenta</a><a href="#s-project">2. Loyiha sahifasi</a><a href="#s-profile">3. Profil</a><a href="#s-add">4. Loyiha qoʻshish</a><a href="#s-edit">4b. Tahrirlash</a><a href="#s-messages">5. Xabarlar</a></nav>
+  <nav class="toc" aria-label="Screens"><a href="#s-feed">1. Lenta</a><a href="#s-project">2. Loyiha sahifasi</a><a href="#s-profile">3. Profil</a><a href="#s-add-step1">4a. GitHub havolasi</a><a href="#s-add">4. Loyiha qoʻshish</a><a href="#s-edit">4b. Tahrirlash</a><a href="#s-messages">5. Xabarlar</a></nav>
   <div id="screens"></div>
 </div>
 
@@ -410,6 +415,19 @@ const messages = t => `<div class="${M(t)}">${nav("msg", t)}<div class="main"><d
 </div></div></div>`;
 
 
+const steps2 = (cur) => `<div class="steps"><span class="${cur === 1 ? "cur" : "done"}"><b>1</b> GitHub havolasi</span><i></i><span class="${cur === 2 ? "cur" : ""}"><b>2</b> Maʼlumotlar va demo</span></div>`;
+const addStep1 = (connected) => (t) => `<div class="${M(t)}">${nav("", t)}<div class="main">
+  <h2 class="h1">Loyiha qoʻshish</h2>
+  ${steps2(1)}
+  <div class="panel step1" style="margin-top:20px">
+    ${connected ? `
+    <div class="field"><label>GitHub repozitoriy havolasi <span class="req">*</span></label><div class="input focus">github.com/aziz-rahimov/cotton-weeds</div><span class="help">Siz egasi yoki hissa qoʻshgan ochiq repozitoriy. Nom, tavsif, texnologiyalar va litsenziya GitHub'dan olinadi.</span></div>
+    <div class="linkrow"><button class="btn" type="button">Davom etish</button><a href="#">GitHub'siz qoʻlda toʻldirish</a></div>` : `
+    <div class="infobox"><b>Avval GitHub hisobingizni ulang</b><span>Repozitoriy sizniki ekanini tekshirish uchun GitHub hisobingiz kerak. Ulangandan keyin shu yerga qaytib keling.</span><span><a class="btn" href="#">Sozlamalarda ulash</a></span></div>
+    <div class="linkrow"><a href="#">GitHub'siz qoʻlda toʻldirish</a></div>`}
+  </div>
+</div></div>`;
+
 const editForm = (t) => `<div class="formgrid" style="margin-top:20px">
   <div class="panel form">
     <div class="field"><label>Loyiha nomi <span class="req">*</span></label><div class="input">Paxta dalasida begona oʻt aniqlash</div></div>
@@ -442,6 +460,8 @@ const SCREENS = [
   { id: "project", h: "2. Loyiha sahifasi (project page)", d: "Everything a recruiter needs on the first screen, with a Report link (spec section 10).", dt: "Demo on top, full width. Under it: title, problem, result, tech, and the author with Message on one row, so they stay near the top. Details follow.", url: "projecthouse.uz/aziz-rahimov/paxta-begona-ot", html: project },
   { id: "profile", h: "3. Profil (developer profile)", d: "Who the person is, open to work, Message and Share. Phone and email are never shown. No Follow button in Phase 1.", dt: "The side column becomes a header card across the top; projects in two columns.", url: "projecthouse.uz/aziz-rahimov", html: profile },
   { id: "profile-company", h: "3b. Profil (company account)", d: "One person per company account in Phase 1 (spec D14); the verified badge is set by the admin.", dt: "Same header card as the developer profile, then About.", url: "projecthouse.uz/dilnoza-karimova", html: company },
+  { id: "add-step1", h: "4a. Loyiha qoʻshish: GitHub havolasi (add project, step 1)", d: "Paste your own repository link; the details are read from GitHub after the ownership check. Hardware or research projects use 'fill in by hand'.", dt: "The same panel, full width.", url: "projecthouse.uz/new", html: addStep1(true) },
+  { id: "add-connect", h: "4a-2. GitHub ulanmagan (GitHub not connected)", d: "Without a connected GitHub account the link cannot be checked: the box sends you to Settings; filling in by hand still works.", dt: "The same box, full width.", url: "projecthouse.uz/new", html: addStep1(false) },
   { id: "add", h: "4. Loyiha qoʻshish (add project)", d: "Step 2 of 3 after the GitHub link: ownership confirmed, AI-filled fields marked, live preview of the feed card and Telegram link.", dt: "One column. The preview moves below the form, feed card and Telegram link side by side, then the buttons.", url: "projecthouse.uz/new", html: add },
   { id: "edit", h: "4b. Loyihani tahrirlash (edit project)", d: "Your own project, opened with Tahrirlash on its page. The same form as Add project without the GitHub step; Save keeps the address. Delete sits on the left, away from Save.", dt: "One column; the preview moves below the form.", url: "projecthouse.uz/aziz-rahimov/paxta-dalasida-begona-o-t-aniqlash/edit", html: edit },
   { id: "edit-delete", h: "4c. Oʻchirishni tasdiqlash (delete confirmation)", d: "Delete asks once more and names the project. Sample projects have only this action (no edit).", dt: "The same dialog over the edit page.", url: "projecthouse.uz/aziz-rahimov/paxta-dalasida-begona-o-t-aniqlash/edit", html: editDelete },
@@ -502,6 +522,13 @@ const addP = () => `<div class="m p">${topBack("Loyiha qoʻshish")}<div class="c
 <div class="actionbar"><button class="btn" type="button">Davom etish</button><button class="btn ghost" type="button">Koʻrish</button></div></div>`;
 
 
+const addStep1P = (connected) => () => `<div class="m p">${topBack("Loyiha qoʻshish")}<div class="content">
+  <div style="display:grid;gap:6px"><span style="font-size:14px"><b>1-qadam (2 tadan):</b> GitHub havolasi</span><div class="progress"><i style="width:50%"></i></div></div>
+  ${connected ? `<div class="field"><label>GitHub repozitoriy havolasi <span class="req">*</span></label><div class="input focus">github.com/aziz-rahimov/cotton-weeds</div><span class="help">Siz egasi yoki hissa qoʻshgan ochiq repozitoriy.</span></div>
+  <button class="btn" type="button" style="width:100%">Davom etish</button>` : `<div class="infobox"><b>Avval GitHub hisobingizni ulang</b><span>Repozitoriy sizniki ekanini tekshirish uchun GitHub hisobingiz kerak.</span><a class="btn" href="#" style="width:100%">Sozlamalarda ulash</a></div>`}
+  <a href="#" style="color:var(--primary);font-weight:600;font-size:14px;text-align:center">GitHub'siz qoʻlda toʻldirish</a>
+</div></div>`;
+
 const editP = (confirm) => `<div class="m p" style="position:relative">${topBack("Loyihani tahrirlash")}<div class="content${confirm ? " dim" : ""}" style="padding-bottom:100px">
   <div class="field"><label>Loyiha nomi <span class="req">*</span></label><div class="input">Paxta dalasida begona oʻt aniqlash</div></div>
   <div class="field"><label>Qanday muammoni hal qiladi? <span class="req">*</span></label><div class="input">Fermerlar begona oʻtni qoʻlda qidiradi va gerbitsidni butun dalaga sepadi.</div></div>
@@ -534,6 +561,8 @@ const PHONE = {
   project: [["Loyiha sahifasi", projectP]],
   profile: [["Dasturchi profili", () => profileP("dev")]],
   "profile-company": [["Kompaniya profili", () => profileP("co")]],
+  "add-step1": [["1-qadam", addStep1P(true)]],
+  "add-connect": [["GitHub ulanmagan", addStep1P(false)]],
   add: [["2-qadam, birinchi ekran", addP]],
   edit: [["Tahrirlash", () => editP(false)]],
   "edit-delete": [["Tasdiqlash", () => editP(true)]],
@@ -544,6 +573,8 @@ const PDESC = {
   project: "Demo edge to edge, then title, problem, result, tech and the author. The tab bar is replaced by a fixed bar with Message and Save, so Message is always one tap away.",
   profile: "Header stacked: photo and name, open to work, facts, stats, then Message and Share at full width. Projects in one column below.",
   "profile-company": "Same header, then About.",
+  "add-step1": "One field, Continue at full width, the by-hand link under it.",
+  "add-connect": "The box with the Settings button at full width, the by-hand link under it.",
   add: "One field per row, a progress bar for the 3 steps, and a fixed bar with Continue and Preview at the bottom.",
   edit: "One field per row; Save and Cancel in the fixed bar; Delete at the end of the form, away from Save.",
   "edit-delete": "The dialog over the page; the destructive button first and full width, Keep under it.",
