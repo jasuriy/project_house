@@ -57,7 +57,7 @@ drag-to-reorder (arrow buttons instead); co-authors.
    gitignored), served read-only at `/api/v1/media/<key>` (so the existing `/api/*` rewrite reaches
    it), long cache headers. R2 replaces only this module at deploy.
 2. **Uploads**: table `uploads(id uuid pk, owner_id fk users ON DELETE CASCADE, key text,
-   created_at)` (migration 0005). `POST /api/v1/me/uploads` (multipart, one file): login required,
+   created_at)` (migration 0005). `POST /api/v1/me/uploads` (raw body, one image): login required,
    Origin check (existing middleware), max 5 MB, JPEG/PNG/WebP decoded with Pillow, decompression-
    bomb limit, longest side resized to 1600 px, saved as WebP without metadata. Returns
    `{id, url}`. On each upload the user's own uploads older than 24 h that were never used are
@@ -109,7 +109,8 @@ drag-to-reorder (arrow buttons instead); co-authors.
 
 ### New dependencies
 
-Backend: `Pillow` (decode, resize, re-encode images) and `python-multipart` (FastAPI file uploads).
+Backend: `Pillow` (decode, resize, re-encode images). Uploads are raw request bodies, so no multipart
+library is needed and the 5 MB cap is enforced while the bytes arrive (advisor, 2026-11-18).
 
 ## Calls made after the builder check (Claude's, Bek can override)
 
