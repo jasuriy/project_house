@@ -43,6 +43,15 @@ async def upload_image(
     return {"id": str(upload.id), "url": storage.url(upload.key)}
 
 
+@router.delete("/me/uploads/{upload_id}", status_code=204)
+async def delete_upload(
+    upload_id: str,
+    user: Annotated[User, Depends(current_developer)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    await service.delete_upload(session, user.id, upload_id)
+
+
 @router.get("/media/{key}")
 async def get_media(key: str) -> FileResponse:
     file = storage.path(key)

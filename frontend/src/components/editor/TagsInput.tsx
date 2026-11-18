@@ -60,7 +60,7 @@ export function TagsInput({
               type="button"
               onClick={() => onChange(tags.filter((t) => t !== tag))}
               aria-label={removeLabel(tag)}
-              className="grid size-6 place-items-center rounded-full text-mute hover:text-fg"
+              className="-my-2.5 -mr-2 grid size-11 place-items-center rounded-full text-mute hover:text-fg md:my-0 md:mr-0 md:size-6"
             >
               <X aria-hidden size={12} strokeWidth={2.5} />
             </button>

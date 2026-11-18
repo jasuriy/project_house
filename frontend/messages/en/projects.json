@@ -106,6 +106,7 @@
     "sample_read_only": "A sample project can only be deleted.",
     "slug_taken": "Sent twice at the same moment. Please try again.",
     "unreachable": "Cannot reach the server. Please try again in a moment.",
-    "generic": "Could not save. Please try again."
+    "generic": "Could not save. Please try again.",
+    "image_too_many_pixels": "The image is too large: at most 40 megapixels."
   }
 }

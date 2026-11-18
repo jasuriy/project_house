@@ -50,7 +50,10 @@ async function UserSlot() {
         <Settings aria-hidden strokeWidth={2} className="size-5 md:hidden" />
         <span className="hidden md:inline">{t("settings")}</span>
       </NavLink>
-      <LogoutButton />
+      {/* A 360 px phone header has room for language, add and settings only: logout is in Settings there. */}
+      <div className="hidden md:block">
+        <LogoutButton />
+      </div>
     </div>
   );
 }

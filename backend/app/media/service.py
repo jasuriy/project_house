@@ -38,6 +38,25 @@ async def create_upload(session: AsyncSession, owner_id: int, webp: bytes) -> Up
     return upload
 
 
+async def delete_upload(session: AsyncSession, owner_id: int, upload_id: str) -> None:
+    """The caller's own unused upload (an image removed from the form before publishing)."""
+    try:
+        wanted = uuid.UUID(upload_id)
+    except ValueError:
+        wanted = None
+    key = None
+    if wanted is not None:
+        key = await session.scalar(
+            delete(Upload)
+            .where(Upload.id == wanted, Upload.owner_id == owner_id)
+            .returning(Upload.key)
+        )
+    if key is None:
+        raise AppError(404, "upload_not_found", "Upload not found")
+    await session.commit()
+    storage.delete(key)
+
+
 async def consume_uploads(session: AsyncSession, owner_id: int, ids: list[str]) -> list[str]:
     """Take the caller's unused uploads by id, in the given order, and return their storage keys.
     One DELETE ... RETURNING, so an upload can be attached once only. Any id that is not the

@@ -29,6 +29,7 @@ const FIELD_OF: Record<string, ProjectField> = {
   media_required: "images",
   image_too_large: "images",
   invalid_image: "images",
+  image_too_many_pixels: "images",
   too_many_uploads: "images",
 };
 

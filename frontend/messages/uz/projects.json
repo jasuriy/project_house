@@ -106,6 +106,7 @@
     "sample_read_only": "Namuna loyihani faqat oʻchirish mumkin.",
     "slug_taken": "Bir vaqtda ikki marta yuborildi. Qayta urinib koʻring.",
     "unreachable": "Serverga ulanib boʻlmadi. Birozdan keyin qayta urinib koʻring.",
-    "generic": "Saqlab boʻlmadi. Qayta urinib koʻring."
+    "generic": "Saqlab boʻlmadi. Qayta urinib koʻring.",
+    "image_too_many_pixels": "Rasm oʻlchami juda katta: 40 megapikseldan oshmasin."
   }
 }

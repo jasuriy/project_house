@@ -15,6 +15,10 @@ def _invalid() -> AppError:
     return AppError(422, "invalid_image", "The file is not a JPEG, PNG or WebP image")
 
 
+def _too_many_pixels() -> AppError:
+    return AppError(422, "image_too_many_pixels", "The image has more than 40 megapixels")
+
+
 def to_webp(data: bytes, *, max_side: int = 1600, square: int | None = None) -> bytes:
     """`square` crops to the centre and resizes to that side (profile photos)."""
     try:
@@ -25,12 +29,14 @@ def to_webp(data: bytes, *, max_side: int = 1600, square: int | None = None) -> 
                 raise _invalid()
             width, height = image.size
             if width * height > MAX_PIXELS:
-                raise _invalid()
+                raise _too_many_pixels()
             image = ImageOps.exif_transpose(image)
             image = image.convert("RGBA" if image.mode in ("RGBA", "LA", "P") else "RGB")
     except AppError:
         raise
-    except (OSError, ValueError, Image.DecompressionBombError, Image.DecompressionBombWarning):
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning):
+        raise _too_many_pixels() from None
+    except (OSError, ValueError):
         raise _invalid() from None
 
     if square:

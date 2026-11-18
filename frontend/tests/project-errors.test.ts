@@ -18,6 +18,7 @@ describe("projectErrorField", () => {
     ["invalid_images", "images"],
     ["media_required", "images"],
     ["image_too_large", "images"],
+    ["image_too_many_pixels", "images"],
     ["developers_only", "form"],
     ["something_new", "form"],
     ["constructor", "form"],

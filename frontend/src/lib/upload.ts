@@ -20,3 +20,9 @@ export async function uploadImage(file: File): Promise<ApiResult<Uploaded>> {
     return UNREACHABLE;
   }
 }
+
+/** Frees an upload that was removed from the form before publishing. Best effort: a failure only
+ * means the backend removes it after a day. */
+export function discardUpload(id: string): void {
+  void fetch(`/api/v1/me/uploads/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
+}

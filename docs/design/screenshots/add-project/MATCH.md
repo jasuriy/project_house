@@ -24,10 +24,14 @@ Known differences (intended):
 | Telegram preview | under the feed card | not shown | Telegram/Open Graph preview is spec step 3 |
 | Phone bottom bar | fixed bar with Davom etish + Ko'rish | buttons at the end of the form | no step 3 to preview yet |
 | Paired fields | role box lower than result box (mockup quirk) | boxes aligned at the top | fields keep their content at the top |
-| Image tiles | plain thumbnails | thumbnails with move-left, move-right and remove buttons | the order and removal need controls |
-| Phone header | (screen 4 phone has its own top bar) | logout became an icon on phone | the add button needed the room; no horizontal scroll |
+| Image tiles | plain 16:9 thumbnails, 6 per row | move-left, move-right and remove buttons; on a phone 2 per row in 4:3 so each button is 44 px (`ours-images-390.png`) | the order and removal need controls and phone tap size |
+| Phone header | (screen 4 phone has its own top bar) | logo, language, +, settings; logout is at the bottom of Settings on phones (`ours-settings-logout-390.png`) | a 360 px phone has no room for a fifth item; no horizontal scroll |
 
-Checks: double click on Publish sends one request; publishing opens the new project page; two
+Checks: a 4.5 MB, 12 MP phone JPEG stored sideways with an EXIF rotation tag went browser -> 3002 ->
+8002 (201) and was stored as an upright 1200x1600 WebP (`ours-published-phone-photo-1440.png`, red band
+on top); a tag typed without Enter is saved on Publish; image and tag buttons are 44x44 at 390 and do
+not overlap; removing a tile frees its upload (DELETE 204); no horizontal scroll against the visible
+width (scrollbar excluded) at 360/390/768, logged in and out, uz/ru/en; double click on Publish sends one request; publishing opens the new project page; two
 uploaded images appear in order; the Vimeo link gets the video error under its field; a company
 sees the explanation and no header button; logged out `/new` -> 307 to `/login?next=/new`; no
 horizontal scroll at 390 in uz/ru/en on `/new` and `/`; header add button one line at 768/1024/1440

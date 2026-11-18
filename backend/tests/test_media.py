@@ -99,7 +99,7 @@ async def test_upload_over_5mb_without_content_length_is_413(auth_client):
 async def test_upload_rejects_a_header_claiming_huge_pixels(auth_client, size):
     await _signup(auth_client)
     r = await _upload(auth_client, png_claiming(*size))
-    assert (r.status_code, _code(r)) == (422, "invalid_image")
+    assert (r.status_code, _code(r)) == (422, "image_too_many_pixels")
 
 
 async def test_pixel_limit_is_checked_before_decoding(auth_client, monkeypatch):
@@ -107,7 +107,7 @@ async def test_pixel_limit_is_checked_before_decoding(auth_client, monkeypatch):
     monkeypatch.setattr("app.media.images.MAX_PIXELS", 100)
     await _signup(auth_client)
     r = await _upload(auth_client, image_bytes("PNG", (20, 20)))
-    assert (r.status_code, _code(r)) == (422, "invalid_image")
+    assert (r.status_code, _code(r)) == (422, "image_too_many_pixels")
 
 
 async def test_upload_requires_login(auth_client):
@@ -165,3 +165,23 @@ async def test_consume_uploads_only_own_and_once(auth_client, db_session):
     await db_session.commit()
     with pytest.raises(AppError):
         await consume_uploads(db_session, alice, [upload_id])
+
+
+async def test_delete_own_unused_upload_frees_it(auth_client, media_root):
+    await _signup(auth_client)
+    body = (await _upload(auth_client, image_bytes())).json()
+    r = await auth_client.delete(f"{UPLOADS}/{body['id']}")
+    assert r.status_code == 204
+    assert not (media_root / body["url"].rsplit("/", 1)[1]).exists()
+    for _ in range(12):  # all 12 places are free again
+        assert (await _upload(auth_client, image_bytes())).status_code == 201
+
+
+async def test_delete_someone_elses_upload_is_404(auth_client):
+    await _signup(auth_client, "alice")
+    upload_id = (await _upload(auth_client, image_bytes())).json()["id"]
+    await auth_client.post("/api/v1/auth/logout")
+    await _signup(auth_client, "bobby")
+    for target in (upload_id, "not-a-uuid"):
+        r = await auth_client.delete(f"{UPLOADS}/{target}")
+        assert (r.status_code, _code(r)) == (404, "upload_not_found")
