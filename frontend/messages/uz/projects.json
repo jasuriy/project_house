@@ -45,7 +45,8 @@
     "editProfile": "Profilni tahrirlash",
     "privacy": "Telefon va email ochiq koʻrsatilmaydi; bogʻlanish xabarlar orqali.",
     "empty": "Hali loyiha yoʻq.",
-    "profileOf": "Profil"
+    "profileOf": "Profil",
+    "likesStat": "yoqtirish"
   },
   "Editor": {
     "title": "Loyiha qoʻshish",
@@ -180,5 +181,18 @@
     "not_authenticated": "Qaytadan kiring.",
     "unreachable": "Server bilan aloqa yoʻq. Qayta urinib koʻring.",
     "generic": "Nimadir xato ketdi. Qayta urinib koʻring."
+  },
+  "Mine": {
+    "saved": "Saqlanganlar",
+    "liked": "Yoqtirganlarim",
+    "lists": "Roʻyxatlaringiz",
+    "only": "Faqat siz koʻrasiz.",
+    "savedOrder": "Oxirgi saqlaganingiz birinchi.",
+    "likedOrder": "Oxirgi yoqtirganingiz birinchi.",
+    "savedEmptyTitle": "Hali hech narsa saqlamadingiz",
+    "savedEmptyText": "Loyiha sahifasidagi Saqlash tugmasi loyihani shu yerga qoʻshadi.",
+    "likedEmptyTitle": "Hali hech narsani yoqtirmadingiz",
+    "likedEmptyText": "Loyiha sahifasidagi yurakcha loyihani shu yerga qoʻshadi.",
+    "toFeed": "Lentaga oʻtish"
   }
 }

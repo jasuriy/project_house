@@ -45,7 +45,8 @@
     "editProfile": "Edit profile",
     "privacy": "Phone and email are never shown; contact happens through messages.",
     "empty": "No projects yet.",
-    "profileOf": "Profile"
+    "profileOf": "Profile",
+    "likesStat": "{count, plural, one {like} other {likes}}"
   },
   "Editor": {
     "title": "Add project",
@@ -180,5 +181,18 @@
     "not_authenticated": "Log in again.",
     "unreachable": "No connection to the server. Try again.",
     "generic": "Something went wrong. Try again."
+  },
+  "Mine": {
+    "saved": "Saved",
+    "liked": "Liked",
+    "lists": "Your lists",
+    "only": "Only you see this.",
+    "savedOrder": "Last saved first.",
+    "likedOrder": "Last liked first.",
+    "savedEmptyTitle": "Nothing saved yet",
+    "savedEmptyText": "The Save button on a project page adds it here.",
+    "likedEmptyTitle": "Nothing liked yet",
+    "likedEmptyText": "The heart on a project page adds it here.",
+    "toFeed": "Go to the feed"
   }
 }

@@ -1,3 +1,4 @@
+import { Bookmark, Heart } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Avatar } from "@/components/Avatar";
 import { ShareButton } from "@/components/projects/ShareButton";
@@ -19,6 +20,7 @@ const GHOST = `${BUTTON} border border-border bg-card text-fg hover:border-prima
 export function ProfileCard({ profile, isOwner }: { profile: Profile; isOwner: boolean }) {
   const t = useTranslations("Profile");
   const tp = useTranslations("Project");
+  const tm = useTranslations("Mine");
   const isDeveloper = profile.account_type === "developer";
   const links = profileLinks(profile.links);
   const facts = [
@@ -83,6 +85,10 @@ export function ProfileCard({ profile, isOwner }: { profile: Profile; isOwner: b
               {t("projectsStat", { count: profile.project_count })}
             </span>
           </p>
+          <p className="grid rounded-[10px] bg-muted px-3 py-2.5">
+            <b className="text-[20px] text-fg tabular-nums">{profile.like_total}</b>
+            <span className="text-meta text-mute">{t("likesStat", { count: profile.like_total })}</span>
+          </p>
         </div>
       )}
       <div className={`flex flex-wrap gap-2 md:max-lg:order-last ${second}`}>
@@ -93,6 +99,19 @@ export function ProfileCard({ profile, isOwner }: { profile: Profile; isOwner: b
         )}
         <ShareButton label={tp("share")} copiedLabel={tp("copied")} className={GHOST} />
       </div>
+      {/* Mockup 3c: your own lists, on your own profile only. */}
+      {isOwner && (
+        <div className={`flex flex-wrap gap-2 md:max-lg:order-last ${second}`}>
+          <Link href="/saved" className={`${GHOST} gap-2`}>
+            <Bookmark aria-hidden className="size-4.5" />
+            {tm("saved")}
+          </Link>
+          <Link href="/liked" className={`${GHOST} gap-2`}>
+            <Heart aria-hidden className="size-4.5" />
+            {tm("liked")}
+          </Link>
+        </div>
+      )}
       {isDeveloper && <p className={`text-meta text-mute ${second}`}>{t("privacy")}</p>}
     </section>
   );

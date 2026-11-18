@@ -3,7 +3,7 @@
 import { Bookmark, Heart } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type ReactNode } from "react";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { clientDelete, clientPut } from "@/lib/client-api";
 
 // Mockup screen 2b: bordered buttons under the author; full width halves on a phone.
@@ -17,6 +17,7 @@ const BUTTON =
 function useMark(path: string, initial: boolean) {
   const [on, setOn] = useState(initial);
   const busy = useRef(false);
+  const router = useRouter();
 
   async function toggle(onChange?: (next: boolean) => void) {
     if (busy.current) return;
@@ -28,6 +29,9 @@ function useMark(path: string, initial: boolean) {
     if (!result.ok) {
       setOn(!next);
       onChange?.(!next);
+    } else {
+      // Drop the pages the browser kept: Back to Saqlanganlar must not show what was just unsaved.
+      router.refresh();
     }
     busy.current = false;
   }
