@@ -20,10 +20,11 @@ Known differences (intended):
 | Edit form fields | a shortened set | the full add-project field set | the same form as Add project |
 | Phone footer | fixed bar with Saqlash + Bekor qilish | buttons at the end of the form, O'chirish full width above them | same as the add page (no fixed bar in part 1) |
 | Address note | full domain | `username/slug` | the domain is not known yet (deploy) |
+| Owner actions on the project page | not drawn | "Tahrirlash" link (own project) or "O'chirish" (sample) after Ulashish in the links row | follows the existing links-row style |
 
 Checks (browser, test data): owner sees Tahrirlash on their project page; the form opens filled with
 both images; saving a new title and removing an image keeps the address and shows the change; logged
 out `/<user>/<slug>/edit` -> 307 to login with `next`; another user's edit address -> 404; a
 sample's edit address -> 404 and its page shows O'chirish only; Esc closes the dialog; a double click
 on "Ha, o'chirish" sends one DELETE; after deleting, the owner lands on their profile and the
-project is gone (404); no horizontal scroll on the edit page at 1440 / 768 / 390.
+project is gone (404); a server error on save (empty title) shows under the field with the cursor there and the dialog closed; no horizontal scroll on the edit page at 1440 / 768 / 390.
