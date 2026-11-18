@@ -30,7 +30,8 @@
     "sample": "Namuna",
     "sampleNotice": "Bu namuna loyiha. Asl muallifi: {name}.",
     "details": "Tafsilotlar",
-    "play": "Videoni ijro etish"
+    "play": "Videoni ijro etish",
+    "edit": "Tahrirlash"
   },
   "Profile": {
     "projectsTab": "Loyihalar ({count})",
@@ -84,7 +85,14 @@
     "removeTag": "{tag} ni olib tashlash",
     "companyTitle": "Loyihalarni dasturchilar qoʻshadi",
     "companyText": "Kompaniya hisobi loyihalarni koʻradi va dasturchilarga yozadi. Loyiha qoʻshish dasturchi hisoblari uchun.",
-    "toFeed": "Lentaga qaytish"
+    "toFeed": "Lentaga qaytish",
+    "delete": "Oʻchirish",
+    "deleteTitle": "Loyihani oʻchirasizmi?",
+    "deleteText": "\"{title}\" va uning rasmlari butunlay oʻchiriladi. Buni qaytarib boʻlmaydi.",
+    "deleteConfirm": "Ha, oʻchirish",
+    "deleting": "Oʻchirilmoqda...",
+    "keep": "Yoʻq, qoldirish",
+    "addressKept": "Manzil oʻzgarmaydi: {address}"
   },
   "EditorErrors": {
     "invalid_title": "Nom 1 dan 80 belgigacha boʻlsin.",

@@ -30,7 +30,8 @@
     "sample": "Sample",
     "sampleNotice": "This is a sample project. Original author: {name}.",
     "details": "Details",
-    "play": "Play the video"
+    "play": "Play the video",
+    "edit": "Edit"
   },
   "Profile": {
     "projectsTab": "Projects ({count})",
@@ -84,7 +85,14 @@
     "removeTag": "Remove {tag}",
     "companyTitle": "Developers add projects",
     "companyText": "A company account browses projects and messages developers. Adding projects is for developer accounts.",
-    "toFeed": "Back to the feed"
+    "toFeed": "Back to the feed",
+    "delete": "Delete",
+    "deleteTitle": "Delete this project?",
+    "deleteText": "\"{title}\" and its images will be deleted for good. This cannot be undone.",
+    "deleteConfirm": "Yes, delete",
+    "deleting": "Deleting...",
+    "keep": "No, keep it",
+    "addressKept": "The address stays the same: {address}"
   },
   "EditorErrors": {
     "invalid_title": "The name must be 1 to 80 characters.",

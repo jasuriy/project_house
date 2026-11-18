@@ -10,6 +10,7 @@ import { clientPatch, clientPost } from "@/lib/client-api";
 import { youtubeId } from "@/lib/media";
 import { type ProjectField, projectErrorField, projectErrorKey } from "@/lib/project-errors";
 import { type EditableProject, FIELD_NAMES, type FieldName, type ProjectDetail } from "@/lib/types";
+import { DeleteProject } from "./DeleteProject";
 import { ImagePicker, type ImageItem } from "./ImagePicker";
 import { TagsInput } from "./TagsInput";
 import { TextAreaField } from "./TextAreaField";
@@ -167,7 +168,12 @@ export function ProjectForm({
           <TextField name="github_url" label={t("github")} placeholder="https://github.com/" defaultValue={values.github_url} maxLength={MAX.link} onChange={set("github_url")} error={fieldError("github_url")} />
           <TextField name="live_url" label={t("live")} help={t("liveHelp")} placeholder="https://" defaultValue={values.live_url} maxLength={MAX.link} onChange={set("live_url")} error={fieldError("live_url")} />
         </div>
-        <div className="flex gap-2 border-t border-border pt-4 md:justify-end">
+        <div className="flex flex-wrap gap-2 border-t border-border pt-4 md:justify-end">
+          {project && (
+            <div className="w-full md:mr-auto md:w-auto">
+              <DeleteProject slug={project.slug} title={project.title} username={username} look="button" />
+            </div>
+          )}
           <Link href={project ? project.path : `/${username}`} className={`${BUTTON} border border-border bg-card text-fg hover:border-primary`}>
             {t("cancel")}
           </Link>

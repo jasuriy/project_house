@@ -4,18 +4,21 @@ import { formatDate, initials } from "@/lib/format";
 import { safeExternalUrl } from "@/lib/safe-url";
 import type { ProjectDetail } from "@/lib/types";
 import { MediaPlayer } from "./MediaPlayer";
+import { DeleteProject } from "@/components/editor/DeleteProject";
 import { ShareButton } from "./ShareButton";
 
 const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const;
 
 /** The project page body, laid out as mockup screen 2 ("Loyiha sahifasi"). */
-export function ProjectView({ project }: { project: ProjectDetail }) {
+/** `viewer` is the signed-in username: the owner gets Tahrirlash, or O'chirish for a sample. */
+export function ProjectView({ project, viewer }: { project: ProjectDetail; viewer: string | null }) {
   const t = useTranslations("Project");
   const tf = useTranslations("Fields");
   const tn = useTranslations("Nav");
   const locale = useLocale();
   const fieldLabel = tf(project.field);
   const authorUrl = project.author.kind === "demo" ? safeExternalUrl(project.author.url) : null;
+  const isOwner = viewer !== null && project.author.kind === "user" && project.author.url === `/${viewer}`;
 
   const links = [
     { href: safeExternalUrl(project.github_url), label: t("github") },
@@ -133,6 +136,14 @@ export function ProjectView({ project }: { project: ProjectDetail }) {
               </a>
             ))}
             <ShareButton label={t("share")} copiedLabel={t("copied")} />
+            {isOwner && !project.is_demo && (
+              <Link href={`${project.path}/edit`} className="inline-flex min-h-11 items-center rounded-control text-small font-semibold text-primary hover:underline md:min-h-0">
+                {t("edit")}
+              </Link>
+            )}
+            {isOwner && project.is_demo && viewer && (
+              <DeleteProject slug={project.slug} title={project.title} username={viewer} look="link" />
+            )}
           </div>
 
           {project.author.kind === "demo" && (
