@@ -20,6 +20,9 @@
 - Lists `/me/saved`, `/me/liked`: newest saved/liked first, cursor `(created_at, project_id)`, page 24, card shape.
 - `saved` and `liked` are reserved usernames.
 - All writes need login and the Origin check; no email confirmation; developers and companies alike.
+- Feed, profile and detail responses stay identical whoever asks (only `liked`/`saved`/`can_delete` depend on the viewer); the public pages keep working when the viewer's cookie is invalid (anonymous, never 401).
+- Like/save writes use `INSERT ... ON CONFLICT DO NOTHING` / plain `DELETE` (no read-then-write), so two quick clicks cannot fail.
+- `/me/saved` and `/me/liked` keep only projects that still exist (cascade), newest saved/liked first.
 - uz / ru / en with the modifier letters; no emoji; desktop 1440 matches the drawing closely, tablet second, phone 360/390 "does not break".
 
 ## Review Focus
@@ -49,7 +52,9 @@
   - `test_saved_and_liked_lists_are_mine_only_and_newest_first` (Review Focus 2): two users; each list has only the caller's; order by save time not publish time; cursor pages.
   - `test_profile_like_total`.
   - `test_deleting_a_project_removes_its_likes_and_saves` (Review Focus 4).
-  - `test_saved_and_liked_are_reserved_usernames`.
+  - `test_saved_and_liked_are_reserved_usernames` (and the architecture list test still passes).
+  - `test_detail_with_an_invalid_cookie_is_still_200` (stale session cookie -> anonymous detail, `liked` false).
+  - `test_like_counts_cost_one_query_per_page`: feed of 24 cards issues at most 1 extra query for counts (SQLAlchemy event counter).
 - [ ] **Step 2-4:** run (FAIL), implement, backend gate (pytest, ruff check, ruff format --check) -> pass.
 - [ ] **Step 5: Commit** `feat(backend): likes, saves and your Saved and Liked lists`
 
@@ -76,7 +81,7 @@
 
 - [ ] **Step 1: Draw** screen 2b; capture (UTF-8 check, no "Ê", modifier letters).
 - [ ] **Step 2: Failing test rows** for the new codes -> fields/form; messages in uz/ru/en.
-- [ ] **Step 3: Implement.** Heart and Saqlash update at once and roll back on failure; logged out -> `/login?next=<this page>`; comment box with counter; delete asks once; report dialog (native `<dialog>`, opens on Cancel).
+- [ ] **Step 3: Implement.** Heart and Saqlash update at once and roll back on failure; logged out -> `/login?next=<this page>` (through `safeNextPath`); comment box with counter; delete asks once; report dialog (native `<dialog>`, opens on Cancel).
 - [ ] **Step 4: Run** lint, test, build (`API_URL=http://localhost:8002` for runtime checks).
 - [ ] **Step 5: Visual gate:** 1440/768/390/360 against 2b; flows: like/unlike, save, comment, delete own, owner deletes another's, report project and comment, logged-out heart -> login -> back (Review Focus 5); `MATCH.md`; advisor compares.
 - [ ] **Step 6: Commit** `feat(frontend): like, save, comment and report on the project page`
