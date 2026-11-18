@@ -158,6 +158,12 @@ section.scr { display: grid; gap: 12px; scroll-margin-top: 16px; }
 .m .tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
 .m .tabs a { padding: 10px 0; font-size: 15px; color: var(--mute); }
 .m .tabs a.on { color: var(--fg); font-weight: 600; box-shadow: inset 0 -2px 0 var(--primary); }
+/* 3c / 3d: your own profile, Saqlanganlar and Yoqtirganlarim */
+.m .mine { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.m .mine .btn svg { width: 17px; height: 17px; }
+.m .only { margin: 4px 0 0; font-size: 14px; color: var(--mute); }
+.m .emptybox { border: 1px dashed var(--border); border-radius: 12px; padding: 28px 20px; text-align: center; display: grid; gap: 10px; justify-items: center; color: var(--mute); }
+.m .emptybox b { color: var(--fg); font-size: 17px; }
 
 /* add project */
 .m .formgrid { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: start; }
@@ -433,6 +439,22 @@ const profSide = (t, who) => {
 const profile = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${profSide(t, "dev")}<div><div class="tabs"><a class="on">Loyihalar (6)</a><a>Haqida</a></div><div class="grid" style="grid-template-columns: repeat(${t ? 2 : 3}, 1fr)">${(t ? AZIZ.slice(0, 4) : AZIZ).map(card).join("")}</div></div></div></div></div>`;
 const company = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${profSide(t, "co")}<div class="panel" style="display:grid;gap:10px"><h3 style="margin:0;font-size:18px">Kompaniya haqida</h3><p style="margin:0">Nova Systems logistika va qishloq xoʻjaligi uchun kompyuter koʻrishi yechimlarini ishlab chiqadi. Talabalar uchun yozgi amaliyot va junior oʻrinlar ochiq.</p><p class="muted" style="margin:0;font-size:14px">Kompaniya hisobi bitta odamga tegishli (Phase 1). Kompaniya sahifalari keyingi bosqichda.</p></div></div></div></div>`;
 
+// ---- 3c / 3d: your own profile; Saqlanganlar and Yoqtirganlarim ----
+const mineBtns = `<div class="mine"><button class="btn ghost" type="button">${MARK}Saqlanganlar</button><button class="btn ghost" type="button">${HEART}Yoqtirganlarim</button></div>`;
+const ownSide = t => profSide(t, "dev")
+  .replace('<button class="btn" type="button">Xabar yozish</button>', '<button class="btn" type="button">Profilni tahrirlash</button>')
+  .replace(/(<div class="acts"[^>]*>.*?<\/div>)/, `$1${t ? "" : mineBtns}`)
+  .replace(/(<\/div>)$/, t ? `<div style="grid-column:2">${mineBtns}</div>$1` : "$1");
+const ownProfile = t => `<div class="${M(t)}">${nav("", t)}<div class="main"><div class="prof">${ownSide(t)}<div><div class="tabs"><a class="on">Loyihalar (6)</a><a>Haqida</a></div><div class="grid" style="grid-template-columns: repeat(${t ? 2 : 3}, 1fr)">${(t ? AZIZ.slice(0, 4) : AZIZ.slice(0, 3)).map(card).join("")}</div></div></div></div></div>`;
+const listHead = which => `<h2 class="h1">${which === "saved" ? "Saqlanganlar" : "Yoqtirganlarim"}</h2><p class="only">Faqat siz koʻrasiz. ${which === "saved" ? "Oxirgi saqlaganingiz birinchi." : "Oxirgi yoqtirganingiz birinchi."}</p><div class="tabs" style="margin-top:14px"><a${which === "saved" ? ' class="on"' : ""}>Saqlanganlar</a><a${which === "liked" ? ' class="on"' : ""}>Yoqtirganlarim</a></div>`;
+const savedList = t => `<div class="${M(t)}">${nav("", t)}<div class="main">${listHead("saved")}<div class="grid" style="grid-template-columns: repeat(${t ? 2 : 4}, 1fr)">${(t ? FEED.slice(0, 4) : FEED.slice(0, 8)).map(card).join("")}</div></div></div>`;
+const emptyBox = which => `<div class="emptybox"><b>${which === "saved" ? "Hali hech narsa saqlamadingiz" : "Hali hech narsani yoqtirmadingiz"}</b><span>${which === "saved" ? "Loyiha sahifasidagi Saqlash tugmasi loyihani shu yerga qoʻshadi." : "Loyiha sahifasidagi yurakcha loyihani shu yerga qoʻshadi."}</span><button class="btn ghost" type="button">Lentaga oʻtish</button></div>`;
+const ownProfileP = () => profileP("dev")
+  .replace('<button class="btn" type="button">Xabar yozish</button>', '<button class="btn" type="button">Profilni tahrirlash</button>')
+  .replace('<div class="tabs" style="margin:0">', `${mineBtns}<div class="tabs" style="margin:0">`);
+const savedListP = () => `<div class="m p">${topBack("Saqlanganlar")}<div class="content"><p class="only" style="margin:0">Faqat siz koʻrasiz. Oxirgi saqlaganingiz birinchi.</p><div class="tabs" style="margin:0"><a class="on">Saqlanganlar</a><a>Yoqtirganlarim</a></div>${card(FEED[0])}${card(FEED[1])}</div></div>`;
+const likedEmptyP = () => `<div class="m p">${topBack("Yoqtirganlarim")}<div class="content"><p class="only" style="margin:0">Faqat siz koʻrasiz. Oxirgi yoqtirganingiz birinchi.</p><div class="tabs" style="margin:0"><a>Saqlanganlar</a><a class="on">Yoqtirganlarim</a></div>${emptyBox("liked")}</div></div>`;
+
 const add = t => `<div class="${M(t)}">${nav("", t)}<div class="main">
   <h2 class="h1">Loyiha qoʻshish</h2>
   <div class="steps"><span class="done"><b>1</b> GitHub havolasi</span><i></i><span class="cur"><b>2</b> Maʼlumotlar va demo</span><i></i><span><b>3</b> ${t ? "Eʼlon qilish" : "Koʻrib chiqish va eʼlon qilish"}</span></div>
@@ -536,6 +558,8 @@ const SCREENS = [
   { id: "project-report", h: "2c. Shikoyat qilish (report dialog)", d: "One dialog for projects and comments: one of four reasons and an optional note up to 500 characters. After Yuborish the dialog says that the report was sent; reporting twice says the same.", dt: "The same dialog over the page.", url: "projecthouse.uz/aziz-rahimov/paxta-begona-ot", html: projectReport },
   { id: "profile", h: "3. Profil (developer profile)", d: "Who the person is, open to work, Message and Share. Phone and email are never shown. No Follow button in Phase 1.", dt: "The side column becomes a header card across the top; projects in two columns.", url: "projecthouse.uz/aziz-rahimov", html: profile },
   { id: "profile-company", h: "3b. Profil (company account)", d: "One person per company account in Phase 1 (spec D14); the verified badge is set by the admin.", dt: "Same header card as the developer profile, then About.", url: "projecthouse.uz/dilnoza-karimova", html: company },
+  { id: "own-profile", h: "3c. Oʻz profilingiz (your own profile)", d: "Only on your own profile: Profilni tahrirlash and Ulashish, then Saqlanganlar and Yoqtirganlarim. Nobody else sees these two buttons.", dt: "The header card; the two buttons under the stats in the second column.", url: "projecthouse.uz/aziz-rahimov", html: ownProfile },
+  { id: "saved-list", h: "3d. Saqlanganlar / Yoqtirganlarim (your saved and liked projects)", d: "Your own lists, only after login and only yours: the feed's cards, the last saved (or liked) first, Yana koʻrsatish at the end. The tabs switch between the two lists. Empty: one line on how to fill it and a way back to the feed.", dt: "Two columns of cards.", url: "projecthouse.uz/saved", html: savedList },
   { id: "add-step1", h: "4a. Loyiha qoʻshish: GitHub havolasi (add project, step 1)", d: "Paste your own repository link; the details are read from GitHub after the ownership check. Hardware or research projects use 'fill in by hand'.", dt: "The same panel, full width.", url: "projecthouse.uz/new", html: addStep1(true) },
   { id: "add-connect", h: "4a-2. GitHub ulanmagan (GitHub not connected)", d: "Without a connected GitHub account the link cannot be checked: the box sends you to Settings; filling in by hand still works.", dt: "The same box, full width.", url: "projecthouse.uz/new", html: addStep1(false) },
   { id: "add", h: "4. Loyiha qoʻshish (add project)", d: "Step 2 of 3 after the GitHub link: ownership confirmed, AI-filled fields marked, live preview of the feed card and Telegram link.", dt: "One column. The preview moves below the form, feed card and Telegram link side by side, then the buttons.", url: "projecthouse.uz/new", html: add },
@@ -639,6 +663,8 @@ const PHONE = {
   "project-report": [["Shikoyat oynasi", projectReportP]],
   profile: [["Dasturchi profili", () => profileP("dev")]],
   "profile-company": [["Kompaniya profili", () => profileP("co")]],
+  "own-profile": [["Oʻz profilingiz", ownProfileP]],
+  "saved-list": [["Saqlanganlar", savedListP], ["Boʻsh holat", likedEmptyP]],
   "add-step1": [["1-qadam", addStep1P(true)]],
   "add-connect": [["GitHub ulanmagan", addStep1P(false)]],
   add: [["2-qadam, birinchi ekran", addP]],
@@ -653,6 +679,8 @@ const PDESC = {
   "project-report": "The dialog almost full width.",
   profile: "Header stacked: photo and name, open to work, facts, stats, then Message and Share at full width. Projects in one column below.",
   "profile-company": "Same header, then About.",
+  "own-profile": "Saqlanganlar and Yoqtirganlarim side by side under the main buttons.",
+  "saved-list": "One column of cards; the empty state on the right.",
   "add-step1": "One field, Continue at full width, the by-hand link under it.",
   "add-connect": "The box with the Settings button at full width, the by-hand link under it.",
   add: "One field per row, a progress bar for the 3 steps, and a fixed bar with Continue and Preview at the bottom.",
