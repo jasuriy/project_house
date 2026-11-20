@@ -14,5 +14,8 @@ node_modules/
 # Uploaded images (disk storage in development)
 backend/media/
 
+# graphify knowledge graph (generated, holds machine-specific paths)
+graphify-out/
+
 # Playwright MCP working files and third-party reference screenshots (never commit)
 .playwright-mcp/
