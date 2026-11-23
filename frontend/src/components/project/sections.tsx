@@ -26,15 +26,13 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { GitHubIcon, LogoMark, TechIcon } from "@/components/ui/icons";
 import type { Catalog, Project } from "@/lib/api";
+import { AUTHOR } from "@/lib/author";
 import { labelOf, labelsOf, techRows, timeline } from "@/lib/catalog";
 import { previewEntries } from "@/lib/repo";
 import { TryDemoButton, VideoStage } from "./demo-player";
 
 // The project page, built from docs/mockups/project-page.png. Server components: they only show
 // data; the one interactive part (the demo player) lives in demo-player.tsx.
-
-// Static author until login exists (decision D6).
-const AUTHOR = { name: "Jasurbek", photo: "/jasurbek.jpg" };
 
 const card = "rounded-[12px] border border-line bg-card shadow-[0_1px_2px_rgba(20,16,50,0.03)]";
 
