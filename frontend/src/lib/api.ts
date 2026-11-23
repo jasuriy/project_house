@@ -15,10 +15,12 @@ export type Catalog = {
   max_tech_name: number;
   max_tech_per_field: number;
   upload_rules: Record<UploadKind, { content_types: string[]; max_bytes: number }>;
+  // What Render needs: form field names, plus "video" and "repo". The server checks the same list.
+  required_fields: string[];
   tech: { name: string; group: string; icon: string | null }[];
 };
 
-// The fields a person edits in the form (sent with PATCH /projects/{id}).
+// The fields a person edits in the form (sent with POST /projects on Render).
 export type ProjectForm = {
   name: string | null;
   short_description: string | null;
@@ -65,41 +67,23 @@ export type Video = {
 
 export type Project = ProjectForm & {
   id: string;
-  slug: string | null;
-  published_at: string | null;
+  slug: string;
+  published_at: string;
   video: Video | null;
   repo_url: string | null;
   repo: RepoSnapshot | null;
-  missing_fields: string[];
   created_at: string;
   updated_at: string;
 };
 
 export type UploadTicket = { upload_url: string; key: string; headers: Record<string, string> };
 
-export const FORM_FIELDS: FormField[] = [
-  "name",
-  "short_description",
-  "project_type",
-  "ai_powered",
-  "category",
-  "post_languages",
-  "problem",
-  "outcome",
-  "audience",
-  "languages",
-  "tools",
-  "deliverables",
-  "getting_started",
-  "requirements",
-  "license",
-  "status",
-  "limitations",
-  "how_it_works",
-  "started_on",
-  "finished_on",
-  "ongoing",
-];
+/** Everything sent on Render: the form plus the temporary file keys and the repository link. */
+export type NewProject = ProjectForm & {
+  video: { key: string; file_name: string; duration_seconds: number | null } | null;
+  poster_key: string | null;
+  repo_url: string | null;
+};
 
 export const EMPTY_FORM: ProjectForm = {
   name: null,
@@ -153,28 +137,10 @@ const json = (data: unknown) => JSON.stringify(data);
 
 export const api = {
   catalog: () => request<Catalog>("/catalog"),
-  createProject: () => request<Project>("/projects", { method: "POST" }),
-  getProject: (id: string) => request<Project>(`/projects/${id}`),
-  updateProject: (id: string, changes: Partial<ProjectForm>) =>
-    request<Project>(`/projects/${id}`, { method: "PATCH", body: json(changes) }),
-  uploadUrl: (id: string, kind: UploadKind, file: { content_type: string; size: number }) =>
-    request<UploadTicket>(`/projects/${id}/uploads/${kind}/url`, { method: "POST", body: json(file) }),
-  completeUpload: (
-    id: string,
-    kind: UploadKind,
-    done: { key: string; file_name?: string; duration_seconds?: number | null },
-  ) => request<Project>(`/projects/${id}/uploads/${kind}/complete`, { method: "POST", body: json(done) }),
-  linkRepo: (id: string, url: string) =>
-    request<Project>(`/projects/${id}/repo`, { method: "POST", body: json({ url }) }),
-  publish: (id: string) => request<Project>(`/projects/${id}/publish`, { method: "POST" }),
+  // Before Render: nothing is stored on the server.
+  uploadUrl: (kind: UploadKind, file: { content_type: string; size: number }) =>
+    request<UploadTicket>(`/uploads/${kind}/url`, { method: "POST", body: json(file) }),
+  previewRepo: (url: string) => request<RepoSnapshot>("/repos/preview", { method: "POST", body: json({ url }) }),
+  // Render: the one request that creates the project.
+  createProject: (project: NewProject) => request<Project>("/projects", { method: "POST", body: json(project) }),
 };
-
-/** The same PATCH, sent while the page is closing (the browser finishes it after unload). */
-export function saveOnLeave(id: string, changes: Partial<ProjectForm>): void {
-  fetch(`/api/v1/projects/${id}`, {
-    method: "PATCH",
-    body: json(changes),
-    headers: { "Content-Type": "application/json" },
-    keepalive: true,
-  });
-}

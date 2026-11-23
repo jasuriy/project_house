@@ -1,23 +1,36 @@
 "use client";
 
 import { CirclePlay, Folder, LoaderCircle, Play, RotateCw, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { StatusDot } from "@/components/ui/icons";
 import { ApiError, type Catalog, api } from "@/lib/api";
 import { formatDuration, formatSize, putWithProgress, readVideo } from "@/lib/upload";
-import type { ProjectDraft } from "@/lib/use-project-draft";
+import type { ProjectFormState } from "@/lib/use-project-form";
 
 type Job = { fileName: string; size: number; phase: "preparing" | "uploading" | "finishing"; progress: number };
 
-/** Choosing, uploading (browser -> R2 directly) and previewing the demo video. */
-export function VideoCard({ draft, catalog, error: requiredError }: { draft: ProjectDraft; catalog: Catalog; error: string | null }) {
-  const video = draft.project?.video ?? null;
+/**
+ * Choosing, uploading and previewing the demo video. The file goes from the browser straight to
+ * R2's temporary folder; the server only signs the link. Nothing is saved until Render.
+ */
+export function VideoCard({ state, catalog, error: requiredError }: { state: ProjectFormState; catalog: Catalog; error: string | null }) {
+  const { video } = state;
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // False once the page is left: an upload that finishes later must not fill the emptied form.
+  const visibleRef = useRef(true);
+
+  useLayoutEffect(() => {
+    visibleRef.current = true;
+    return () => {
+      visibleRef.current = false;
+      setJob(null);
+      setError(null);
+    };
+  }, []);
 
   async function upload(file: File) {
     setError(null);
@@ -28,31 +41,39 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
     setJob({ fileName: file.name, size: file.size, phase: "preparing", progress: 0 });
     try {
       const { duration, poster } = await readVideo(file);
-      const id = await draft.ensureDraft();
-      // 1. ask for a signed link, 2. upload straight to R2, 3. tell the backend it is there
-      const ticket = await draft.enqueue(() => api.uploadUrl(id, "video", { content_type: file.type, size: file.size }));
+      // 1. ask for a signed link, 2. upload straight to R2
+      const ticket = await api.uploadUrl("video", { content_type: file.type, size: file.size });
       setJob((j) => j && { ...j, phase: "uploading" });
       await putWithProgress(ticket.upload_url, file, ticket.headers, (p) => setJob((j) => j && { ...j, progress: p }));
       setJob((j) => j && { ...j, phase: "finishing", progress: 1 });
-      await draft.send((pid) =>
-        api.completeUpload(pid, "video", { key: ticket.key, file_name: file.name, duration_seconds: duration }),
-      );
-      if (poster) await uploadPoster(id, poster);
+      // The video counts as uploaded only after its first frame is done (or failed), so Render
+      // never runs between the two and saves the project without its still image.
+      const posterKey = poster ? await uploadPoster(poster) : null;
+      if (!visibleRef.current) return;
+      state.setVideo({
+        key: ticket.key,
+        posterKey,
+        fileName: file.name,
+        size: file.size,
+        duration,
+        previewUrl: URL.createObjectURL(file),
+        posterPreviewUrl: poster && posterKey ? URL.createObjectURL(poster) : null,
+      });
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Upload failed");
+      if (visibleRef.current) setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Upload failed");
     } finally {
-      setJob(null);
+      if (visibleRef.current) setJob(null);
     }
   }
 
-  // The first frame is a nice-to-have: if it fails, the video is still saved.
-  async function uploadPoster(id: string, poster: Blob) {
+  // The first frame is a nice-to-have: if it fails, the video is kept without it.
+  async function uploadPoster(poster: Blob): Promise<string | null> {
     try {
-      const ticket = await draft.enqueue(() => api.uploadUrl(id, "poster", { content_type: "image/jpeg", size: poster.size }));
+      const ticket = await api.uploadUrl("poster", { content_type: "image/jpeg", size: poster.size });
       await putWithProgress(ticket.upload_url, poster, ticket.headers, () => undefined);
-      await draft.send((pid) => api.completeUpload(pid, "poster", { key: ticket.key }));
+      return ticket.key;
     } catch {
-      /* keep the video without a still image */
+      return null;
     }
   }
 
@@ -76,7 +97,7 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
       {job ? (
         <Progress job={job} />
       ) : video ? (
-        <Preview url={video.url} poster={video.poster_url} duration={video.duration_seconds} />
+        <Preview url={video.previewUrl} poster={video.posterPreviewUrl} duration={video.duration} />
       ) : (
         <button
           type="button"
@@ -110,10 +131,10 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
             <Folder size={18} strokeWidth={1.6} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-bold leading-[15px] text-ink">{video.file_name ?? "Video"}</p>
+            <p className="truncate text-[12px] font-bold leading-[15px] text-ink">{video.fileName}</p>
             <p className="text-[11.5px] leading-[15px] text-muted">
-              {video.size !== null && formatSize(video.size)}
-              {video.duration_seconds !== null && <> &middot; {formatDuration(video.duration_seconds)}</>}
+              {formatSize(video.size)}
+              {video.duration !== null && <> &middot; {formatDuration(video.duration)}</>}
             </p>
           </div>
           <span className="flex items-center gap-[6px] text-[12px] font-semibold text-success">
@@ -140,35 +161,8 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
   );
 }
 
-const LINK_MAX_AGE_MS = 50 * 60 * 1000; // signed links last 60 minutes
-
-const pathOf = (link: string | null) => link?.split("?")[0] ?? null;
-
-/**
- * Signed links change on every answer (new signature), but the file is the same. Keep the first
- * link while the file path is unchanged, so the player does not reload on every autosave.
- * `renew` (called when play is pressed) swaps in the newest link once the kept one is 50 minutes
- * old, before it expires.
- */
-function useStableLink(link: string | null) {
-  const [held, setHeld] = useState(link);
-  if (pathOf(held) !== pathOf(link)) setHeld(link);
-  const current = pathOf(held) === pathOf(link) ? held : link;
-  const takenAt = useRef(0);
-  useEffect(() => {
-    takenAt.current = Date.now(); // when the kept link was taken (after render, not during it)
-  }, [current]);
-  const renew = () => {
-    if (Date.now() - takenAt.current > LINK_MAX_AGE_MS) flushSync(() => setHeld(link));
-  };
-  return { link: current, renew };
-}
-
-function Preview(props: { url: string; poster: string | null; duration: number | null }) {
-  const video = useStableLink(props.url);
-  const poster = useStableLink(props.poster);
-  const url = video.link ?? props.url;
-  const { duration } = props;
+/** Plays the person's own file from memory (an object URL), so nothing is downloaded. */
+function Preview({ url, poster, duration }: { url: string; poster: string | null; duration: number | null }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   return (
@@ -177,7 +171,7 @@ function Preview(props: { url: string; poster: string | null; duration: number |
         <video
           ref={ref}
           src={url}
-          poster={poster.link ?? undefined}
+          poster={poster ?? undefined}
           preload="metadata"
           controls={playing}
           onEnded={() => setPlaying(false)}
@@ -189,7 +183,6 @@ function Preview(props: { url: string; poster: string | null; duration: number |
               type="button"
               aria-label="Play preview"
               onClick={() => {
-                video.renew();
                 setPlaying(true);
                 void ref.current?.play();
               }}

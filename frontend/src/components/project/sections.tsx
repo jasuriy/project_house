@@ -23,6 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { GitHubIcon, LogoMark, TechIcon } from "@/components/ui/icons";
 import type { Catalog, Project } from "@/lib/api";
@@ -39,10 +40,13 @@ const card = "rounded-[12px] border border-line bg-card shadow-[0_1px_2px_rgba(2
 export function SiteHeader() {
   return (
     <header className="relative flex h-[52px] items-center border-b border-[#f0ebea] px-[16px] md:h-[42px] md:pl-[52px] md:pr-[50px]">
-      <div className="flex items-center gap-[8px]">
+      <Link
+        href="/"
+        className="flex items-center gap-[8px] rounded-[6px] outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
         <LogoMark size={25} />
         <span className="text-[19.9px] font-extrabold tracking-[-0.015em] text-ink">Prostagram</span>
-      </div>
+      </Link>
       {/* Static until the explore page exists (decision D6). */}
       <span className="absolute left-1/2 hidden -translate-x-1/2 text-[12.5px] font-semibold text-ink-2 md:block">
         Explore projects

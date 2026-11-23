@@ -1,30 +1,40 @@
 "use client";
 
 import { File, FileText, Folder, Link, LoaderCircle } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { GitHubIcon, StatusDot } from "@/components/ui/icons";
 import { ApiError, type RepoSnapshot, api } from "@/lib/api";
 import { previewEntries } from "@/lib/repo";
-import type { ProjectDraft } from "@/lib/use-project-draft";
+import type { ProjectFormState } from "@/lib/use-project-form";
 
 const README_LINES = 3;
 
-/** Linking the GitHub repository; shows the preview the backend stored. */
-export function RepoCard({ draft, error: requiredError }: { draft: ProjectDraft; error: string | null }) {
-  const repo = draft.project?.repo ?? null;
-  const savedUrl = draft.project?.repo_url?.replace(/^https?:\/\//, "") ?? "";
-  const [typed, setTyped] = useState<string | null>(null); // null: show the saved link
+/** Linking the GitHub repository: the server reads GitHub and answers a preview; nothing is saved. */
+export function RepoCard({ state, error: requiredError }: { state: ProjectFormState; error: string | null }) {
+  const repo = state.repo?.snapshot ?? null;
+  const linkedUrl = state.repo?.snapshot.html_url.replace(/^https?:\/\//, "") ?? "";
+  const [typed, setTyped] = useState<string | null>(null); // null: show the linked repository
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const value = typed ?? savedUrl;
+  const value = typed ?? linkedUrl;
+
+  // The page was left: the form is emptied, so is what was typed here.
+  useLayoutEffect(
+    () => () => {
+      setTyped(null);
+      setError(null);
+    },
+    [],
+  );
 
   async function link() {
-    if (typed === null || typed.trim() === "" || typed.trim() === savedUrl) return;
+    if (typed === null || typed.trim() === "" || typed.trim() === linkedUrl) return;
     setLinking(true);
     setError(null);
     try {
-      await draft.send((id) => api.linkRepo(id, typed.trim()));
+      const snapshot = await api.previewRepo(typed.trim());
+      state.setRepo({ url: snapshot.html_url, snapshot });
       setTyped(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not link the repository");

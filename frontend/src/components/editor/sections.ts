@@ -1,7 +1,7 @@
 import { FileText, Layers, Package, Play, type LucideIcon } from "lucide-react";
 
-// Which required fields (names from the API's missing_fields) belong to which part of the page.
-// The rule of what is required lives in the backend; this only groups its answer for display.
+// Which required fields (names from the catalog's required_fields) belong to which part of the
+// page. The rule of what is required lives in the backend; this only groups it for display.
 
 export type SectionId = "details" | "demo" | "technology" | "setup";
 
@@ -21,9 +21,6 @@ export const SECTIONS: { id: SectionId; label: string; icon: LucideIcon; fields:
     fields: ["deliverables", "getting_started", "requirements", "license", "status"],
   },
 ];
-
-/** Before the first save there is no server answer yet: everything required is missing. */
-export const ALL_REQUIRED = SECTIONS.flatMap((s) => s.fields);
 
 export const READY_ITEMS: { label: string; fields: string[] }[] = [
   { label: "Project details complete", fields: SECTIONS[0].fields },

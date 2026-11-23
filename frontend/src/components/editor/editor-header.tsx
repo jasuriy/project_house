@@ -1,18 +1,9 @@
-import { ArrowRight, ChevronRight, CircleAlert, House, LoaderCircle } from "lucide-react";
-import { LogoMark, StatusDot } from "@/components/ui/icons";
-import type { SaveState } from "@/lib/use-project-draft";
+import { ArrowRight, ChevronRight, House, LoaderCircle } from "lucide-react";
+import { LogoMark } from "@/components/ui/icons";
 
-export function EditorHeader({
-  saveState = "idle",
-  saveError,
-  onRender,
-  rendering = false,
-}: {
-  saveState?: SaveState;
-  saveError?: { code: string; message: string } | null;
-  onRender?: () => void;
-  rendering?: boolean;
-}) {
+// The mockup's "Draft saved" status is left out on purpose: nothing is saved before Render
+// (Bek, 2026-11-24).
+export function EditorHeader({ onRender, rendering = false }: { onRender?: () => void; rendering?: boolean }) {
   return (
     <header className="relative flex h-[52px] items-center border-b border-[#f0ebea] px-[16px] md:h-[42px] md:pl-[38px] md:pr-[30px]">
       <div className="flex items-center gap-[7px]">
@@ -31,8 +22,7 @@ export function EditorHeader({
         <span aria-current="page">New project</span>
       </nav>
 
-      <div className="ml-auto flex items-center gap-[14px] md:gap-[27px]">
-        <SaveStatus state={saveState} error={saveError} />
+      <div className="ml-auto flex items-center">
         <button
           type="button"
           onClick={onRender}
@@ -45,22 +35,5 @@ export function EditorHeader({
         </button>
       </div>
     </header>
-  );
-}
-
-function SaveStatus({ state, error }: { state: SaveState; error?: { message: string } | null }) {
-  if (state === "idle") return null;
-  return (
-    <span role="status" className="flex items-center gap-[7px] text-[12.3px] text-ink-2">
-      {state === "saving" && <LoaderCircle size={15} className="animate-spin text-muted" aria-hidden="true" />}
-      {state === "saved" && <StatusDot done size={16} />}
-      {state === "error" && <CircleAlert size={16} className="text-danger" aria-hidden="true" />}
-      <span
-        className={`max-sm:sr-only ${state === "error" ? "max-w-[300px] truncate text-danger" : ""}`}
-        title={error?.message}
-      >
-        {state === "saving" ? "Saving..." : state === "saved" ? "Draft saved" : `Not saved: ${error?.message ?? "try again"}`}
-      </span>
-    </span>
   );
 }

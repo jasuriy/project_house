@@ -1,21 +1,21 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { type ReactNode, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useLayoutEffect, useState } from "react";
 import { ApiError, type Catalog, api } from "@/lib/api";
-import { useProjectDraft } from "@/lib/use-project-draft";
+import { dateError, missingFields, useProjectForm } from "@/lib/use-project-form";
 import { EditorHeader } from "./editor-header";
 import { DetailsSection, SetupSection, TechSection } from "./form-sections";
 import { ReadyCard } from "./ready-card";
 import { RepoCard } from "./repo-card";
-import { ALL_REQUIRED, SECTIONS } from "./sections";
+import { SECTIONS } from "./sections";
 import { SideNav } from "./side-nav";
 import { VideoCard } from "./video-card";
 
-/** The upload page: owns the draft and the catalog, and lays out every section. */
+/** The upload page: owns the form and the catalog, and lays out every section. */
 export function ProjectEditor() {
   const router = useRouter();
-  const draft = useProjectDraft(useSearchParams().get("draft"));
+  const state = useProjectForm();
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [catalogError, setCatalogError] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
@@ -26,47 +26,53 @@ export function ProjectEditor() {
     api.catalog().then(setCatalog, () => setCatalogError(true));
   }, []);
 
-  const missing = new Set(draft.project?.missing_fields ?? ALL_REQUIRED);
-  const errorFor = (field: string) => {
-    if (draft.saveError?.code === "invalid_dates" && (field === "started_on" || field === "finished_on")) {
-      return draft.saveError.message;
-    }
-    return showErrors && missing.has(field) ? "Required" : null;
-  };
-  const latestMissing = () => new Set(draft.latestProject()?.missing_fields ?? ALL_REQUIRED);
-
-  async function render() {
-    setShowErrors(true);
-    setRenderError(null);
-    if (!draft.project) return scrollToFirstMissing(missing);
-    setRendering(true);
-    try {
-      const published = await draft.publish();
-      router.push(`/projects/${published.slug}`);
-    } catch (e) {
-      if (e instanceof ApiError && e.code === "project_incomplete") scrollToFirstMissing(latestMissing());
-      else setRenderError(e instanceof ApiError ? e.message : "Could not render the project");
+  // The page was left (the form itself is reset by useProjectForm): start without old messages.
+  useLayoutEffect(
+    () => () => {
+      setShowErrors(false);
       setRendering(false);
-    }
-  }
+      setRenderError(null);
+    },
+    [],
+  );
 
-  if (catalogError || draft.loadError) {
+  if (catalogError) {
     return (
       <EditorLayout header={<EditorHeader />}>
         <p role="alert" className="text-[14px] text-danger">
-          {draft.loadError ?? "Could not reach the server. Reload the page to try again."}
+          Could not reach the server. Reload the page to try again.
         </p>
       </EditorLayout>
     );
   }
-  if (!catalog || draft.loading) return <EditorSkeleton />;
+  if (!catalog) return <EditorSkeleton />;
 
-  const sectionProps = { form: draft.form, setField: draft.setField, catalog, errorFor };
+  const missing = missingFields(catalog, state.form, state.video, state.repo);
+  const datesWrong = dateError(state.form);
+  const errorFor = (field: string) => {
+    if (datesWrong && (field === "started_on" || field === "finished_on")) return datesWrong;
+    return showErrors && missing.has(field) ? "Required" : null;
+  };
+
+  async function render() {
+    setShowErrors(true);
+    setRenderError(null);
+    if (missing.size > 0 || datesWrong) return scrollToFirstMissing(missing);
+    setRendering(true);
+    try {
+      const project = await state.submit();
+      router.push(`/projects/${project.slug}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "busy") return; // a second click while rendering
+      setRenderError(e instanceof ApiError ? e.message : "Could not render the project");
+      setRendering(false);
+    }
+  }
+
+  const sectionProps = { form: state.form, setField: state.setField, catalog, errorFor };
   return (
     <EditorLayout
-      header={
-        <EditorHeader saveState={draft.saveState} saveError={draft.saveError} onRender={render} rendering={rendering} />
-      }
+      header={<EditorHeader onRender={render} rendering={rendering} />}
       nav={<SideNav missing={missing} />}
       middle={
         <>
@@ -84,8 +90,8 @@ export function ProjectEditor() {
       right={
         <>
           <div id="demo" className="order-2 flex scroll-mt-4 flex-col gap-[14px] lg:order-none lg:gap-[13px]">
-            <VideoCard draft={draft} catalog={catalog} error={errorFor("video")} />
-            <RepoCard draft={draft} error={errorFor("repo")} />
+            <VideoCard state={state} catalog={catalog} error={errorFor("video")} />
+            <RepoCard state={state} error={errorFor("repo")} />
           </div>
           {renderError && (
             <p role="alert" className="order-5 text-[13px] text-danger lg:order-none">

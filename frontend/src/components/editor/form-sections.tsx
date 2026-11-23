@@ -8,8 +8,8 @@ import { TechIcon } from "@/components/ui/icons";
 import { TagPicker, type TagOption } from "@/components/ui/tag-picker";
 import type { Catalog, FormField, ProjectForm } from "@/lib/api";
 
-// The three form sections of the middle column. They only show and edit the form; saving is
-// done by the useProjectDraft hook.
+// The three form sections of the middle column. They only show and edit the form; the form
+// lives in the useProjectForm hook and is sent once, on Render.
 
 export type SectionProps = {
   form: ProjectForm;
