@@ -47,5 +47,5 @@ def web():
 
 @app.function(secrets=[SECRET], region=REGION, timeout=600)
 def migrate() -> None:
-    """Bring the production database to the newest schema (take a pg_dump first)."""
+    """Bring the production database to the newest schema."""
     subprocess.run(["python", "-m", "alembic", "upgrade", "head"], cwd=ROOT, check=True)

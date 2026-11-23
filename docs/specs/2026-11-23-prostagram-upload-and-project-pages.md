@@ -263,15 +263,17 @@ Done only after both pages pass review, in this order, each step confirmed with 
 
 0. Before push day: write the new Modal app file (the old `modal_app.py` was deleted with the old
    code), building its image from `backend/uv.lock`, and confirm Modal runs Python 3.13 [A].
-1. Back up the old Neon database (`pg_dump`).
-2. Empty the R2 bucket `projecthouse-images` (all old images).
-3. Drop every old table in Neon, including `alembic_version` (otherwise the new migrations collide
+No backup of the old database: Bek, 2026-11-23, the old tables and data are not needed (fresh
+start).
+
+1. Empty the R2 bucket `projecthouse-images` (all old images).
+2. Drop every old table in Neon, including `alembic_version` (otherwise the new migrations collide
    with the old migration history); run the new migrations.
-4. Update the Modal secret with the new setting names; redeploy the Modal app.
-5. Update the Vercel environment variables (backend address; remove the old login flag). The
+3. Deploy the new Modal app (the secret's setting names already match, checked 2026-11-23).
+4. Update the Vercel environment variables (backend address; remove the old login flag). The
    Vercel project's root directory stays `frontend`.
-6. Push to `main`; Vercel deploys the new frontend on the old link.
-7. Check the R2 CORS rule includes the Vercel domain; check the live upload and project page.
+5. Push to `main`; Vercel deploys the new frontend on the old link.
+6. Check the R2 CORS rule includes the Vercel domain; check the live upload and project page.
 
 ## 12. Order of work
 
