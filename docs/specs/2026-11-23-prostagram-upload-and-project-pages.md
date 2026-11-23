@@ -46,14 +46,15 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D21 | Old files (`backend/`, `frontend/`, `docs/` except this spec and the mockups, `seed/`, `docker-compose.yml`, `README.md`) are deleted in the first commit; a new README replaces the old one. The local `.env` is kept. The new code again lives in `backend/` and `frontend/` (the Vercel project builds from `frontend/`). |
 | D22 | Friends get the link of the new app to test it. |
 | D23 | Video box is 16:9 on both pages (Bek, 2026-11-23), not the mockup's wide 452:177 shape, so 16:9 demo videos show without side bars. |
+| D24 | No drafts (Bek, 2026-11-24): nothing is stored before "Render project". Closing the page, F5 or leaving it for another page of the site gives an empty form; an unfinished form is not wanted. The form lives in the browser, files wait in R2's temporary folder `uploads/` (a bucket lifecycle rule deletes them after 1 day), and Render sends one request that creates the published project. The mockup's "Draft saved" status is removed. The project page's logo links to the home page `/`. Replaces T1. |
 
 ## 3. Choices made by Claude (technical, Bek may object)
 
 | # | Choice | Why |
 |---|---|---|
-| T1 | A draft is created on the server at the first edit; every change autosaves about 1 s after typing stops; the header shows "Draft saved". The draft id goes into the address (`/new?draft=<id>`), so a page reload or a copied link opens the same draft. | The mockup shows "Draft saved"; without login, the address is the only way back to a draft. |
-| T2 | "Render project" checks all required fields; if one is missing it scrolls to it and shows the error. When everything is valid the project becomes published and the browser opens its project page. | The mockup shows "Ready to render" and a "Render project" button. |
-| T3 | Project ids are random UUIDs. | Without login, a guessable number would let anyone edit someone else's draft by counting. |
+| T1 | ~~Server-side draft with autosave and `/new?draft=<id>`.~~ Replaced by D24 (2026-11-24). | |
+| T2 | "Render project" checks all required fields in the browser (the list comes from the catalog); if one is missing it scrolls to it and shows the error. The server checks the same list again; when everything is valid the project is created and the browser opens its project page. | The mockup shows "Ready to render" and a "Render project" button. |
+| T3 | Project ids are random UUIDs, chosen by the server before the row is written (the files are copied under the id first). | Not guessable, and known before the insert. |
 | T4 | Empty optional fields hide their element on the project page (How it works card, Limitations card, Timeline row). | No empty boxes. |
 | T5 | A custom technology typed into "Programming languages" goes to the Languages row; one typed into "Frameworks & tools" goes to an "Other" row. | The field tells us it is a language; a tool's group is not known. |
 | T6 | Video formats: MP4 and WebM only. | Every browser plays them; MOV plays reliably only in Safari [A]. |
@@ -66,8 +67,8 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 
 Layout from `docs/mockups/upload-page.png`:
 
-- **Header:** logo + "Prostagram"; centre breadcrumb "home > Workspace / New project"; right "Draft
-  saved" (green check, only after the first save) and the primary button "Render project ->".
+- **Header:** logo + "Prostagram"; centre breadcrumb "home > Workspace / New project"; right the
+  primary button "Render project ->". (The mockup's "Draft saved" is removed, D24.)
 - **Title:** "Build your project page", subtitle "Everything someone needs to understand your project."
 - **Left nav (sticky):** Project details, Demo & links, Technology, Setup & delivery. Clicking scrolls
   to the section. A green check appears when all required fields of that section are filled.
@@ -160,19 +161,27 @@ with the R2 secret, that allows exactly one upload of one file to one place for 
 
 ### 7.2 Flow
 
+Since D24 (2026-11-24) nothing is stored before Render:
+
 ```
-1. browser -> backend   POST /api/v1/projects/{id}/uploads/video/url  {file name, type, size}
+1. browser -> backend   POST /api/v1/uploads/video/url  {type, size}
 2. backend              checks: type is video/mp4 or video/webm, size <= 300 MB (314,572,800 bytes)
-                        signs a PUT URL for key videos/{project_id}/{random}.{ext}, valid 15 min,
-                        with the exact Content-Type and Content-Length signed in
-3. browser -> R2        PUT the file to that URL (progress bar from upload events)
-4. browser -> backend   POST /api/v1/projects/{id}/uploads/video/complete  {key, file name, duration}
-5. backend -> R2        HEAD the object: exists, size and type match; then saves the key on the
-                        project and deletes the previous video, if any
+                        signs a PUT URL for the temporary key uploads/{random}/video.{ext}, valid
+                        15 min, with the exact Content-Type and Content-Length signed in
+3. browser -> R2        PUT the file to that URL (progress bar from upload events); the preview on
+                        the page plays the person's own file from memory
+   (the first-frame JPEG, T7, goes the same way to uploads/{random}/poster.jpg, max 2 MB)
+4. browser -> backend   Render: POST /api/v1/projects  {all fields, video key, poster key, repo link}
+5. backend              checks the fields; the keys must look like keys it handed out; HEAD the
+                        video in R2 (exists, allowed type and size); reads GitHub itself; copies the
+                        files inside R2 to videos/{project_id}/... and posters/{project_id}/...;
+                        writes the row; then deletes the temporary originals
 ```
 
-The first-frame JPEG (T7) uses the same flow (`uploads/poster/...`) with key
-`posters/{project_id}/{random}.jpg`, max 2 MB.
+A form that is never rendered leaves its files in `uploads/`; the bucket's lifecycle rule (prefix
+`uploads/`, delete after 1 day) removes them [V: Cloudflare R2 object lifecycle docs, prefix rules,
+deletion within about 24 h of expiry]. R2 copies objects server-side and keeps the content type [V:
+copy_object test, 2026-11-24].
 
 Verified live on R2 (2026-11-23) with the 31.8 MB reflex video: a PUT with a different size or
 content type than signed is refused with 403 [V]; the real upload returns 200 [V].
@@ -201,10 +210,11 @@ Both are done by Bek in one Cloudflare dashboard session (Claude gives the exact
 
 ## 8. Repository preview
 
-When the user links a repo, the backend calls the GitHub API once (repo info, root folder list, README)
-and stores a snapshot on the project: full name, public/private, description, default branch, root
-entries (name and type), the first 3 lines of the README, fetch time. The project page reads only the
-snapshot. Reason: GitHub allows 60 unauthenticated requests per hour [V: api.github.com/rate_limit
+When the user links a repo, the backend calls the GitHub API (repo info, root folder list, README) and
+answers a preview, storing nothing (`POST /repos/preview`, D24). On Render the backend reads GitHub
+again itself and stores the snapshot on the project: full name, public/private, description, default
+branch, root entries (name and type), the first 3 lines of the README, fetch time. The project page
+reads only the snapshot. Reason: GitHub allows 60 unauthenticated requests per hour [V: api.github.com/rate_limit
 returned limit 60]. Linking again refreshes the snapshot. Only public repos can be linked.
 
 ## 9. Backend shape
@@ -216,16 +226,15 @@ returned limit 60]. Linking again refreshes the snapshot. Only public repos can 
   Video bytes are the exception: they go browser -> R2 directly (section 7).
 - FastAPI, SQLAlchemy 2 (async), Alembic, PostgreSQL. Exact versions pinned in the plan.
 - One table `projects` (UUID id, every form field above, video and poster keys, video size and
-  duration, repo URL and snapshot as JSON, created/updated times). `published_at` is NULL for a
-  draft and set when published; `slug` is unique and set only when published.
-- Endpoints (`/api/v1`): `GET /catalog` (all lists, text limits, upload rules, tech catalog);
-  `POST /projects` (create draft); `GET /projects/{id}` (reopen a draft); `PATCH /projects/{id}`
-  (autosave, drafts only); `POST /projects/{id}/uploads/{video|poster}/url` and `.../complete`;
-  `POST /projects/{id}/repo`; `POST /projects/{id}/publish` (the "Render project" button);
-  `GET /projects/by-slug/{slug}` (project page, step 5).
-- Every project response carries `missing_fields`, computed by the backend. The upload page's
-  section checks and "Ready to render" list read it, and publishing re-checks it, so the rule of
-  what is required exists in one place.
+  duration, repo URL and snapshot as JSON, created/updated times). Every row is a published project
+  (D24): `slug` (unique) and `published_at` are always set (migration 0002).
+- Endpoints (`/api/v1`): `GET /catalog` (all lists, text limits, upload rules, required fields, tech
+  catalog); `POST /uploads/{video|poster}/url` (signed link into `uploads/`); `POST /repos/preview`;
+  `POST /projects` (the "Render project" button: creates the published project);
+  `GET /projects/by-slug/{slug}` and `GET /projects/by-slug/{slug}/video` (project page).
+- The required fields are one list in the backend (`catalog.REQUIRED_FIELDS`), sent to the browser
+  in the catalog. The upload page's section checks and "Ready to render" list use it, and Render
+  re-checks it on the server, so the rule of what is required exists in one place.
 - One error shape for every error: `{"error": {"code": "...", "message": "..."}}`.
 - Tests: pytest against a real local PostgreSQL; R2 and GitHub are faked in tests.
 - `docs/architecture.md` is written alongside the code in plain language, so Bek can explain every part
@@ -295,5 +304,7 @@ Each step ends with a report to Bek before the next starts.
   The new compose file now has its own project name (`prostagram`). Old volume and containers: removed
   later if Bek wants.
 - CI: the old GitHub Actions workflow was deleted with the old code; a new one is not set up yet.
-- Orphan videos (a draft abandoned after upload): not cleaned up yet.
+- ~~Orphan videos (a draft abandoned after upload): not cleaned up yet.~~ Solved by D24: abandoned
+  files sit only in `uploads/`, which the bucket lifecycle rule empties after 1 day (rule added by
+  Bek in the Cloudflare dashboard).
 - Rate limiting and abuse protection: not needed while only friends use the app (Bek, 2026-11-23).

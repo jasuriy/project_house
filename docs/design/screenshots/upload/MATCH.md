@@ -8,7 +8,8 @@ Positions were measured by scanning card borders in both images (`diff-1280.png`
 |---|---|---|---|
 | Header height, bottom line | 42 px | 42 px | MATCH |
 | Logo and name | "Projectfolio" | "Prostagram", same logo shape | EXPECTED (decision D3) |
-| Breadcrumb, Draft saved | centred / right | same | MATCH |
+| Breadcrumb | centred | same | MATCH |
+| Draft saved | right of the header | removed | EXPECTED: nothing is saved before Render (Bek, 2026-11-24, D24) |
 | Render project button | x 1104-1250, h 29 | x 1105-1250, h 29 | MATCH |
 | Title "Build your project page" | 32.7 px, x 45 | 32.7 px, x 45 | MATCH |
 | Side nav | x 31-216, rows 37 px | same | MATCH |

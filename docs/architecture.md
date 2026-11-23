@@ -47,12 +47,12 @@ backend/app/
   errors.py    turns every error into one JSON shape
   health.py    GET /api/health
   catalog.py   every fixed list, text limit, upload rule and the tech catalog; GET /api/v1/catalog
-  storage.py   Cloudflare R2: signs upload/download links, checks and deletes files
+  storage.py   Cloudflare R2: signs upload/download links, checks, copies and deletes files
   github.py    reads a public repo once and makes its preview
   projects/    the project feature, split by job:
     models.py    the projects table
     schemas.py   what each endpoint accepts and returns (the API contract)
-    service.py   the business rules (drafts, uploads, repo, publishing)
+    service.py   the business rules (upload links, repo preview, creating a project on Render)
     router.py    HTTP only: read the request, call the service, return the answer
 backend/alembic/   database migrations (versioned changes to the tables)
 backend/tests/     tests that run against a real PostgreSQL test database
@@ -66,8 +66,8 @@ router.py  ->  service.py  ->  models.py (database)
 ```
 
 - The **router** knows HTTP (paths, status codes) and nothing about rules.
-- The **service** holds every rule ("a published project cannot be changed", "an ongoing project
-  has no finish date") and knows nothing about HTTP. It can be tested and reused without a request.
+- The **service** holds every rule ("only a file key this API handed out may be used", "an ongoing
+  project has no finish date") and knows nothing about HTTP. It can be tested and reused without a request.
 - **Who saves to the database:** each public service function is one unit of work and calls
   `commit` itself, at its end. Routers never commit. One rule means every change is saved exactly once,
   and a function that fails halfway saves nothing.
@@ -128,41 +128,65 @@ Why: the frontend needs one place that shows errors, not one per endpoint.
 - Constraint names follow a fixed pattern (`db.py`, `NAMING_CONVENTION`), so migrations are
   readable and the same on every machine.
 
-### The projects table: draft and published in one row
+### Nothing is stored before Render (Bek, 2026-11-24)
 
-- A project is created empty when the person starts typing, and every change is saved
-  ("autosave", `PATCH /api/v1/projects/{id}`). There is no separate drafts table.
-- `published_at` is the only switch: empty means draft, a time means published. A second
-  "state" column would duplicate it and could disagree with it.
-- The id is a random UUID: without login, a counting number (1, 2, 3...) would let anyone open other
-  people's drafts by guessing.
-- `slug` (the page address, `/projects/reflex`) is set when publishing, made from the name. The
-  database has a unique rule on it; if two projects want "reflex" at the same moment, the second one
-  hits that rule, and the service retries with "reflex-2". Checking first and then saving would leave
-  a gap between the two steps where both could pass.
+An unfinished form is not wanted: closing the page or pressing F5 must give an empty form. So the
+server keeps nothing until "Render project" is pressed:
+
+| Moment | Where the data is |
+|---|---|
+| typing | only in the browser's memory (React state) |
+| video chosen | the file in R2's temporary folder `uploads/`; the browser remembers its key |
+| repo link typed | the server reads GitHub and answers a preview; nothing is saved |
+| Render pressed | one request with everything; the server writes one row |
+
+- No drafts means no draft code: no autosave queue, no merge rule, no "reopen a draft" address, no
+  clean-up job for abandoned drafts.
+- Abandoned files stay only in `uploads/`. A lifecycle rule on the bucket (set once in the
+  Cloudflare dashboard) deletes anything there after one day, with no code of ours.
+
+### The projects table: one row per published project
+
+- A row is written only on Render, so every row is a published project: `slug` and `published_at`
+  are always set (the database enforces it, migration 0002).
+- The id is a random UUID chosen by the server before the row is written: the files are copied
+  under it first.
+- `slug` (the page address, `/projects/reflex`) is made from the name. The database has a unique
+  rule on it; if two projects want "reflex" at the same moment, the second one hits that rule, and
+  the service retries with "reflex-2". Checking first and then saving would leave a gap between the
+  two steps where both could pass.
 - Lists (languages, deliverables) are PostgreSQL arrays; the repo preview is JSON (`jsonb`), because it
   is always read and written as one piece.
-- **What is required** is decided in one place, `service.missing_fields()`. Every project answer
-  includes that list, the upload page shows it, and publishing checks it again. The frontend
-  has no copy of the rule that could drift.
+- **What is required** is one list, `catalog.REQUIRED_FIELDS`. The catalog sends it to the browser,
+  which shows the checklist from it; Render checks the same list again on the server. There is no
+  second copy of the rule that could drift.
 
-### Uploading a video (presigned URLs)
+### Uploading a video and creating the project (presigned URLs)
 
 ```
-1. browser -> API   "I want to upload reflex-demo.mp4, video/mp4, 33,372,331 bytes"
-2. API              checks type and size, signs a one-time upload link (15 minutes)
-3. browser -> R2    uploads the file straight to R2 with that link (progress bar)
-4. browser -> API   "done"
-5. API -> R2        checks the file is really there, with the right size and type,
-                    then saves its key on the project (and deletes the replaced video)
+1. browser -> API   "I want to upload a video/mp4 of 33,372,331 bytes"
+2. API              checks type and size, signs a one-time upload link (15 minutes) for the
+                    temporary key uploads/<random>/video.mp4
+3. browser -> R2    uploads the file straight to R2 with that link (progress bar); the preview on
+                    the page plays the person's own file from memory
+   ... the person finishes the form ...
+4. browser -> API   Render: every field, the video and poster keys, the repo link (one request)
+5. API              checks the fields; the keys must look like keys it handed out; looks at R2 to
+                    see the video is really there with an allowed type and size; reads GitHub;
+                    copies the files inside R2 to videos/<project id>/ and posters/<project id>/;
+                    writes the row; deletes the temporary originals
 ```
 
 - **Why not through our server:** a Vercel function accepts at most 4.5 MB per request and a Modal
   request may last at most 150 s; a 300 MB video breaks both, and the traffic would be paid twice.
 - **What the signature locks:** the link is valid for one file name, one content type and one exact
   size. Verified on R2: a different size or type is refused with 403.
-- **Step 5 is still needed:** the browser could skip the upload or send something else, so the API
-  never trusts the browser's "done" without looking at R2 itself.
+- **Step 5 never trusts the browser:** the browser could send a key it did not upload, or someone
+  else's published video, so the API accepts only `uploads/...` keys and looks at R2 itself.
+- **Why copy instead of keeping the temporary key:** the lifecycle rule empties `uploads/` after a
+  day; a published video must live outside it. The copy happens inside R2 (no download).
+- **If something fails in step 5** (GitHub down, database error), the copies are deleted and no row
+  is written; the temporary files stay, so pressing Render again works.
 - **Watching a video:** the bucket is private. Each project answer contains fresh download links,
   valid for one hour, so a link that leaks stops working. Seeking works because R2 answers "give
   me bytes 1000-2000" requests (verified: 206 Partial Content).
@@ -172,16 +196,18 @@ Why: the frontend needs one place that shows errors, not one per endpoint.
 
 ### Repository preview
 
-When a repo is linked, the API reads it from GitHub once (repo info, root folder list, README) and
-stores a small preview with the project. Showing a project never calls GitHub: GitHub allows only 60
+When a repo link is typed, the API reads it from GitHub (repo info, root folder list, README) and
+answers a preview without storing it. On Render the API reads GitHub again itself (the browser's
+preview is never trusted) and stores the small preview with the project. Showing a project never
+calls GitHub: GitHub allows only 60
 anonymous requests per hour from one server address, and an optional `GITHUB_API_TOKEN` raises that to
 5,000 (useful on Modal, whose outgoing addresses may be shared with other users).
 
 ### No caching of API answers
 
-Every `/api` answer carries `Cache-Control: no-store` (`main.py`). The answers contain download links
-that expire after an hour and drafts that change every second, and on Vercel they pass through a
-proxy. A cached answer could hand out dead links or one person's draft to another.
+Every `/api` answer carries `Cache-Control: no-store` (`main.py`). The answers contain upload and
+download links that expire, and on Vercel they pass through a proxy. A cached answer could hand out
+dead links, or one person's upload link to another.
 
 ### Tests
 
@@ -224,21 +250,20 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
   the status stays 200; Next.js adds `noindex` so search engines do not keep it (documented
   behaviour, `node_modules/next/dist/docs/.../not-found.md`).
 
-### The upload page: autosave without losing typing (`src/lib/use-project-draft.ts`)
+### The upload page: the form lives in the browser (`src/lib/use-project-form.ts`)
 
-- **Draft created once.** The first edit (or the first upload) creates the draft through one
-  shared promise, so two things at once cannot create two drafts. Its id goes into the address
-  (`/new?draft=<id>`), so a reload reopens it.
-- **Saving.** About 800 ms after typing stops, only the changed fields are sent (PATCH).
-- **One queue for every request.** Saves, upload steps, repo link and publish run one after
-  another. Answers therefore arrive in order; an old answer can never arrive after a newer one.
-- **The merge rule.** When an answer arrives, a field takes the server's value only if it is not
-  waiting to be saved and was not edited since the request left. So typing is never overwritten,
-  and the server's clean-up still shows (trimmed text, "python" -> "Python").
-- **Failures are visible.** A failed save keeps the fields waiting, shows the reason in the header
-  (and on the date fields for date errors), and "Render" refuses to publish unsaved changes.
-- **Closing the tab.** On `pagehide`, unsaved fields are sent with `keepalive`, a request the
-  browser finishes even after the page is gone.
+- **State.** The typed fields, the uploaded video (its temporary key, name, size, length) and the
+  repo preview are React state. The checklist ("Ready to render", the side nav checks) is computed
+  from them and the catalog's `required_fields`, with the server's blank rule (spaces only = empty).
+- **Leaving the page empties it.** F5 or closing the tab: the browser's memory is gone. Moving to
+  another page of the site: Next.js keeps the page hidden (React `Activity`) and would show the old
+  form on return, so a `useLayoutEffect` clean-up resets the state when the page is hidden
+  (`node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md`).
+- **Render.** One request with everything. A ref (not state) blocks a second click before React
+  re-renders the button; after success the lock stays on until the page is left, so one form can
+  create only one project.
+- **Dates.** The two date rules are checked while typing and shown on the date fields; the server
+  checks them again on Render.
 
 ### The upload page: sending the video
 
@@ -247,10 +272,10 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
   video is uploaded without a poster instead of waiting forever.
 - The upload to R2 uses `XMLHttpRequest`, not `fetch`, because only XHR reports upload progress
   (the progress bar).
-- **Stable links.** Every project answer carries newly signed links (a new signature each time)
-  for the same file. If the player took each new link, it would reload on every autosave. So the
-  page keeps the first link while the file path stays the same, and swaps in the newest one when
-  play is pressed after 50 minutes (links last 60).
+- The video counts as uploaded only after its poster upload has finished (or failed), so Render
+  cannot run in between and save the project without its still image.
+- The preview plays the person's own file from memory (`URL.createObjectURL`), so nothing is
+  downloaded back from R2 and no signed link can expire on this page.
 
 ### The project page: one player, two places
 
