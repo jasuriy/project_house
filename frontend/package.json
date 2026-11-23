@@ -1,18 +1,15 @@
 {
-  "name": "frontend",
+  "name": "prostagram-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run"
+    "lint": "eslint"
   },
   "dependencies": {
-    "lucide-react": "1.68.0",
     "next": "16.4.6",
-    "next-intl": "4.14.10",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -24,7 +21,6 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
-    "typescript": "5.9.3",
-    "vitest": "4.1.12"
+    "typescript": "5.9.3"
   }
 }

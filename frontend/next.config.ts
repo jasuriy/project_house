@@ -1,23 +1,12 @@
 import type { NextConfig } from "next";
-import createNextIntlPlugin from "next-intl/plugin";
 
-const withNextIntl = createNextIntlPlugin();
+// Where the FastAPI backend runs. The browser never calls it directly: it calls
+// /api/* on this site, and Next.js forwards the request (one address for the browser).
+const apiUrl = process.env.API_URL ?? "http://127.0.0.1:8000";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  // The reset and verify links carry a token in the address: no request from those pages may send
-  // it as Referer (the meta tag arrives after the first stylesheet and script requests).
-  async headers() {
-    return ["/reset-password", "/verify-email"].map((source) => ({
-      source,
-      headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
-    }));
-  },
-  // One origin in dev: /api/* is forwarded to FastAPI (production: reverse proxy).
-  async rewrites() {
-    const apiUrl = process.env.API_URL ?? "http://localhost:8000";
-    return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
-  },
+  cacheComponents: true,
+  partialPrefetching: true,
   turbopack: {
     rules: {
       "*.css": {
@@ -26,6 +15,9 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async rewrites() {
+    return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
+  },
 };
 
-export default withNextIntl(nextConfig);
+export default nextConfig;

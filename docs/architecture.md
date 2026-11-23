@@ -1,201 +1,136 @@
-# Project House architecture (Phase 1)
+# Prostagram architecture
 
-Status: binding for all implementation work from 2026-11-17. Changes need a written reason here.
-Spec: `docs/superpowers/specs/2026-11-17-project-house-design.md`. Agent rules: `docs/agent-rules.md`.
-Evidence tags: [V] verified, [C] claim from a third-party source, [D] derived, [A] assumption.
+Written so the owner can explain every part in an interview. Updated with every step.
+Product decisions live in `docs/specs/`. This file explains how the system is built and why.
 
-## 1. System shape
+## 1. The big picture
 
 ```
-browser ──> projecthouse.uz (one origin)
-              ├── /api/*  ──> FastAPI backend (Python)  ──> PostgreSQL 17
-              └── /*      ──> Next.js frontend (server-rendered pages)
+browser
+   |  every request goes to ONE address (the Next.js site)
+   v
+Next.js (frontend/)            pages, forms; /api/* is forwarded, not handled here
+   |  /api/*  -> forwarded ("rewrite") to the backend
+   v
+FastAPI (backend/)             business rules, validation, database, signing R2 links
+   |
+   +--> PostgreSQL             projects and their data (local: Docker; production: Neon)
+   +--> Cloudflare R2          video files (later step; the browser uploads straight to R2)
+   +--> GitHub API             repository preview (later step)
 ```
 
-- **One origin.** The browser only talks to one host. `/api/*` goes to FastAPI, everything else to
-  Next.js. Dev: a Next.js rewrite of `/api/:path*` to `API_URL`. Production: the reverse proxy
-  (Step 0b). Reason: the session cookie works without cross-origin rules, and the later WebSocket
-  DMs authenticate with the same cookie. The Next.js proxy matcher already excludes `/api` [V].
-- Server components in Next.js call the backend directly at `API_URL` (internal network), forwarding
-  the user's cookie when needed.
-- No other services in Phase 1 (no Redis, no queue). Added only when a measured need appears.
+Where it runs in production (from push day): Next.js on Vercel, FastAPI on Modal, PostgreSQL on Neon,
+files on Cloudflare R2.
 
-## 2. Backend structure
+### Why one address for the browser
+
+The browser only ever talks to the Next.js site. When it asks for `/api/health`, Next.js forwards the
+request to FastAPI and passes the answer back (`frontend/next.config.ts`, `rewrites`).
+
+- **No CORS.** Browsers block a page from calling another domain unless that domain allows it
+  (CORS rules). With one address there is nothing to allow and nothing to get wrong.
+- **Login later is simpler.** A login cookie set on one domain is sent automatically with every
+  request. Two domains would need cross-site cookie settings.
+- **The exception is video.** A video of up to 300 MB is uploaded by the browser straight to R2,
+  never through Next.js or FastAPI (spec section 7).
+
+## 2. Backend (`backend/`)
+
+Python 3.13, FastAPI, SQLAlchemy 2 (async), Alembic, PostgreSQL. Packages are pinned to exact
+versions in `pyproject.toml` and locked in `uv.lock`, so every machine installs the same thing.
 
 ```
 backend/app/
-  main.py              create_app(): middleware, routers, lifespan
-  core/                shared plumbing, no business rules
-    config.py          Settings (env), APP_ENV
-    db.py              engine, session dependency, lifespan dispose, Base
-    errors.py          AppError + handler -> one JSON error shape
-    pagination.py      keyset cursor encode/decode
-  users/               user profile basics (owned by the foundation)
-  auth/                login, sessions, OAuth, email tokens (Task B)
-  projects/            projects, media, demo seed, feed API (Task A)
-  health/              GET /api/health (existing)
+  main.py      builds the app: error handlers, routers, closing DB connections on shutdown
+  config.py    settings from environment variables (and backend/.env in development)
+  db.py        database engine, one session per request, base class for tables
+  errors.py    turns every error into one JSON shape
+  health.py    GET /api/health
+backend/alembic/   database migrations (versioned changes to the tables)
+backend/tests/     tests that run against a real PostgreSQL test database
 ```
 
-Each feature package has the same files, created only when needed:
+### How one request flows
 
-| File | Owns | Must not |
-|---|---|---|
-| `models.py` | SQLAlchemy tables of this feature | import another feature's service |
-| `schemas.py` | Pydantic request/response models (the API contract) | contain DB queries |
-| `service.py` | business rules and queries (async functions taking an `AsyncSession`) | know about HTTP (no Request/Response) |
-| `router.py` | HTTP only: parse input, call service, return schema | contain business rules or raw SQL |
+1. A request arrives, for example `GET /api/health`.
+2. FastAPI finds the matching function (a "route") in a router.
+3. The route asks for what it needs as parameters, for example a database session
+   (`Depends(get_session)`). FastAPI creates it, and closes it when the request ends. This is
+   "dependency injection": the route does not build its own tools, it receives them, so tests can
+   hand it fake ones.
+4. The route returns data; FastAPI turns it into JSON.
+5. If anything goes wrong, an error handler turns it into the error shape below.
 
-- Features talk to each other through the other feature's `service.py` functions, never its models
-  directly. (Exception: SQLAlchemy relationships/foreign keys across tables.)
-- **No generic repository or unit-of-work layer.** SQLAlchemy's `AsyncSession` already is one; an
-  extra layer would be an abstraction without a concrete problem.
-- One concrete abstraction is allowed because a real swap exists: `EmailSender` (console in dev,
-  provider in production).
+### One error shape
 
-## 3. Configuration
+Every error, from any route, looks the same:
 
-`app/core/config.py`, pydantic-settings, all from environment:
+```json
+{"error": {"code": "not_found", "message": "Not Found"}}
+```
 
-| Setting | Dev default | Production |
-|---|---|---|
-| `APP_ENV` | `development` | `production` (also `test`) |
-| `DATABASE_URL` | `postgresql+asyncpg://projecthouse:projecthouse_dev@127.0.0.1:55432/projecthouse` | **required, no default** (startup fails without it) |
-| `SECRET_KEY` | fixed dev string | **required**, 32+ random bytes |
-| `CORS_ORIGINS` | `["http://localhost:3000"]` | not needed (one origin) |
-| `PUBLIC_BASE_URL` | `http://localhost:3000` | `https://projecthouse.uz` |
-| OAuth client ids/secrets | empty (provider disabled) | required for enabled providers |
+- `code` is stable and meant for code (the frontend can react to `"video_too_large"`).
+- `message` is meant for people.
+- Expected errors are raised as `AppError(status, code, message)`. Wrong input is 422
+  `validation_error`. Anything unexpected is logged and answered with 500 `internal_error`, so
+  internal details never leak to the browser.
 
-This closes Step 0's Ruling B: the dev default can never silently reach production.
+Why: the frontend needs one place that shows errors, not one per endpoint.
 
-## 4. Database
+### Settings and secrets
 
-- PostgreSQL 17, SQLAlchemy 2 async + asyncpg, **Alembic** for every schema change (async env).
-- Primary keys: `bigint` identity. Public URLs use usernames and slugs, never ids.
-  Exception (Bek, 2026-11-18): the API calls for likes, saves, comments and reports name a project
-  or comment by its numeric id (`/api/v1/me/likes/{project_id}`), and project responses carry that
-  id; page addresses never do. Path ids are checked against the bigint range (422 outside it).
-- Timestamps: `timestamptz`, stored UTC, `created_at` / `updated_at` on every table.
-- Naming convention for constraints set on `Base.metadata` (pk/fk/uq/ck/ix names are deterministic,
-  so migrations stay readable).
-- Small fixed lists (account type, project field, media kind) are `text` + validation in code and a
-  `CHECK` constraint, **not** Postgres enums (enums are painful to alter).
-- Engine: `pool_pre_ping=True`; disposed in the FastAPI lifespan on shutdown.
+`config.py` reads settings from environment variables. In development they come from
+`backend/.env` (copied from `backend/.env.example`; never committed).
 
-### Tables and owners
+- `DATABASE_URL` has **no default**. If it is missing, the app refuses to start. A default would
+  let production silently connect to a development database.
+- The backend reads only `backend/.env`, never the `.env` in the repository root. The root file
+  belongs to the old app and points at the old database.
 
-| Table | Owner | Key columns and rules |
-|---|---|---|
-| `users` | foundation | `username` unique, lowercase, `^[a-z0-9_-]{3,30}$` (no dots, D17), not in the reserved list; `display_name`; `account_type` developer\|company; `headline`, `location`, `university_or_employer`, `company_name` (company accounts), `open_to_work` bool, `is_verified_company` bool, `avatar_url`, `links` jsonb |
-| `auth_identities` | Task B | `user_id` FK; `provider` google\|github\|email; `provider_user_id`; `email`; `email_verified`; unique (`provider`, `provider_user_id`); unique (`user_id`, `provider`): one identity per provider per user |
-| `password_credentials` | Task B | `user_id` PK/FK; `password_hash` (argon2 via pwdlib) |
-| `sessions` | Task B | `user_id` FK; `token_hash` unique (SHA-256 of the cookie token); `expires_at`; `last_seen_at`; `user_agent` |
-| `email_tokens` | Task B | `user_id` FK; `purpose` verify\|reset; `token_hash`; `expires_at`; `used_at` |
-| `projects` | Task A | `owner_id` FK nullable; `is_demo` bool; `demo_author`, `demo_author_url`; `slug`; `title`; `one_line_problem`; `short_description`; `result`; `field`; `tech_stack text[]` (GIN index); `github_url`; `live_url` (nullable, CHECK `http(s)://` only); `demo_video_url`; `license`; `role`; `published_at` |
-| `project_media` | Task A | `project_id` FK on delete cascade; `kind` image\|video; `url`; `position`; `alt` |
+### Database
 
-Integrity rules on `projects`:
-- `CHECK (owner_id IS NOT NULL OR is_demo)`: only demo rows may have no owner.
-- Unique `(owner_id, slug)` for real projects; unique `slug` among demo rows.
-- Feed index on `(published_at DESC, id DESC)`. `published_at` is NOT NULL (default `now()`): the
-  keyset cursor cannot order NULLs, so a NULL row would silently drop out of the feed.
-- `project_media.project_id` is indexed: the feed loads media with `WHERE project_id IN (...)` and
-  the cascade delete looks rows up by it.
-- `owner_id` has no ON DELETE action yet (deleting a user with projects is blocked). Decided
-  (Bek, 2026-11-17): deleting an account deletes its projects, so the account-deletion task adds a
-  migration changing this FK to ON DELETE CASCADE. (`SET NULL` is impossible under the CHECK above.)
+- Local PostgreSQL 18 runs in Docker (`docker-compose.yml`, port 55433). Production uses Neon,
+  also PostgreSQL 18, so local and production behave the same.
+- Two databases: `prostagram` for development, `prostagram_test` for tests, so tests never
+  touch development data.
+- **Migrations (Alembic):** the tables are never changed by hand. Each change is a numbered
+  migration file with an `upgrade` (apply) and a `downgrade` (undo). The database remembers which
+  migrations ran, so every environment can be brought to the same state with
+  `uv run alembic upgrade head`.
+- **Connection pool:** opening a database connection is slow, so the engine keeps a few open
+  and lends them to requests. `pool_pre_ping` checks a connection is still alive before lending
+  it (Neon closes idle connections). On shutdown the pool is closed (`main.py`, `lifespan`).
+- Constraint names follow a fixed pattern (`db.py`, `NAMING_CONVENTION`), so migrations are
+  readable and the same on every machine.
 
-Reserved usernames (code constant, extended as routes appear): `uz ru en api _next _vercel demo
-new messages settings login logout signup admin explore feed search about help forgot-password reset-password verify-email onboarding saved liked`.
+### Tests
 
-## 5. API conventions
+- `uv run pytest` runs the tests against the real `prostagram_test` database. Real PostgreSQL,
+  not a fake: a fake database can hide real problems (types, constraints, SQL differences).
+- External services (R2, GitHub) are replaced with fakes in tests, because tests must not depend on
+  the internet or cost money.
+- `uv run ruff check .` and `uv run ruff format --check .` keep the code style consistent.
 
-- Prefix **`/api/v1`** for all feature routes (`/api/health` stays as is).
-- JSON only, snake_case fields, timestamps ISO 8601 UTC.
-- One error shape for every 4xx/5xx raised by our code:
-  `{"error": {"code": "project_not_found", "message": "Project not found"}}`.
-- **Keyset pagination** for lists: `?limit=24&cursor=<opaque>`; response
-  `{"items": [...], "next_cursor": "..." | null}`. Cursor = base64 of (`published_at`, `id`).
-  Never offset pagination (new projects shift pages).
-- Validation errors from FastAPI keep status 422 but are mapped to the same error shape.
+## 3. Frontend (`frontend/`)
 
-## 6. Authentication (Task B)
+Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
 
-- **Server-side sessions.** Login creates a random 32-byte token; the cookie `ph_session` carries
-  the token (HttpOnly, Secure in production, SameSite=Lax, Path=/, 30 days); the DB stores only its
-  SHA-256 hash. Logout deletes the row. Not JWT: sessions must be revocable and simple.
-- **CSRF:** SameSite=Lax plus an Origin/Referer check on every state-changing request
-  (POST/PUT/PATCH/DELETE) against `PUBLIC_BASE_URL`.
-- **Passwords:** pwdlib with argon2. Minimum 10 characters. Never logged.
-- **OAuth (Google, GitHub):** Authlib's Starlette client. It needs Starlette `SessionMiddleware`
-  (signed with `SECRET_KEY`) for the OAuth `state`; that cookie is separate from `ph_session`.
-- **Account linking (Bek, 2026-11-17, after security review H1; refined by reviews N1-N3):** a
-  provider identity is linked only while the user is logged in ("log in first, then connect"),
-  never by email match alone. Reason: automatic linking on a verified email allows pre-account
-  hijack (an attacker signs up with the victim's email, the victim clicks the unsolicited verify
-  link, the victim's first Google login lands in the attacker's account).
-  OAuth callback, logged in as U (connect flow, checked first):
-  identity already U's -> no change; identity owned by another user -> no change,
-  `/settings?error=provider_in_use&provider=<p>`; U already has that provider ->
-  `/settings?error=provider_already_connected&provider=<p>`; U's email identity is unverified ->
-  `/settings?error=verify_email_first&provider=<p>` (otherwise an attacker could attach their own
-  provider account to an address they squatted); else the identity is connected to U.
-  OAuth callback, logged out: known (provider, provider_user_id) logs in; else, if any identity has
-  the same normalized email, nothing is created and the browser goes to
-  `/login?error=account_exists&provider=<p>` (the owner logs in, or resets the password, then
-  connects); else a new developer account is created.
-  A provider email is stored only when the provider reports it verified (Google `email_verified`,
-  GitHub verified primary email); otherwise it is NULL, so an unverified address can never block
-  its real owner.
-  A password reset proves ownership of the email: it marks the email identity verified, revokes all
-  sessions and other reset tokens, and, if the email was unverified before, deletes every
-  non-email identity attached to the account before that proof.
-- **`GET /api/v1/auth/providers`** (public) returns `{"providers": [...]}`: only the providers whose
-  client id AND secret are both set, in the order `google`, `github`. The login page shows buttons from
-  this list, so it never offers a provider whose start route would answer 404.
-- **Email verification and password reset:** single-use tokens, hashed in `email_tokens`, expiry
-  24 h (verify) / 1 h (reset). Sent through `EmailSender`; dev implementation prints to the console.
-- **Verification needs the account's session (Bek, 2026-11-17, security review N1b):** a verify
-  token is accepted only from a request carrying a valid `ph_session` of the token's user. No
-  session -> 401 `not_authenticated` (the frontend sends the user to log in and back); a session of
-  another user -> 400 `token_invalid`; in both cases the token stays unused. Reason: clicking a
-  link proves mailbox ownership, not that the clicker created the account. Without this, a victim
-  who clicks an unsolicited verify link verifies an attacker's account, which can then carry the
-  attacker's provider identities past a password reset.
-- fastapi-users is not used: its PyPI page states "This project is now in maintenance mode" [V,
-  pypi.org/project/fastapi-users, latest 15.0.5, 2026-03-27].
-- Rate limiting of login attempts: deferred to Step 0b (reverse proxy level); noted, not built.
+- **Tailwind CSS:** styles are written as small classes directly on elements
+  (`class="rounded-xl p-4"`). Chosen because matching a pixel-exact mockup means many small,
+  local style decisions; with Tailwind they sit next to the element they style instead of in a
+  separate stylesheet.
+- **Cache Components** (on by default in this Next.js version): a page is computed fresh on every
+  request unless code explicitly marks something as cacheable with `"use cache"`. We never cache the
+  project page, because it carries video links that expire after one hour.
+- `API_URL` (in `frontend/.env.local`, from `.env.example`) tells Next.js where FastAPI runs.
 
-## 7. Demo data (Task A)
+## 4. Running it locally
 
-- Demo (sample) projects are `projects` rows with `is_demo = true`, the original author in
-  `demo_author` / `demo_author_url`.
-- Bek, 2026-11-18 (replaces "no user accounts for demo rows"): during development the samples are
-  posted from Bek's own account, shown as his posts. This is temporary development data; Bek
-  deletes them with the project delete button (step 2) when development is done.
-- Who is shown follows ownership: an owned row shows its owner and lives at `/<username>/<slug>`;
-  an ownerless sample shows the original author at `/demo/<slug>` (`demo` is a reserved username).
-- Loader: `python -m app.projects.seed_demo [--owner USERNAME]` (idempotent upsert by slug;
-  `--owner` gives every sample to that account, without it a row keeps its owner). Refuses to run
-  when `APP_ENV=production`, unless `--allow-production` is given together with `--owner` (Bek,
-  2026-11-18: the friends' beta starts with the samples on his live account).
-- Every `/api` answer carries `Cache-Control: private, no-store` (`app/core/cache.py`; unexpected
-  500s get it in `app/core/errors.py`), so no proxy in front of the API (Vercel's CDN in the
-  deployment) can serve one person's answer to another. A route may set its own header: images
-  under `/api/v1/media/` keep `public, max-age=31536000, immutable`.
-- Images and videos are linked from their GitHub/YouTube URLs, not copied.
+```
+docker compose up -d                       # PostgreSQL
+cd backend && uv run uvicorn app.main:app  # API on http://127.0.0.1:8000
+cd frontend && npm run dev                 # site on http://localhost:3000
+```
 
-## 8. Testing
-
-- Backend tests run against a real PostgreSQL. Each test session migrates a dedicated test database
-  with `alembic upgrade head`; every test starts from empty tables (truncate after each test).
-- Test engine uses `NullPool` (no pooled connection survives an event loop).
-- Parallel work: each agent uses its own database name in `DATABASE_URL`
-  (`projecthouse_test_<task>`) on the shared Postgres container, so test runs do not collide.
-- CI adds a migration job: exactly one Alembic head, and `upgrade head` succeeds on an empty DB.
-
-## 9. Frontend (Task C, later)
-
-- Next.js App Router, server components fetch from `API_URL`; client components only for
-  interaction. Tokens from `docs/design/tokens.css`, Inter via `next/font`.
-- `localePrefix: 'never'` (D17); interface language from cookie / browser.
-- Pages follow `docs/design/design-guide.md` and the mockups.
+Check: http://localhost:3000/api/health answers `{"status":"ok","database":"ok"}`. That one answer
+proves the whole chain: browser, Next.js forwarding, FastAPI, PostgreSQL.

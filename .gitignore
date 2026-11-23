@@ -8,14 +8,11 @@ __pycache__/
 node_modules/
 .next/
 
-# Local environment
+# Local secrets (only the .example files are committed)
 .env
+.env.*
+!.env.example
 
-# Uploaded images (disk storage in development)
-backend/media/
-
-# graphify knowledge graph (generated, holds machine-specific paths)
+# Generated or tool-local folders
 graphify-out/
-
-# Playwright MCP working files and third-party reference screenshots (never commit)
 .playwright-mcp/

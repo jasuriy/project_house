@@ -1,4 +1,4 @@
-"""Async Alembic environment. The database URL comes from app Settings, never from alembic.ini."""
+"""Alembic runs migrations with the same database address the app uses (DATABASE_URL)."""
 
 import asyncio
 from logging.config import fileConfig
@@ -7,31 +7,16 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-import app.core.models_registry  # noqa: F401 - registers every feature's tables on Base.metadata
 from alembic import context
-from app.core.config import Settings
-from app.core.db import Base
+from app.config import get_settings
+from app.db import Base
 
 config = context.config
-
-# Tests run Alembic in a subprocess whose logging is configured by the parent; keep this
-# for command-line use.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name, disable_existing_loggers=False)
+    fileConfig(config.config_file_name)
 
+# Table modules are imported here as they are added, so autogenerate can see them.
 target_metadata = Base.metadata
-
-
-def run_migrations_offline() -> None:
-    """Emit SQL to stdout without a database connection."""
-    context.configure(
-        url=Settings().database_url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
-    with context.begin_transaction():
-        context.run_migrations()
 
 
 def do_run_migrations(connection: Connection) -> None:
@@ -40,18 +25,11 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 
-async def run_async_migrations() -> None:
-    connectable = create_async_engine(Settings().database_url, poolclass=pool.NullPool)
-    async with connectable.connect() as connection:
+async def run_migrations() -> None:
+    engine = create_async_engine(get_settings().database_url, poolclass=pool.NullPool)
+    async with engine.connect() as connection:
         await connection.run_sync(do_run_migrations)
-    await connectable.dispose()
+    await engine.dispose()
 
 
-def run_migrations_online() -> None:
-    asyncio.run(run_async_migrations())
-
-
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
+asyncio.run(run_migrations())
