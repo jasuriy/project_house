@@ -2,6 +2,7 @@
 
 import { Play } from "lucide-react";
 import { type ReactNode, type RefObject, createContext, useContext, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { Video } from "@/lib/api";
 import { formatDuration } from "@/lib/upload";
 
@@ -42,8 +43,9 @@ export function DemoPlayer({ slug, video, children }: { slug: string; video: Vid
       const response = await fetch(`/api/v1/projects/by-slug/${encodeURIComponent(slug)}/video`);
       if (response.ok) {
         const fresh: Video = await response.json();
-        setLinks(fresh);
-        element.src = fresh.url;
+        // React owns the src attribute: apply the new link now (flushSync), so React does not
+        // write it again after play() starts, which would restart loading and stop the video.
+        flushSync(() => setLinks(fresh));
       }
     }
     element.scrollIntoView({ behavior: "smooth", block: "center" });

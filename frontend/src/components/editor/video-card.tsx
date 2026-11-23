@@ -1,7 +1,8 @@
 "use client";
 
 import { CirclePlay, Folder, LoaderCircle, Play, RotateCw, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Card } from "@/components/ui/card";
 import { StatusDot } from "@/components/ui/icons";
 import { ApiError, type Catalog, api } from "@/lib/api";
@@ -139,20 +140,34 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
   );
 }
 
+const LINK_MAX_AGE_MS = 50 * 60 * 1000; // signed links last 60 minutes
+
+const pathOf = (link: string | null) => link?.split("?")[0] ?? null;
+
 /**
  * Signed links change on every answer (new signature), but the file is the same. Keep the first
  * link while the file path is unchanged, so the player does not reload on every autosave.
+ * `renew` (called when play is pressed) swaps in the newest link once the kept one is 50 minutes
+ * old, before it expires.
  */
-function useStableLink(link: string | null): string | null {
-  const [stable, setStable] = useState(link);
-  const path = (l: string | null) => l?.split("?")[0] ?? null;
-  if (path(stable) !== path(link)) setStable(link);
-  return path(stable) === path(link) ? stable : link;
+function useStableLink(link: string | null) {
+  const [held, setHeld] = useState(link);
+  if (pathOf(held) !== pathOf(link)) setHeld(link);
+  const current = pathOf(held) === pathOf(link) ? held : link;
+  const takenAt = useRef(0);
+  useEffect(() => {
+    takenAt.current = Date.now(); // when the kept link was taken (after render, not during it)
+  }, [current]);
+  const renew = () => {
+    if (Date.now() - takenAt.current > LINK_MAX_AGE_MS) flushSync(() => setHeld(link));
+  };
+  return { link: current, renew };
 }
 
 function Preview(props: { url: string; poster: string | null; duration: number | null }) {
-  const url = useStableLink(props.url) ?? props.url;
+  const video = useStableLink(props.url);
   const poster = useStableLink(props.poster);
+  const url = video.link ?? props.url;
   const { duration } = props;
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -162,7 +177,7 @@ function Preview(props: { url: string; poster: string | null; duration: number |
         <video
           ref={ref}
           src={url}
-          poster={poster ?? undefined}
+          poster={poster.link ?? undefined}
           preload="metadata"
           controls={playing}
           onEnded={() => setPlaying(false)}
@@ -174,6 +189,7 @@ function Preview(props: { url: string; poster: string | null; duration: number |
               type="button"
               aria-label="Play preview"
               onClick={() => {
+                video.renew();
                 setPlaying(true);
                 void ref.current?.play();
               }}

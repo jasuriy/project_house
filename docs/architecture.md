@@ -204,6 +204,63 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
   project page, because it carries video links that expire after one hour.
 - `API_URL` (in `frontend/.env.local`, from `.env.example`) tells Next.js where FastAPI runs.
 
+### Two ways the frontend gets data
+
+- **From the browser** (the upload page, which is interactive): `fetch("/api/v1/...")` to the same
+  site; Next.js forwards it to FastAPI (the rewrite). No CORS, one address.
+- **From the server** (the project page, rendered before it reaches the browser): server components
+  call FastAPI directly at `API_URL` (`src/lib/server-api.ts`). The request never leaves the server
+  side, so the rewrite is not needed.
+- The rewrite's target is fixed when the frontend is **built**; `API_URL` must be set before a build
+  (on Vercel: before the push that triggers it).
+
+### Cache Components and the project page
+
+- A page is static unless it reads per-request data. The project page reads its address
+  (`/projects/<slug>`) and fresh project data, so that part sits inside `<Suspense>`: the shell
+  (header) is sent at once, the content streams in. The build shows it as "Partial Prerender".
+- Nothing on it is cached: every request gets fresh signed video links.
+- An unknown address shows the not-found page. Because the response has already started streaming,
+  the status stays 200; Next.js adds `noindex` so search engines do not keep it (documented
+  behaviour, `node_modules/next/dist/docs/.../not-found.md`).
+
+### The upload page: autosave without losing typing (`src/lib/use-project-draft.ts`)
+
+- **Draft created once.** The first edit (or the first upload) creates the draft through one
+  shared promise, so two things at once cannot create two drafts. Its id goes into the address
+  (`/new?draft=<id>`), so a reload reopens it.
+- **Saving.** About 800 ms after typing stops, only the changed fields are sent (PATCH).
+- **One queue for every request.** Saves, upload steps, repo link and publish run one after
+  another. Answers therefore arrive in order; an old answer can never arrive after a newer one.
+- **The merge rule.** When an answer arrives, a field takes the server's value only if it is not
+  waiting to be saved and was not edited since the request left. So typing is never overwritten,
+  and the server's clean-up still shows (trimmed text, "python" -> "Python").
+- **Failures are visible.** A failed save keeps the fields waiting, shows the reason in the header
+  (and on the date fields for date errors), and "Render" refuses to publish unsaved changes.
+- **Closing the tab.** On `pagehide`, unsaved fields are sent with `keepalive`, a request the
+  browser finishes even after the page is gone.
+
+### The upload page: sending the video
+
+- The browser reads the chosen file locally first: its length, and its first frame drawn onto a
+  canvas and saved as a JPEG (the poster). If the browser cannot read the file within 10 s, the
+  video is uploaded without a poster instead of waiting forever.
+- The upload to R2 uses `XMLHttpRequest`, not `fetch`, because only XHR reports upload progress
+  (the progress bar).
+- **Stable links.** Every project answer carries newly signed links (a new signature each time)
+  for the same file. If the player took each new link, it would reload on every autosave. So the
+  page keeps the first link while the file path stays the same, and swaps in the newest one when
+  play is pressed after 50 minutes (links last 60).
+
+### The project page: one player, two places
+
+"Try demo" (top) and the video box (lower) share one player through a React context
+(`src/components/project/demo-player.tsx`). The video never starts by itself; "Try demo" scrolls to
+it and plays it with controls; at the end it returns to its first frame. If the page has been open
+for more than 50 minutes, "Try demo" first asks the API for fresh links
+(`/projects/by-slug/<slug>/video`). React alone sets the video's `src`; setting it by hand as well
+would make the browser load the video twice and stop playback.
+
 ## 4. Running it locally
 
 ```
