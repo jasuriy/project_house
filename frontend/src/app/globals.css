@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+/* Design tokens, sampled from docs/mockups/upload-page.png and project-page.png. */
+@theme {
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --color-page: #fbf7f6;
+  --color-card: #fdf9f8;
+  --color-line: #ebe4e3; /* card borders and dividers */
+  --color-field: #fefbfa; /* inputs */
+  --color-field-line: #dcd5d4;
+  --color-ink: #0d0c22; /* headings */
+  --color-ink-2: #1f1e33; /* labels, values */
+  --color-muted: #5a596c; /* secondary text */
+  --color-faint: #8b8a99;
+  --color-primary: #3b32db;
+  --color-primary-strong: #2f27b8;
+  --color-primary-soft: #dedcff; /* selected chip */
+  --color-primary-tint: #efe9fd; /* active nav, ready card */
+  --color-chip: #f3efee; /* technology chips */
+  --color-success: #2eb158;
+  --color-danger: #e5484d;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink-2);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
