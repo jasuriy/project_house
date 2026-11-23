@@ -85,6 +85,24 @@ UPLOAD_RULES = {
     "poster": {"content_types": ["image/jpeg"], "max_bytes": 2 * 1024 * 1024},
 }
 
+# What a project needs before it can be rendered. The browser shows the checklist from this list
+# and the server checks the same list again when the project is created.
+REQUIRED_TEXT = [
+    "name",
+    "short_description",
+    "project_type",
+    "category",
+    "problem",
+    "outcome",
+    "audience",
+    "getting_started",
+    "requirements",
+    "license",
+    "status",
+]
+REQUIRED_LISTS = ["post_languages", "languages", "tools", "deliverables"]
+REQUIRED_FIELDS = [*REQUIRED_TEXT, *REQUIRED_LISTS, "video", "repo"]
+
 LANGUAGES_GROUP = "Languages"
 OTHER_GROUP = "Other"
 
@@ -182,5 +200,6 @@ async def get_catalog() -> dict:
         "max_tech_name": MAX_TECH_NAME,
         "max_tech_per_field": MAX_TECH_PER_FIELD,
         "upload_rules": UPLOAD_RULES,
+        "required_fields": REQUIRED_FIELDS,
         "tech": [{"name": n, "group": g, "icon": icon} for n, g, icon in TECH_CATALOG],
     }

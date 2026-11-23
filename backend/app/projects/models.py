@@ -1,4 +1,4 @@
-"""The projects table. One row is one project, from first draft to published page."""
+"""The projects table. One row is one published project; a row is written only on Render."""
 
 import uuid
 from datetime import date, datetime
@@ -17,11 +17,11 @@ def _text_list() -> Mapped[list[str]]:
 class Project(Base):
     __tablename__ = "projects"
 
-    # Random id: without login, a counting number would let anyone open other people's drafts.
+    # Random id, chosen before the row exists: the files are copied under it first.
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    # Set when the project is published; NULL means "still a draft".
-    published_at: Mapped[datetime | None]
-    slug: Mapped[str | None] = mapped_column(Text, unique=True)
+    published_at: Mapped[datetime]
+    # The page address (/projects/<slug>); unique, so two projects never share one.
+    slug: Mapped[str] = mapped_column(Text, unique=True)
 
     # Project details
     name: Mapped[str | None] = mapped_column(Text)

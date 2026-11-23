@@ -58,8 +58,20 @@ TechList = Annotated[
 ]
 
 
-class ProjectUpdate(BaseModel):
-    """Autosave of a draft. Only the fields that are sent change; null clears a field."""
+class VideoUpload(BaseModel):
+    """The demo video the browser already uploaded to the temporary folder."""
+
+    key: str = Field(max_length=300)
+    file_name: str | None = Field(default=None, max_length=200)
+    duration_seconds: float | None = Field(default=None, ge=0)
+
+
+class ProjectCreate(BaseModel):
+    """Everything on the upload page, sent once when Render is pressed.
+
+    Required fields may arrive empty here: the service answers with the full list of what is
+    missing (project_incomplete) instead of one validation error at a time.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -84,6 +96,9 @@ class ProjectUpdate(BaseModel):
     started_on: date | None = None
     finished_on: date | None = None
     ongoing: bool = False
+    video: VideoUpload | None = None
+    poster_key: str | None = Field(default=None, max_length=300)
+    repo_url: str | None = Field(default=None, max_length=300)
 
 
 class UploadRequest(BaseModel):
@@ -97,12 +112,6 @@ class UploadTicket(BaseModel):
     upload_url: str
     key: str
     headers: dict[str, str]
-
-
-class UploadComplete(BaseModel):
-    key: str = Field(max_length=300)
-    file_name: str | None = Field(default=None, max_length=200)
-    duration_seconds: float | None = Field(default=None, ge=0)
 
 
 class RepoLink(BaseModel):
@@ -120,8 +129,8 @@ class VideoOut(BaseModel):
 
 class ProjectOut(BaseModel):
     id: uuid.UUID
-    slug: str | None
-    published_at: datetime | None
+    slug: str
+    published_at: datetime
     name: str | None
     short_description: str | None
     project_type: str | None
@@ -146,7 +155,5 @@ class ProjectOut(BaseModel):
     video: VideoOut | None
     repo_url: str | None
     repo: RepoSnapshot | None
-    # Required fields that are still empty; the page's checklist and "Render" both use it.
-    missing_fields: list[str]
     created_at: datetime
     updated_at: datetime

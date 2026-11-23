@@ -27,6 +27,9 @@ class FakeStorage:
     async def head(self, key: str) -> StoredFile | None:
         return self.files.get(key)
 
+    async def copy(self, source: str, target: str) -> None:
+        self.files[target] = self.files[source]
+
     async def delete(self, key: str) -> None:
         if self.fail_deletes:
             raise ConnectionError("R2 is unreachable")

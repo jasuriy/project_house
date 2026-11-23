@@ -1,8 +1,8 @@
 """File storage in Cloudflare R2 (S3-compatible API).
 
 The browser uploads and downloads files straight from R2 with short-lived signed links
-("presigned URLs"). This module only signs links and checks or deletes stored files; file bytes
-never pass through the backend.
+("presigned URLs"). This module only signs links and checks, copies or deletes stored files; file
+bytes never pass through the backend.
 """
 
 import asyncio
@@ -30,6 +30,7 @@ class Storage(Protocol):
     def presign_put(self, key: str, content_type: str, size: int) -> str: ...
     def presign_get(self, key: str) -> str: ...
     async def head(self, key: str) -> StoredFile | None: ...
+    async def copy(self, source: str, target: str) -> None: ...
     async def delete(self, key: str) -> None: ...
 
 
@@ -76,6 +77,15 @@ class R2Storage:
                 return None
             raise
         return StoredFile(size=meta["ContentLength"], content_type=meta["ContentType"])
+
+    async def copy(self, source: str, target: str) -> None:
+        # Done inside R2: the bytes are never downloaded. The content type is copied along.
+        await asyncio.to_thread(
+            self.client.copy_object,
+            Bucket=self.bucket,
+            Key=target,
+            CopySource={"Bucket": self.bucket, "Key": source},
+        )
 
     async def delete(self, key: str) -> None:
         await asyncio.to_thread(self.client.delete_object, Bucket=self.bucket, Key=key)
