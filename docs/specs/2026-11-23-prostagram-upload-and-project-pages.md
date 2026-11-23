@@ -305,6 +305,6 @@ Each step ends with a report to Bek before the next starts.
   later if Bek wants.
 - CI: the old GitHub Actions workflow was deleted with the old code; a new one is not set up yet.
 - ~~Orphan videos (a draft abandoned after upload): not cleaned up yet.~~ Solved by D24: abandoned
-  files sit only in `uploads/`, which the bucket lifecycle rule empties after 1 day (rule added by
-  Bek in the Cloudflare dashboard).
+  files sit only in `uploads/`, which the bucket lifecycle rule empties after 1 day. PENDING: Bek adds
+  the rule in the Cloudflare dashboard (prefix exactly `uploads/`).
 - Rate limiting and abuse protection: not needed while only friends use the app (Bek, 2026-11-23).

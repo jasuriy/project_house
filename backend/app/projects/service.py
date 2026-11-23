@@ -183,6 +183,9 @@ async def create_project(
         await _delete_quietly(storage, copies)  # no row, so the copies belong to nothing
         raise
 
+    # Only after the try: once the row is committed its files must never be deleted, even if
+    # reading back the server-set columns (created_at) fails.
+    await session.refresh(project)
     temporary = [data.video.key] + ([data.poster_key] if data.poster_key else [])
     await _delete_quietly(storage, temporary)  # the lifecycle rule would remove them anyway
     return project
@@ -209,7 +212,6 @@ async def _insert_with_free_slug(
             # cannot get the same address. Take the next number and try again.
             await session.rollback()
             continue
-        await session.refresh(project)
         return project
     raise AppError(409, "slug_unavailable", "Could not find a free address for this name")
 
