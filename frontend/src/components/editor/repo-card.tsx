@@ -5,9 +5,9 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { GitHubIcon, StatusDot } from "@/components/ui/icons";
 import { ApiError, type RepoSnapshot, api } from "@/lib/api";
+import { previewEntries } from "@/lib/repo";
 import type { ProjectDraft } from "@/lib/use-project-draft";
 
-const PREVIEW_ROWS = 4;
 const README_LINES = 3;
 
 /** Linking the GitHub repository; shows the preview the backend stored. */
@@ -88,11 +88,7 @@ export function RepoCard({ draft, error: requiredError }: { draft: ProjectDraft;
 }
 
 function RepoPreview({ repo }: { repo: RepoSnapshot }) {
-  // Hidden entries (.github, .devcontainer) say little about a project, so they are not shown.
-  const visible = repo.entries.filter((e) => !e.name.startsWith("."));
-  const readme = visible.find((e) => e.name.toLowerCase() === "readme.md");
-  const rows = visible.filter((e) => e !== readme).slice(0, readme ? PREVIEW_ROWS - 1 : PREVIEW_ROWS);
-  if (readme) rows.push(readme);
+  const { rows, readme } = previewEntries(repo);
 
   return (
     <div className="mt-[9px] grid grid-cols-1 sm:grid-cols-[168px_1fr] overflow-hidden rounded-[8px] border border-line bg-[#fdf9fb]">

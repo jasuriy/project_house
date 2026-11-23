@@ -1,0 +1,84 @@
+{
+  "id": "fixture-published",
+  "slug": "quloq-ai",
+  "published_at": "2026-11-23T00:00:00Z",
+  "name": "Quloq AI",
+  "short_description": "Turn conversations into clear, searchable transcripts.",
+  "project_type": "web_app",
+  "ai_powered": true,
+  "category": "ai_ml",
+  "post_languages": [
+    "uz",
+    "ru"
+  ],
+  "problem": "Long recordings are hard to review. Uzbek and Russian conversations need clear, accessible transcripts.",
+  "outcome": "Upload audio, identify speakers, and search an organized transcript.",
+  "audience": "Teams, researchers & creators",
+  "languages": [
+    "Python",
+    "TypeScript"
+  ],
+  "tools": [
+    "Next.js",
+    "Tailwind CSS",
+    "FastAPI",
+    "pyannote.audio",
+    "Gemini",
+    "PostgreSQL"
+  ],
+  "deliverables": [
+    "source_code",
+    "self_hosted"
+  ],
+  "getting_started": "Clone repository, add API keys, and run Docker Compose.",
+  "requirements": "Docker + Gemini API key.",
+  "license": "MIT",
+  "status": "prototype",
+  "limitations": "Accuracy varies with audio quality.",
+  "how_it_works": "Upload audio → Process speech → Review the transcript",
+  "started_on": null,
+  "finished_on": null,
+  "ongoing": false,
+  "video": {
+    "url": "http://127.0.0.1:8766/video.mp4",
+    "poster_url": "http://127.0.0.1:8766/poster.jpg",
+    "file_name": "quloq-demo.mp4",
+    "content_type": "video/mp4",
+    "size": 255432704,
+    "duration_seconds": 154
+  },
+  "repo_url": "https://github.com/saloxiddin/quloq-ai",
+  "repo": {
+    "full_name": "saloxiddin/quloq-ai",
+    "html_url": "https://github.com/saloxiddin/quloq-ai",
+    "description": "Speech transcription web app for Uzbek and Russian.",
+    "default_branch": "main",
+    "entries": [
+      {
+        "name": "frontend",
+        "type": "dir"
+      },
+      {
+        "name": "backend",
+        "type": "dir"
+      },
+      {
+        "name": "docker-compose.yml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      }
+    ],
+    "readme_lines": [
+      "# Quloq AI",
+      "Speech transcription web app for Uzbek and Russian.",
+      "Upload audio, identify speakers, and search transcripts."
+    ],
+    "fetched_at": "2026-11-23T00:00:00Z"
+  },
+  "missing_fields": [],
+  "created_at": "2026-11-23T00:00:00Z",
+  "updated_at": "2026-11-23T00:00:00Z"
+}
