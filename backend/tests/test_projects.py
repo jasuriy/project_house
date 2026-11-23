@@ -425,3 +425,45 @@ async def test_api_answers_are_never_cached(client: AsyncClient) -> None:
     response = await client.get(f"/api/v1/projects/{project_id}")
 
     assert response.headers["cache-control"] == "no-store"
+
+
+# --- project page (published projects by address) ------------------------------------------
+
+
+async def test_published_project_is_found_by_its_address(
+    client: AsyncClient, storage: FakeStorage, github_routes: GitHubRoutes, reflex_readme: str
+) -> None:
+    project_id = await complete_reflex_draft(client, storage, github_routes, reflex_readme)
+    await client.post(f"/api/v1/projects/{project_id}/publish")
+
+    response = await client.get("/api/v1/projects/by-slug/reflex")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == "Reflex"
+    assert body["video"]["url"].startswith("https://r2.test/download/videos/")
+    assert body["repo"]["full_name"] == "reflex-dev/reflex"
+
+
+async def test_draft_or_unknown_address_is_not_found(
+    client: AsyncClient, storage: FakeStorage, github_routes: GitHubRoutes, reflex_readme: str
+) -> None:
+    project_id = await complete_reflex_draft(client, storage, github_routes, reflex_readme)
+    await client.patch(f"/api/v1/projects/{project_id}", json={"name": "Not published"})
+
+    unknown = await client.get("/api/v1/projects/by-slug/nothing-here")
+
+    assert unknown.status_code == 404
+    assert unknown.json()["error"]["code"] == "project_not_found"
+
+
+async def test_fresh_video_links_for_a_long_open_page(
+    client: AsyncClient, storage: FakeStorage, github_routes: GitHubRoutes, reflex_readme: str
+) -> None:
+    project_id = await complete_reflex_draft(client, storage, github_routes, reflex_readme)
+    await client.post(f"/api/v1/projects/{project_id}/publish")
+
+    response = await client.get("/api/v1/projects/by-slug/reflex/video")
+
+    assert response.status_code == 200
+    assert response.json()["url"].startswith("https://r2.test/download/videos/")

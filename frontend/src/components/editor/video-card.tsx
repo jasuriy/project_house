@@ -91,7 +91,7 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
             const file = e.dataTransfer.files[0];
             if (file) void upload(file);
           }}
-          className={`mt-[10px] flex aspect-[452/177] w-full flex-col items-center justify-center gap-[6px] rounded-[8px] border-[1.5px] border-dashed text-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 ${
+          className={`mt-[10px] flex aspect-video w-full flex-col items-center justify-center gap-[6px] rounded-[8px] border-[1.5px] border-dashed text-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 ${
             dragging ? "border-primary bg-primary-tint" : shownError ? "border-danger" : "border-field-line bg-field hover:border-primary"
           }`}
         >
@@ -158,7 +158,7 @@ function Preview(props: { url: string; poster: string | null; duration: number |
   const [playing, setPlaying] = useState(false);
   return (
     <div className="mt-[9px] rounded-[9px] border border-line bg-[#fbf8f7] p-[5px]">
-      <div className="relative aspect-[452/177] overflow-hidden rounded-[6px] bg-[#1b1a33]">
+      <div className="relative aspect-video overflow-hidden rounded-[6px] bg-[#1b1a33]">
         <video
           ref={ref}
           src={url}
@@ -197,7 +197,7 @@ function Progress({ job }: { job: Job }) {
   const percent = Math.round(job.progress * 100);
   const label = job.phase === "preparing" ? "Preparing..." : job.phase === "finishing" ? "Finishing..." : `Uploading ${percent}%`;
   return (
-    <div className="mt-[10px] flex aspect-[452/177] flex-col justify-center gap-[10px] rounded-[8px] border border-line bg-field px-[20px]">
+    <div className="mt-[10px] flex aspect-video flex-col justify-center gap-[10px] rounded-[8px] border border-line bg-field px-[20px]">
       <div className="flex items-center gap-[10px]">
         <LoaderCircle size={18} className="animate-spin text-primary" aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-ink-2">{job.fileName}</span>

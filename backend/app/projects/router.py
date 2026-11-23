@@ -19,6 +19,7 @@ from app.projects.schemas import (
     UploadComplete,
     UploadRequest,
     UploadTicket,
+    VideoOut,
 )
 from app.storage import Storage, get_storage
 
@@ -33,6 +34,18 @@ UploadKind = Literal["video", "poster"]
 @router.post("", status_code=201)
 async def create_project(session: Session, storage: Files) -> ProjectOut:
     return service.to_out(await service.create_draft(session), storage)
+
+
+# Address routes come before "/{project_id}", so "by-slug" is never read as an id.
+@router.get("/by-slug/{slug}")
+async def get_published_project(slug: str, session: Session, storage: Files) -> ProjectOut:
+    return service.to_out(await service.get_published(session, slug), storage)
+
+
+@router.get("/by-slug/{slug}/video")
+async def get_video_links(slug: str, session: Session, storage: Files) -> VideoOut:
+    """Fresh signed links, for a project page that stayed open longer than the links last."""
+    return await service.get_published_video(session, storage, slug)
 
 
 @router.get("/{project_id}")

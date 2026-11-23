@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from slugify import slugify
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,18 +54,23 @@ def missing_fields(project: Project) -> list[str]:
     return missing
 
 
+def video_out(project: Project, storage: Storage) -> VideoOut | None:
+    """The video's details with fresh signed links (valid one hour), or None without a video."""
+    if not project.video_key:
+        return None
+    return VideoOut(
+        url=storage.presign_get(project.video_key),
+        poster_url=storage.presign_get(project.poster_key) if project.poster_key else None,
+        file_name=project.video_file_name,
+        content_type=project.video_content_type,
+        size=project.video_size,
+        duration_seconds=project.video_duration_seconds,
+    )
+
+
 def to_out(project: Project, storage: Storage) -> ProjectOut:
     """The project as the API returns it, with fresh signed links to its files."""
-    video = None
-    if project.video_key:
-        video = VideoOut(
-            url=storage.presign_get(project.video_key),
-            poster_url=storage.presign_get(project.poster_key) if project.poster_key else None,
-            file_name=project.video_file_name,
-            content_type=project.video_content_type,
-            size=project.video_size,
-            duration_seconds=project.video_duration_seconds,
-        )
+    video = video_out(project, storage)
     computed = {"video", "repo", "missing_fields"}
     columns = {f: getattr(project, f) for f in ProjectOut.model_fields if f not in computed}
     return ProjectOut(
@@ -85,6 +91,23 @@ async def get_project(session: AsyncSession, project_id: uuid.UUID) -> Project:
     if project is None:
         raise AppError(404, "project_not_found", "Project not found")
     return project
+
+
+async def get_published(session: AsyncSession, slug: str) -> Project:
+    """A published project by its address; drafts are never shown on a project page."""
+    project = await session.scalar(
+        select(Project).where(Project.slug == slug, Project.published_at.is_not(None))
+    )
+    if project is None:
+        raise AppError(404, "project_not_found", "Project not found")
+    return project
+
+
+async def get_published_video(session: AsyncSession, storage: Storage, slug: str) -> VideoOut:
+    video = video_out(await get_published(session, slug), storage)
+    if video is None:
+        raise AppError(404, "video_not_found", "This project has no video")
+    return video
 
 
 async def get_draft(session: AsyncSession, project_id: uuid.UUID) -> Project:

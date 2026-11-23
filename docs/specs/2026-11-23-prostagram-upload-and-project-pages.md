@@ -45,6 +45,7 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D20 | On the push day: the old R2 bucket is emptied, the old Neon tables are dropped, the old Modal app and Vercel project are reused (section 11). |
 | D21 | Old files (`backend/`, `frontend/`, `docs/` except this spec and the mockups, `seed/`, `docker-compose.yml`, `README.md`) are deleted in the first commit; a new README replaces the old one. The local `.env` is kept. The new code again lives in `backend/` and `frontend/` (the Vercel project builds from `frontend/`). |
 | D22 | Friends get the link of the new app to test it. |
+| D23 | Video box is 16:9 on both pages (Bek, 2026-11-23), not the mockup's wide 452:177 shape, so 16:9 demo videos show without side bars. |
 
 ## 3. Choices made by Claude (technical, Bek may object)
 
