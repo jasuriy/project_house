@@ -9,6 +9,7 @@ backend/.env.example; no value lives here. Functions run in the EU, near the Neo
 """
 
 import subprocess
+import sys
 from pathlib import Path
 
 import modal
@@ -48,4 +49,6 @@ def web():
 @app.function(secrets=[SECRET], region=REGION, timeout=600)
 def migrate() -> None:
     """Bring the production database to the newest schema."""
-    subprocess.run(["python", "-m", "alembic", "upgrade", "head"], cwd=ROOT, check=True)
+    # sys.executable: the interpreter uv_sync installed the packages into, not whatever "python"
+    # is first on PATH.
+    subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], cwd=ROOT, check=True)
