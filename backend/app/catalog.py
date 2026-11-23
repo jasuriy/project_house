@@ -67,7 +67,6 @@ LICENSES = {
 TEXT_LIMITS = {
     "name": 80,
     "short_description": 160,
-    "audience": 120,
     "problem": 600,
     "outcome": 600,
     "how_it_works": 600,
@@ -94,14 +93,13 @@ REQUIRED_TEXT = [
     "category",
     "problem",
     "outcome",
-    "audience",
     "getting_started",
     "requirements",
     "license",
     "status",
 ]
 REQUIRED_LISTS = ["post_languages", "languages", "tools", "deliverables"]
-REQUIRED_FIELDS = [*REQUIRED_TEXT, *REQUIRED_LISTS, "video", "repo"]
+REQUIRED_FIELDS = [*REQUIRED_TEXT, *REQUIRED_LISTS, "video"]
 
 LANGUAGES_GROUP = "Languages"
 OTHER_GROUP = "Other"

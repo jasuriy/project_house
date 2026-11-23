@@ -196,8 +196,9 @@ server keeps nothing until "Render project" is pressed:
 
 ### Repository preview
 
-When a repo link is typed, the API reads it from GitHub (repo info, root folder list, README) and
-answers a preview without storing it. On Render the API reads GitHub again itself (the browser's
+The repository is optional (D25). When a repo link is typed, the API reads it from GitHub (repo
+info, root folder list, README) and answers a preview without storing it. On Render, if a link was
+sent, the API reads GitHub again itself (the browser's
 preview is never trusted) and stores the small preview with the project. Showing a project never
 calls GitHub: GitHub allows only 60
 anonymous requests per hour from one server address, and an optional `GITHUB_API_TOKEN` raises that to
@@ -252,8 +253,9 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
 
 ### The upload page: the form lives in the browser (`src/lib/use-project-form.ts`)
 
-- **State.** The typed fields, the uploaded video (its temporary key, name, size, length) and the
-  repo preview are React state. The checklist ("Ready to render", the side nav checks) is computed
+- **State.** The typed fields, the uploaded video (its temporary key, name, size, length), the
+  repo preview and the text typed in the repo box are React state. The repo text lives here, not in
+  the repo card, so Render can refuse a link that is typed but not connected yet (`repoPending`). The checklist ("Ready to render", the side nav checks) is computed
   from them and the catalog's `required_fields`, with the server's blank rule (spaces only = empty).
 - **Leaving the page empties it.** F5 or closing the tab: the browser's memory is gone. Moving to
   another page of the site: Next.js keeps the page hidden (React `Activity`) and would show the old

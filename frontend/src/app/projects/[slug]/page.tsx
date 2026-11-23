@@ -56,7 +56,12 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
           </div>
         </div>
 
-        <div className="mt-[16px] grid grid-cols-1 items-start gap-[16px] lg:mt-[14px] lg:grid-cols-[minmax(0,512fr)_minmax(0,643fr)] lg:gap-[30px]">
+        {/* The repository is optional (D25): without it the technology card takes the full row. */}
+        <div
+          className={`mt-[16px] grid grid-cols-1 items-start gap-[16px] lg:mt-[14px] lg:gap-[30px] ${
+            project.repo ? "lg:grid-cols-[minmax(0,512fr)_minmax(0,643fr)]" : ""
+          }`}
+        >
           <TechStack project={project} catalog={catalog} />
           <RepoPreview project={project} />
         </div>

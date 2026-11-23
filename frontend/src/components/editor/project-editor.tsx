@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useLayoutEffect, useState } from "react";
 import { ApiError, type Catalog, api } from "@/lib/api";
-import { dateError, missingFields, useProjectForm } from "@/lib/use-project-form";
+import { dateError, missingFields, repoPending, useProjectForm } from "@/lib/use-project-form";
 import { EditorHeader } from "./editor-header";
 import { DetailsSection, SetupSection, TechSection } from "./form-sections";
 import { ReadyCard } from "./ready-card";
@@ -47,7 +47,11 @@ export function ProjectEditor() {
   }
   if (!catalog) return <EditorSkeleton />;
 
-  const missing = missingFields(catalog, state.form, state.video, state.repo);
+  const missing = missingFields(catalog, state.form, state.video);
+  const repoWaiting = repoPending(state);
+  // While the link is being checked the card shows "Checking...", so no message then.
+  const repoError =
+    showErrors && repoWaiting && !state.repoLinking ? "Connect the repository (press Enter) or clear the link" : null;
   const datesWrong = dateError(state.form);
   const errorFor = (field: string) => {
     if (datesWrong && (field === "started_on" || field === "finished_on")) return datesWrong;
@@ -58,6 +62,7 @@ export function ProjectEditor() {
     setShowErrors(true);
     setRenderError(null);
     if (missing.size > 0 || datesWrong) return scrollToFirstMissing(missing);
+    if (repoWaiting) return document.getElementById("demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
     setRendering(true);
     try {
       const project = await state.submit();
@@ -91,7 +96,7 @@ export function ProjectEditor() {
         <>
           <div id="demo" className="order-2 flex scroll-mt-4 flex-col gap-[14px] lg:order-none lg:gap-[13px]">
             <VideoCard state={state} catalog={catalog} error={errorFor("video")} />
-            <RepoCard state={state} error={errorFor("repo")} />
+            <RepoCard state={state} error={repoError} />
           </div>
           {renderError && (
             <p role="alert" className="order-5 text-[13px] text-danger lg:order-none">

@@ -6,44 +6,54 @@ import { Card } from "@/components/ui/card";
 import { GitHubIcon, StatusDot } from "@/components/ui/icons";
 import { ApiError, type RepoSnapshot, api } from "@/lib/api";
 import { previewEntries } from "@/lib/repo";
-import type { ProjectFormState } from "@/lib/use-project-form";
+import { linkedRepoText, type ProjectFormState } from "@/lib/use-project-form";
 
 const README_LINES = 3;
 
-/** Linking the GitHub repository: the server reads GitHub and answers a preview; nothing is saved. */
-export function RepoCard({ state, error: requiredError }: { state: ProjectFormState; error: string | null }) {
+/**
+ * Linking the GitHub repository (optional, D25): the server reads GitHub and answers a preview;
+ * nothing is saved. The typed text lives in the form state, so Render can see an unconnected link.
+ */
+export function RepoCard({ state, error: renderError }: { state: ProjectFormState; error: string | null }) {
   const repo = state.repo?.snapshot ?? null;
-  const linkedUrl = state.repo?.snapshot.html_url.replace(/^https?:\/\//, "") ?? "";
-  const [typed, setTyped] = useState<string | null>(null); // null: show the linked repository
-  const [linking, setLinking] = useState(false);
+  const linkedUrl = linkedRepoText(state.repo);
+  const typed = state.repoText;
+  const linking = state.repoLinking;
   const [error, setError] = useState<string | null>(null);
   const value = typed ?? linkedUrl;
 
-  // The page was left: the form is emptied, so is what was typed here.
-  useLayoutEffect(
-    () => () => {
-      setTyped(null);
-      setError(null);
-    },
-    [],
-  );
+  // The page was left: the form is emptied (useProjectForm), so is this message.
+  useLayoutEffect(() => () => setError(null), []);
+
+  function change(text: string) {
+    setError(null);
+    if (text.trim() === "") {
+      // An emptied box means no repository, at once (not only after leaving the box).
+      state.setRepo(null);
+      state.setRepoText(null);
+    } else {
+      state.setRepoText(text);
+    }
+  }
 
   async function link() {
     if (typed === null || typed.trim() === "" || typed.trim() === linkedUrl) return;
-    setLinking(true);
+    state.setRepoLinking(true);
     setError(null);
     try {
       const snapshot = await api.previewRepo(typed.trim());
       state.setRepo({ url: snapshot.html_url, snapshot });
-      setTyped(null);
+      state.setRepoText(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not link the repository");
     } finally {
-      setLinking(false);
+      state.setRepoLinking(false);
     }
   }
 
-  const shownError = error ?? (repo ? null : requiredError);
+  // The link's own problem first, then what Render needs (both when Render was blocked by it).
+  const errors = [error, renderError].filter((e): e is string => !!e);
+  const shownError = errors.length > 0;
 
   return (
     <Card icon={<GitHubIcon size={20} />} title="GitHub repository" subtitle="Link your project repository with source code, setup, and docs.">
@@ -60,7 +70,7 @@ export function RepoCard({ state, error: requiredError }: { state: ProjectFormSt
               inputMode="url"
               placeholder="github.com/owner/repository"
               value={value}
-              onChange={(e) => setTyped(e.target.value)}
+              onChange={(e) => change(e.target.value)}
               onBlur={() => void link()}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -68,7 +78,7 @@ export function RepoCard({ state, error: requiredError }: { state: ProjectFormSt
                   void link();
                 }
               }}
-              aria-invalid={!!shownError || undefined}
+              aria-invalid={shownError || undefined}
               className={`h-[25px] w-full rounded-[7px] border bg-field pl-[33px] max-sm:h-[44px] max-sm:text-[16px] pr-[10px] text-[12.3px] text-ink-2 outline-none placeholder:text-faint focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 ${
                 shownError ? "border-danger" : "border-field-line"
               }`}
@@ -87,11 +97,11 @@ export function RepoCard({ state, error: requiredError }: { state: ProjectFormSt
           </span>
         ) : null}
       </div>
-      {shownError && (
-        <p role="alert" className="mt-[4px] text-[12px] text-danger">
-          {shownError}
+      {errors.map((message) => (
+        <p key={message} role="alert" className="mt-[4px] text-[12px] text-danger">
+          {message}
         </p>
-      )}
+      ))}
       {repo && <RepoPreview repo={repo} />}
     </Card>
   );

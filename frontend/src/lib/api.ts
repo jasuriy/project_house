@@ -15,7 +15,7 @@ export type Catalog = {
   max_tech_name: number;
   max_tech_per_field: number;
   upload_rules: Record<UploadKind, { content_types: string[]; max_bytes: number }>;
-  // What Render needs: form field names, plus "video" and "repo". The server checks the same list.
+  // What Render needs: form field names, plus "video". The server checks the same list.
   required_fields: string[];
   tech: { name: string; group: string; icon: string | null }[];
 };
@@ -25,12 +25,10 @@ export type ProjectForm = {
   name: string | null;
   short_description: string | null;
   project_type: string | null;
-  ai_powered: boolean;
   category: string | null;
   post_languages: string[];
   problem: string | null;
   outcome: string | null;
-  audience: string | null;
   languages: string[];
   tools: string[];
   deliverables: string[];
@@ -89,12 +87,10 @@ export const EMPTY_FORM: ProjectForm = {
   name: null,
   short_description: null,
   project_type: null,
-  ai_powered: false,
   category: null,
   post_languages: [],
   problem: null,
   outcome: null,
-  audience: null,
   languages: [],
   tools: [],
   deliverables: [],

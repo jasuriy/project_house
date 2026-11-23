@@ -31,7 +31,7 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D6 | No login for now. The author is static: name "Jasurbek", photo `profile_photo.jpg` (640 x 640 JPEG [V]). The header avatar, GitHub icon and "Explore projects" are static and do nothing yet. |
 | D7 | Post language: one or more of English, O'zbek, Русский (the languages the post is written in). Shown in "At a glance" as "Languages" (for example "English & O'zbek"). |
 | D8 | Category: one choice from a fixed list (section 5.2). Shown in the breadcrumb. |
-| D9 | "AI powered": the user ticks it. Never automatic. Shown in the badge ("LIBRARY • AI POWERED"). |
+| D9 | ~~"AI powered": the user ticks it. Never automatic. Shown in the badge ("LIBRARY • AI POWERED").~~ Replaced by D25. |
 | D10 | "How it works": optional text. |
 | D11 | Deliverable: several choices from a fixed list. Rendered in "What you get" and in "At a glance > Delivery". |
 | D12 | Project type adds "Mobile app". |
@@ -47,6 +47,7 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D22 | Friends get the link of the new app to test it. |
 | D23 | Video box is 16:9 on both pages (Bek, 2026-11-23), not the mockup's wide 452:177 shape, so 16:9 demo videos show without side bars. |
 | D24 | No drafts (Bek, 2026-11-24): nothing is stored before "Render project". Closing the page, F5 or leaving it for another page of the site gives an empty form; an unfinished form is not wanted. The form lives in the browser, files wait in R2's temporary folder `uploads/` (a bucket lifecycle rule deletes them after 1 day), and Render sends one request that creates the published project. The mockup's "Draft saved" status is removed. The project page's logo links to the home page `/`. Replaces T1. |
+| D25 | Form trimmed (Bek, 2026-11-24): "AI powered" (D9) and "Who is it for? (audience)" are removed from the upload page, the project page (badge, "For" row) and the database (migration 0003, values deleted). The GitHub repository is optional: without it the project page shows no "View source" and no repository preview, and the technology card takes the full row; a link that is typed but not connected stops Render ("Connect the repository (press Enter) or clear the link"). "Repository linked" is removed from the Ready card. Getting started and Requirements stay required and get example text in the box ("e.g. npm install, npm run dev", "e.g. Python 3.11+, Node 20"). |
 
 ## 3. Choices made by Claude (technical, Bek may object)
 
@@ -74,33 +75,33 @@ Layout from `docs/mockups/upload-page.png`:
   to the section. A green check appears when all required fields of that section are filled.
 - **Middle column:**
   - *Project details:* Project name*, Short description*, Project type* (chips, one choice),
-    **AI powered** (tick, D9), **Category*** (dropdown, D8), **Post language*** (chips + dropdown, several, D7),
-    What problem does it solve?*, What is the outcome?* (two textareas side by side),
-    Who is it for? (audience)*.
+    **Category*** (dropdown, D8), **Post language*** (chips + dropdown, several, D7),
+    What problem does it solve?*, What is the outcome?* (two textareas side by side).
+    (AI powered and audience removed, D25.)
   - *Technology stack:* Programming languages* (chips + dropdown), Frameworks & tools* (chips +
     dropdown). Both search the catalog and accept a typed custom value (D14).
-  - *Setup & delivery:* Deliverable* (chips + dropdown, several, D11), Getting started*,
-    Requirements*, License*, Status*, Limitations (optional, D15), **How it works** (optional, D10),
+  - *Setup & delivery:* Deliverable* (chips + dropdown, several, D11), Getting started* and
+    Requirements* (with example text, D25), License*, Status*, Limitations (optional, D15), **How it works** (optional, D10),
     **Started** / **Finished** or **still ongoing** (optional, D13).
 - **Right column:**
   - *Demo video:* drop zone / file picker. After upload: first-frame preview with duration badge,
     file name, size and duration, "Upload complete", "Replace". While uploading: a progress bar.
-  - *GitHub repository:* URL input; after linking, "Repository connected" and the preview (root files
-    and the first lines of the README).
-  - *Ready to render:* four checks: Project details complete, Demo video uploaded, Repository linked,
-    Technology stack added. Text: "Your showcase will include outcomes, video, code, and setup details."
+  - *GitHub repository (optional, D25):* URL input; after linking, "Repository connected" and the
+    preview (root files and the first lines of the README). Emptying the box removes the link.
+  - *Ready to render:* three checks: Project details complete, Demo video uploaded, Technology stack
+    added ("Repository linked" removed, D25). Text: "Your showcase will include outcomes, video, code, and setup details."
   - Footnote: "Review your details, then click Render project."
 
 New fields (marked bold above) use exactly the mockup's field styles.
 
 ### 4.1 Required fields
 
-Required: name, short description, project type, category, post language, problem, outcome, audience,
+Required: name, short description, project type, category, post language, problem, outcome,
 at least one programming language, at least one framework or tool, at least one deliverable, getting
-started, requirements, license, status, demo video, GitHub repo.
-Optional: AI powered (default off), limitations, how it works, dates.
+started, requirements, license, status, demo video.
+Optional: GitHub repo (D25), limitations, how it works, dates.
 
-Text limits: name 80, short description 160, audience 120, problem and outcome 600, getting started,
+Text limits: name 80, short description 160, problem and outcome 600, getting started,
 requirements, limitations 300, how it works 600 characters. (Bek confirmed 2026-11-23.)
 
 ## 5. Fixed lists
@@ -134,17 +135,17 @@ Layout from `docs/mockups/project-page.png`. Data source of each element:
 | Element | Source |
 |---|---|
 | Breadcrumb "Projects / <Category>" | category |
-| Badge "WEB APP • AI POWERED" | project type, plus "AI POWERED" when ticked |
+| Badge "WEB APP" | project type (the mockup's "AI POWERED" part removed, D25) |
 | Title, subtitle | name, short description |
 | "By Jasurbek • <Status>" with photo | static author (D6), status |
 | Try demo | plays the video (D4) |
-| View source | GitHub repo URL |
+| View source | GitHub repo URL (hidden without a repo, D25) |
 | The problem / The outcome | problem / outcome |
 | What you get | deliverables, one tick per item |
 | Video box | first frame, duration badge, controls during playback (D5) |
-| At a glance | Type, For (audience), Languages (post languages joined with " & "), Status, Delivery (deliverables joined with " + "), Timeline (dates, hidden when empty) |
+| At a glance | Type, Languages (post languages joined with " & "), Status, Delivery (deliverables joined with " + "), Timeline (dates, hidden when empty) |
 | Technology stack | catalog groups; custom entries under "Other" |
-| Repository preview | stored snapshot (section 8), "Open on GitHub" |
+| Repository preview | stored snapshot (section 8), "Open on GitHub"; hidden without a repo, the technology card then takes the full row (D25) |
 | Bottom cards | How it works (hidden when empty), Getting started, Requirements, Limitations (hidden when empty), License |
 
 ## 7. Video upload (system design)
@@ -247,12 +248,10 @@ returned limit 60]. Linking again refreshes the snapshot. Only public repos can 
 | Name | Reflex | README [V] |
 | Short description | Web apps in pure Python. | pyproject [V] |
 | Project type | Library | README "Reflex is a library ..." [V] |
-| AI powered | no | [D] it is a web framework |
 | Category | Developer Tools | [D] |
 | Post language | English | |
 | Problem | Python developers have to learn JavaScript to build a web frontend. | [D] from README "no need to learn Javascript" |
 | Outcome | Frontend and backend written in Python; the app runs at localhost:3000 with fast refresh. | [D] paraphrase of README |
-| Audience | Python developers | [D] |
 | Programming languages | Python, TypeScript, JavaScript | GitHub languages API [V] |
 | Frameworks & tools | Starlette, Granian, Socket.IO, Redis, Radix UI, Plotly, Recharts | pyproject dependencies [V] |
 | Deliverable | Source code, Package (PyPI/npm) | README PyPI badge [V] |

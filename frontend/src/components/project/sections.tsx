@@ -18,7 +18,6 @@ import {
   Settings,
   Target,
   TriangleAlert,
-  Users,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -77,9 +76,7 @@ export function Breadcrumb({ category }: { category: string }) {
 }
 
 export function Hero({ project, catalog }: { project: Project; catalog: Catalog }) {
-  const badge = [labelOf(catalog.project_types, project.project_type), project.ai_powered ? "AI powered" : null]
-    .filter(Boolean)
-    .join(" • ");
+  const badge = labelOf(catalog.project_types, project.project_type);
   return (
     <div>
       <span className="inline-flex h-[22px] items-center rounded-[6px] bg-[#dcd9ff] px-[8px] text-[12px] font-bold uppercase tracking-[0.01em] text-[#4a43c4]">
@@ -167,7 +164,6 @@ export function AtAGlance({ project, catalog }: { project: Project; catalog: Cat
   const when = timeline(project);
   const rows: { icon: LucideIcon; label: string; value: ReactNode }[] = [
     { icon: Laptop, label: "Type", value: labelOf(catalog.project_types, project.project_type) },
-    { icon: Users, label: "For", value: project.audience },
     { icon: Globe, label: "Languages", value: labelsOf(catalog.post_languages, project.post_languages).join(" & ") },
     {
       icon: Layers,

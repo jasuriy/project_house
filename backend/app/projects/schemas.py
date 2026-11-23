@@ -78,12 +78,10 @@ class ProjectCreate(BaseModel):
     name: _text("name") = None
     short_description: _text("short_description") = None
     project_type: Annotated[str | None, _one_of(catalog.PROJECT_TYPES)] = None
-    ai_powered: bool = False
     category: Annotated[str | None, _one_of(catalog.CATEGORIES)] = None
     post_languages: _choices(catalog.POST_LANGUAGES) = []
     problem: _text("problem") = None
     outcome: _text("outcome") = None
-    audience: _text("audience") = None
     languages: TechList = []
     tools: TechList = []
     deliverables: _choices(catalog.DELIVERABLES) = []
@@ -134,12 +132,10 @@ class ProjectOut(BaseModel):
     name: str | None
     short_description: str | None
     project_type: str | None
-    ai_powered: bool
     category: str | None
     post_languages: list[str]
     problem: str | None
     outcome: str | None
-    audience: str | None
     languages: list[str]
     tools: list[str]
     deliverables: list[str]

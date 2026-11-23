@@ -27,12 +27,10 @@ class Project(Base):
     name: Mapped[str | None] = mapped_column(Text)
     short_description: Mapped[str | None] = mapped_column(Text)
     project_type: Mapped[str | None] = mapped_column(Text)
-    ai_powered: Mapped[bool] = mapped_column(default=False, server_default=false())
     category: Mapped[str | None] = mapped_column(Text)
     post_languages: Mapped[list[str]] = _text_list()
     problem: Mapped[str | None] = mapped_column(Text)
     outcome: Mapped[str | None] = mapped_column(Text)
-    audience: Mapped[str | None] = mapped_column(Text)
 
     # Technology stack (names from the catalog, or typed by the user)
     languages: Mapped[list[str]] = _text_list()

@@ -103,8 +103,6 @@ def missing_fields(data: ProjectCreate) -> list[str]:
     missing += [f for f in REQUIRED_LISTS if not getattr(data, f)]
     if data.video is None:
         missing.append("video")
-    if not data.repo_url:
-        missing.append("repo")
     return missing
 
 
@@ -143,7 +141,7 @@ async def create_project(
     if missing:
         raise AppError(422, "project_incomplete", f"Missing: {', '.join(missing)}")
     _check_dates(data)
-    assert data.video is not None and data.repo_url is not None  # checked by missing_fields
+    assert data.video is not None  # checked by missing_fields
 
     if not TEMP_KEYS["video"].match(data.video.key):
         raise AppError(422, "upload_key_invalid", "This video was not uploaded through this page")
@@ -155,7 +153,8 @@ async def create_project(
     # The first frame is a nice-to-have: without a valid one the project is saved without it.
     poster_ok = data.poster_key and await _checked_upload(storage, "poster", data.poster_key)
 
-    snapshot = await preview_repo(github, data.repo_url)  # read by the server, not the browser
+    # The repository is optional (D25); a given link is read by the server, not the browser.
+    snapshot = await preview_repo(github, data.repo_url) if data.repo_url else None
 
     project_id = uuid.uuid4()
     video_key = f"videos/{project_id}/{uuid.uuid4().hex}.{FILE_EXTENSIONS[video.content_type]}"
@@ -175,8 +174,8 @@ async def create_project(
             "video_size": video.size,
             "video_duration_seconds": data.video.duration_seconds,
             "poster_key": poster_key,
-            "repo_url": snapshot.html_url,
-            "repo_snapshot": snapshot.model_dump(mode="json"),
+            "repo_url": snapshot.html_url if snapshot else None,
+            "repo_snapshot": snapshot.model_dump(mode="json") if snapshot else None,
         }
         project = await _insert_with_free_slug(session, project_id, {**fields, **files})
     except Exception:

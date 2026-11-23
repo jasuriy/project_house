@@ -22,7 +22,6 @@ REFLEX = {
     "post_languages": ["en"],
     "problem": "Python developers have to learn JavaScript to build a web frontend.",
     "outcome": "Frontend and backend written in Python.",
-    "audience": "Python developers",
     "languages": ["Python", "TypeScript", "JavaScript"],
     "tools": ["Starlette", "Granian", "Socket.IO", "Redis", "Radix UI"],
     "deliverables": ["source_code", "package"],
@@ -153,9 +152,9 @@ async def test_incomplete_project_is_refused_with_everything_missing(
     error = response.json()["error"]
     assert error["code"] == "project_incomplete"
     assert error["message"] == (
-        "Missing: short_description, project_type, category, problem, outcome, audience, "
+        "Missing: short_description, project_type, category, problem, outcome, "
         "getting_started, requirements, license, status, post_languages, languages, tools, "
-        "deliverables, video, repo"
+        "deliverables, video"
     )
     assert await row_count() == 0
     assert final_keys(storage) == []
@@ -226,6 +225,22 @@ async def test_project_without_a_valid_first_frame_is_saved_without_it(
 
     assert response.status_code == 201
     assert response.json()["video"]["poster_url"] is None
+
+
+async def test_project_without_a_repository_is_saved_without_one(
+    client: AsyncClient, storage: FakeStorage
+) -> None:
+    # The repository is optional (D25): no link, so GitHub is never asked (no routes are set).
+    payload = await reflex_payload(client, storage)
+    del payload["repo_url"]
+
+    response = await client.post("/api/v1/projects", json=payload)
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["repo_url"] is None
+    assert body["repo"] is None
+    assert await row_count() == 1
 
 
 async def test_github_down_at_render_leaves_nothing_behind(

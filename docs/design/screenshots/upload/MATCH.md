@@ -16,7 +16,7 @@ Positions were measured by scanning card borders in both images (`diff-1280.png`
 | Middle column | x 232-743 | x 232-742 | MATCH |
 | Right column | x 758-1250 | x 758-1250 | MATCH |
 | Project details, first rows | label/input positions | within 3 px | MATCH |
-| Project details height | 357 px | 466 px | EXPECTED: added AI powered, Category, Post language, Mobile app |
+| Project details height | 357 px | smaller since D25 | EXPECTED: added Category, Post language, Mobile app; AI powered and audience removed (Bek, 2026-11-24, D25) |
 | Project type chips | 5 in one row | 5 in one row, Mobile app on row 2 | MATCH + EXPECTED |
 | Technology card height | 139 px | 136 px | MATCH |
 | Frameworks chips | 2 rows | 2 rows | MATCH |
@@ -28,7 +28,7 @@ Positions were measured by scanning card borders in both images (`diff-1280.png`
 | Video preview, file row | as drawn | same | MATCH |
 | GitHub card and preview | as drawn | same | MATCH |
 | README lines | ~7 px mono, full lines | 7.5 px mono, last line cut | MATCH (text barely readable, as in the mockup) |
-| Ready to render card | as drawn | within 3 px | MATCH |
+| Ready to render card | four checks | three checks, "Repository linked" removed | EXPECTED: the repository is optional (D25) |
 
 Fonts: Figtree (closest of 8 candidates), JetBrains Mono for the README lines (closest of 9; the
 mockup is blurry there), Onest for Cyrillic letters (Figtree has none).

@@ -10,9 +10,9 @@ export const SECTIONS: { id: SectionId; label: string; icon: LucideIcon; fields:
     id: "details",
     label: "Project details",
     icon: FileText,
-    fields: ["name", "short_description", "project_type", "category", "post_languages", "problem", "outcome", "audience"],
+    fields: ["name", "short_description", "project_type", "category", "post_languages", "problem", "outcome"],
   },
-  { id: "demo", label: "Demo & links", icon: Play, fields: ["video", "repo"] },
+  { id: "demo", label: "Demo & links", icon: Play, fields: ["video"] },
   { id: "technology", label: "Technology", icon: Layers, fields: ["languages", "tools"] },
   {
     id: "setup",
@@ -25,7 +25,6 @@ export const SECTIONS: { id: SectionId; label: string; icon: LucideIcon; fields:
 export const READY_ITEMS: { label: string; fields: string[] }[] = [
   { label: "Project details complete", fields: SECTIONS[0].fields },
   { label: "Demo video uploaded", fields: ["video"] },
-  { label: "Repository linked", fields: ["repo"] },
   { label: "Technology stack added", fields: SECTIONS[2].fields },
 ];
 

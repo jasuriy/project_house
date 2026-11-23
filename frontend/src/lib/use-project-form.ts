@@ -30,17 +30,23 @@ function isBlank(value: unknown): boolean {
   return value === null || value === undefined;
 }
 
-export function missingFields(
-  catalog: Catalog,
-  form: ProjectForm,
-  video: UploadedVideo | null,
-  repo: LinkedRepo | null,
-): Set<string> {
+export function missingFields(catalog: Catalog, form: ProjectForm, video: UploadedVideo | null): Set<string> {
   return new Set(
-    catalog.required_fields.filter((field) =>
-      field === "video" ? !video : field === "repo" ? !repo : isBlank(form[field as FormField]),
-    ),
+    catalog.required_fields.filter((field) => (field === "video" ? !video : isBlank(form[field as FormField]))),
   );
+}
+
+/** The linked repository's address as shown in the box (without https://). */
+export const linkedRepoText = (repo: LinkedRepo | null) => repo?.snapshot.html_url.replace(/^https?:\/\//, "") ?? "";
+
+/**
+ * The repository is optional (D25), but a link that is typed and not connected yet (or still
+ * being checked) must not be dropped silently on Render.
+ */
+export function repoPending(state: ProjectFormState): boolean {
+  if (state.repoLinking) return true;
+  const typed = state.repoText?.trim() ?? "";
+  return typed !== "" && typed !== linkedRepoText(state.repo);
 }
 
 /** The server's two date rules, shown while typing (the server checks them again on Render). */
@@ -62,6 +68,9 @@ export function useProjectForm() {
   const [form, setForm] = useState<ProjectForm>(EMPTY_FORM);
   const [video, setVideoState] = useState<UploadedVideo | null>(null);
   const [repo, setRepo] = useState<LinkedRepo | null>(null);
+  // What is typed in the repository box; null shows the linked repository instead.
+  const [repoText, setRepoText] = useState<string | null>(null);
+  const [repoLinking, setRepoLinking] = useState(false);
   const videoRef = useRef<UploadedVideo | null>(null);
   // A ref, not state: a second click must be refused before React re-renders the button.
   const submittingRef = useRef(false);
@@ -81,6 +90,8 @@ export function useProjectForm() {
     setForm(EMPTY_FORM);
     setVideo(null);
     setRepo(null);
+    setRepoText(null);
+    setRepoLinking(false);
   }, [setVideo]);
 
   // Runs when the page is hidden (another page of the site opened, including the new project's
@@ -107,7 +118,7 @@ export function useProjectForm() {
     }
   }, [form, video, repo]);
 
-  return { form, video, repo, setField, setVideo, setRepo, submit };
+  return { form, video, repo, repoText, repoLinking, setField, setVideo, setRepo, setRepoText, setRepoLinking, submit };
 }
 
 export type ProjectFormState = ReturnType<typeof useProjectForm>;

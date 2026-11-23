@@ -59,16 +59,6 @@ export function DetailsSection({ form, setField, catalog, errorFor }: SectionPro
             options={catalog.project_types.map((t) => ({ ...t, icon: TYPE_ICONS[t.id] ?? Monitor }))}
           />
         </Field>
-        <label className="flex w-fit cursor-pointer items-center gap-[8px] text-[11.5px] font-medium text-ink-2">
-          <input
-            type="checkbox"
-            checked={form.ai_powered}
-            onChange={(e) => setField("ai_powered", e.target.checked)}
-            className="h-[15px] w-[15px] accent-primary"
-          />
-          <Sparkle size={15} strokeWidth={1.7} aria-hidden="true" className="text-primary" />
-          AI powered
-        </label>
         <div className="grid grid-cols-1 gap-[9px] sm:grid-cols-2 sm:gap-x-[14px]">
           <Field id="category" label="Category" required error={errorFor("category")}>
             <SelectInput
@@ -97,9 +87,6 @@ export function DetailsSection({ form, setField, catalog, errorFor }: SectionPro
             {text("outcome", "outcome", true)}
           </Field>
         </div>
-        <Field id="audience" label="Who is it for? (audience)" required error={errorFor("audience")}>
-          {text("audience", "audience")}
-        </Field>
       </div>
     </Card>
   );
@@ -155,12 +142,13 @@ export function TechSection({ form, setField, catalog, errorFor }: SectionProps)
 
 export function SetupSection({ form, setField, catalog, errorFor }: SectionProps) {
   const limit = catalog.text_limits;
-  const input = (field: FormField) => (
+  const input = (field: FormField, placeholder?: string) => (
     <TextInput
       id={field}
       value={form[field] as string | null}
       onChange={(v) => setField(field, v as never)}
       maxLength={limit[field]}
+      placeholder={placeholder}
       invalid={!!errorFor(field)}
     />
   );
@@ -178,10 +166,10 @@ export function SetupSection({ form, setField, catalog, errorFor }: SectionProps
           />
         </Field>
         <Field id="getting_started" label="Getting started" required error={errorFor("getting_started")}>
-          {input("getting_started")}
+          {input("getting_started", "e.g. npm install, npm run dev")}
         </Field>
         <Field id="requirements" label="Requirements" required error={errorFor("requirements")}>
-          {input("requirements")}
+          {input("requirements", "e.g. Python 3.11+, Node 20")}
         </Field>
         <Field id="license" label="License" required error={errorFor("license")}>
           <SelectInput
