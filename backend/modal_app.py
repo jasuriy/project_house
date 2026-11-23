@@ -1,7 +1,7 @@
 """Prostagram API on Modal (production).
 
     uv run modal deploy modal_app.py                # the API (push day)
-    uv run modal run modal_app.py::migrate          # alembic upgrade head on the production database
+    uv run modal run modal_app.py::migrate          # alembic upgrade head (production database)
 
 Every setting comes from the Modal secret "projecthouse-prod", with the same names as
 backend/.env.example; no value lives here. Functions run in the EU, near the Neon database
