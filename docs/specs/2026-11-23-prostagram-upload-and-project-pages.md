@@ -274,6 +274,12 @@ Each step ends with a report to Bek before the next starts.
 
 ## 13. Deferred
 
-- Old local Docker database container of the previous app: left alone; removed later if Bek wants.
+- Old local Docker setup of the previous app (incident 2026-11-23): the first `docker compose up` of the
+  new compose file replaced the old container `project_house-db-1` (same compose project name). Its
+  data volume `project_house_pgdata` is intact [V]; the stopped containers `project_house-frontend-1`
+  and `project_house-backend-1` still exist. The old local site can only return by checking out d55f266.
+  The new compose file now has its own project name (`prostagram`). Old volume and containers: removed
+  later if Bek wants.
+- CI: the old GitHub Actions workflow was deleted with the old code; a new one is not set up yet.
 - Orphan videos (a draft abandoned after upload): not cleaned up yet.
 - Rate limiting and abuse protection: not needed while only friends use the app (Bek, 2026-11-23).
