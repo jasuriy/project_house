@@ -11,9 +11,17 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BACKEND_DIR / ".env", extra="ignore")
 
-    # No default on purpose: a missing value must stop the app, never fall back to a
-    # development database by accident.
+    # No defaults on purpose: a missing value must stop the app, never fall back to a
+    # development database or bucket by accident.
     database_url: str
+    r2_account_id: str
+    r2_access_key_id: str
+    r2_secret_access_key: str
+    r2_bucket: str
+
+    # Optional. Without it GitHub allows 60 requests per hour per server address; a token
+    # (no scopes needed for public repos) raises that to 5,000.
+    github_token: str = ""
 
 
 @lru_cache

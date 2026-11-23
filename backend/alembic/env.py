@@ -10,12 +10,12 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 from app.config import get_settings
 from app.db import Base
+from app.projects import models as _projects_models  # noqa: F401  (registers the table)
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Table modules are imported here as they are added, so autogenerate can see them.
 target_metadata = Base.metadata
 
 

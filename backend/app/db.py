@@ -1,8 +1,9 @@
 """Database engine, session dependency and the base class for tables."""
 
 from collections.abc import AsyncIterator
+from datetime import datetime
 
-from sqlalchemy import MetaData
+from sqlalchemy import DateTime, MetaData
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -20,6 +21,8 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+    # Every datetime column stores a moment with its time zone (timestamptz).
+    type_annotation_map = {datetime: DateTime(timezone=True)}
 
 
 engine = create_async_engine(get_settings().database_url, pool_pre_ping=True)

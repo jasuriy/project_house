@@ -41,14 +41,39 @@ versions in `pyproject.toml` and locked in `uv.lock`, so every machine installs 
 
 ```
 backend/app/
-  main.py      builds the app: error handlers, routers, closing DB connections on shutdown
+  main.py      builds the app: error handlers, routers, "no-store", closing DB connections
   config.py    settings from environment variables (and backend/.env in development)
   db.py        database engine, one session per request, base class for tables
   errors.py    turns every error into one JSON shape
   health.py    GET /api/health
+  catalog.py   every fixed list, text limit, upload rule and the tech catalog; GET /api/v1/catalog
+  storage.py   Cloudflare R2: signs upload/download links, checks and deletes files
+  github.py    reads a public repo once and makes its preview
+  projects/    the project feature, split by job:
+    models.py    the projects table
+    schemas.py   what each endpoint accepts and returns (the API contract)
+    service.py   the business rules (drafts, uploads, repo, publishing)
+    router.py    HTTP only: read the request, call the service, return the answer
 backend/alembic/   database migrations (versioned changes to the tables)
 backend/tests/     tests that run against a real PostgreSQL test database
 ```
+
+### Layers inside a feature
+
+```
+router.py  ->  service.py  ->  models.py (database)
+  HTTP          rules            tables
+```
+
+- The **router** knows HTTP (paths, status codes) and nothing about rules.
+- The **service** holds every rule ("a published project cannot be changed", "an ongoing project
+  has no finish date") and knows nothing about HTTP. It can be tested and reused without a request.
+- **Who saves to the database:** each public service function is one unit of work and calls
+  `commit` itself, at its end. Routers never commit. One rule means every change is saved exactly once,
+  and a function that fails halfway saves nothing.
+- Outside services (R2, GitHub) reach the service as parameters. The router gets them from
+  FastAPI (`Depends(get_storage)`), and tests swap in fakes (`app.dependency_overrides`), with no
+  code change in the service.
 
 ### How one request flows
 
@@ -102,6 +127,61 @@ Why: the frontend needs one place that shows errors, not one per endpoint.
   it (Neon closes idle connections). On shutdown the pool is closed (`main.py`, `lifespan`).
 - Constraint names follow a fixed pattern (`db.py`, `NAMING_CONVENTION`), so migrations are
   readable and the same on every machine.
+
+### The projects table: draft and published in one row
+
+- A project is created empty when the person starts typing, and every change is saved
+  ("autosave", `PATCH /api/v1/projects/{id}`). There is no separate drafts table.
+- `published_at` is the only switch: empty means draft, a time means published. A second
+  "state" column would duplicate it and could disagree with it.
+- The id is a random UUID: without login, a counting number (1, 2, 3...) would let anyone open other
+  people's drafts by guessing.
+- `slug` (the page address, `/projects/reflex`) is set when publishing, made from the name. The
+  database has a unique rule on it; if two projects want "reflex" at the same moment, the second one
+  hits that rule, and the service retries with "reflex-2". Checking first and then saving would leave
+  a gap between the two steps where both could pass.
+- Lists (languages, deliverables) are PostgreSQL arrays; the repo preview is JSON (`jsonb`), because it
+  is always read and written as one piece.
+- **What is required** is decided in one place, `service.missing_fields()`. Every project answer
+  includes that list, the upload page shows it, and publishing checks it again. The frontend
+  has no copy of the rule that could drift.
+
+### Uploading a video (presigned URLs)
+
+```
+1. browser -> API   "I want to upload reflex-demo.mp4, video/mp4, 33,372,331 bytes"
+2. API              checks type and size, signs a one-time upload link (15 minutes)
+3. browser -> R2    uploads the file straight to R2 with that link (progress bar)
+4. browser -> API   "done"
+5. API -> R2        checks the file is really there, with the right size and type,
+                    then saves its key on the project (and deletes the replaced video)
+```
+
+- **Why not through our server:** a Vercel function accepts at most 4.5 MB per request and a Modal
+  request may last at most 150 s; a 300 MB video breaks both, and the traffic would be paid twice.
+- **What the signature locks:** the link is valid for one file name, one content type and one exact
+  size. Verified on R2: a different size or type is refused with 403.
+- **Step 5 is still needed:** the browser could skip the upload or send something else, so the API
+  never trusts the browser's "done" without looking at R2 itself.
+- **Watching a video:** the bucket is private. Each project answer contains fresh download links,
+  valid for one hour, so a link that leaks stops working. Seeking works because R2 answers "give
+  me bytes 1000-2000" requests (verified: 206 Partial Content).
+- **boto3 and async:** boto3 (the S3 library) is not async. Signing a link is pure computation and
+  is fine, but checking or deleting a file is a network call. It runs in a worker thread
+  (`asyncio.to_thread`), so one slow R2 call does not freeze every other request.
+
+### Repository preview
+
+When a repo is linked, the API reads it from GitHub once (repo info, root folder list, README) and
+stores a small preview with the project. Showing a project never calls GitHub: GitHub allows only 60
+anonymous requests per hour from one server address, and an optional `GITHUB_TOKEN` raises that to
+5,000 (useful on Modal, whose outgoing addresses may be shared with other users).
+
+### No caching of API answers
+
+Every `/api` answer carries `Cache-Control: no-store` (`main.py`). The answers contain download links
+that expire after an hour and drafts that change every second, and on Vercel they pass through a
+proxy. A cached answer could hand out dead links or one person's draft to another.
 
 ### Tests
 

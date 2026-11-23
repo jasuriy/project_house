@@ -5,15 +5,17 @@ requires-python = "==3.13.*"
 dependencies = [
     "alembic==1.20.1",
     "asyncpg==0.32.0",
+    "boto3==1.44.9",
     "fastapi==0.165.0",
+    "httpx==0.28.1",
     "pydantic-settings==2.16.3",
+    "python-slugify==9.2.0",
     "sqlalchemy[asyncio]==2.1.9",
     "uvicorn[standard]==0.54.0",
 ]
 
 [dependency-groups]
 dev = [
-    "httpx==0.28.1",
     "pytest==9.2.0",
     "pytest-asyncio==1.5.0",
     "ruff==0.17.6",

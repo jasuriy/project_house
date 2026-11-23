@@ -54,7 +54,7 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | T2 | "Render project" checks all required fields; if one is missing it scrolls to it and shows the error. When everything is valid the project becomes published and the browser opens its project page. | The mockup shows "Ready to render" and a "Render project" button. |
 | T3 | Project ids are random UUIDs. | Without login, a guessable number would let anyone edit someone else's draft by counting. |
 | T4 | Empty optional fields hide their element on the project page (How it works card, Limitations card, Timeline row). | No empty boxes. |
-| T5 | A custom technology typed by the user goes to an "Other" row on the project page. | Its group is not known. |
+| T5 | A custom technology typed into "Programming languages" goes to the Languages row; one typed into "Frameworks & tools" goes to an "Other" row. | The field tells us it is a language; a tool's group is not known. |
 | T6 | Video formats: MP4 and WebM only. | Every browser plays them; MOV plays reliably only in Safari [A]. |
 | T7 | First frame: the browser takes a still image of the video's first frame when the video is chosen and uploads it next to the video as a JPEG. | Some mobile browsers (Safari on iPhone) do not draw a video's first frame without a poster image [A, checked during the build]. |
 | T8 | Tablet and phone layouts are designed by Claude in the same style; the mockups are desktop only. | No mockup exists for them. |
@@ -160,23 +160,27 @@ with the R2 secret, that allows exactly one upload of one file to one place for 
 ### 7.2 Flow
 
 ```
-1. browser -> backend   POST /api/v1/projects/{id}/video/upload-url  {file name, type, size}
+1. browser -> backend   POST /api/v1/projects/{id}/uploads/video/url  {file name, type, size}
 2. backend              checks: type is video/mp4 or video/webm, size <= 300 MB (314,572,800 bytes)
                         signs a PUT URL for key videos/{project_id}/{random}.{ext}, valid 15 min,
                         with the exact Content-Type and Content-Length signed in
 3. browser -> R2        PUT the file to that URL (progress bar from upload events)
-4. browser -> backend   POST /api/v1/projects/{id}/video/complete  {key, duration}
+4. browser -> backend   POST /api/v1/projects/{id}/uploads/video/complete  {key, file name, duration}
 5. backend -> R2        HEAD the object: exists, size and type match; then saves the key on the
                         project and deletes the previous video, if any
 ```
 
-The first-frame JPEG (T7) uses the same flow with key `posters/{project_id}/{random}.jpg`, max 2 MB.
+The first-frame JPEG (T7) uses the same flow (`uploads/poster/...`) with key
+`posters/{project_id}/{random}.jpg`, max 2 MB.
+
+Verified live on R2 (2026-11-23) with the 31.8 MB reflex video: a PUT with a different size or
+content type than signed is refused with 403 [V]; the real upload returns 200 [V].
 
 ### 7.3 Playback
 
 The bucket stays private. When the project page is rendered, the backend signs a GET URL for the video
 and the poster, valid for 1 hour. The browser plays the video from R2 directly. Seeking works because
-R2 answers byte-range requests [A: S3-compatible GET supports Range; checked during the build].
+R2 answers byte-range requests [V: a signed GET with `Range: bytes=0-99` returned 206, 2026-11-23].
 
 - The project page is rendered fresh on every request and never cached (by Next.js or Vercel);
   a cached page would carry expired links and the video would fail with 403.
@@ -210,12 +214,17 @@ returned limit 60]. Linking again refreshes the snapshot. Only public repos can 
   browser calling the Modal URL directly, needs CORS on FastAPI and a cross-site cookie later.
   Video bytes are the exception: they go browser -> R2 directly (section 7).
 - FastAPI, SQLAlchemy 2 (async), Alembic, PostgreSQL. Exact versions pinned in the plan.
-- One table `projects` (UUID id, draft/published state, every form field above, video and poster
-  keys, video size and duration, repo URL and snapshot as JSON, created/updated/published times,
-  slug unique among published projects).
-- Endpoints (`/api/v1`): `GET /catalog`; `POST /projects` (create draft); `PATCH /projects/{id}`
-  (autosave, drafts only); `POST /projects/{id}/video/upload-url`, `.../video/complete`, the same two
-  for the poster; `POST /projects/{id}/repo`; `POST /projects/{id}/render`; `GET /projects/by-slug/{slug}`.
+- One table `projects` (UUID id, every form field above, video and poster keys, video size and
+  duration, repo URL and snapshot as JSON, created/updated times). `published_at` is NULL for a
+  draft and set when published; `slug` is unique and set only when published.
+- Endpoints (`/api/v1`): `GET /catalog` (all lists, text limits, upload rules, tech catalog);
+  `POST /projects` (create draft); `GET /projects/{id}` (reopen a draft); `PATCH /projects/{id}`
+  (autosave, drafts only); `POST /projects/{id}/uploads/{video|poster}/url` and `.../complete`;
+  `POST /projects/{id}/repo`; `POST /projects/{id}/publish` (the "Render project" button);
+  `GET /projects/by-slug/{slug}` (project page, step 5).
+- Every project response carries `missing_fields`, computed by the backend. The upload page's
+  section checks and "Ready to render" list read it, and publishing re-checks it, so the rule of
+  what is required exists in one place.
 - One error shape for every error: `{"error": {"code": "...", "message": "..."}}`.
 - Tests: pytest against a real local PostgreSQL; R2 and GitHub are faked in tests.
 - `docs/architecture.md` is written alongside the code in plain language, so Bek can explain every part
