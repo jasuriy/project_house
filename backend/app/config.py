@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Optional. Without it GitHub allows 60 requests per hour per server address; a token
     # (no scopes needed for public repos) raises that to 5,000.
-    github_token: str = ""
+    github_api_token: str = ""
 
 
 @lru_cache

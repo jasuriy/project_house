@@ -174,7 +174,7 @@ Why: the frontend needs one place that shows errors, not one per endpoint.
 
 When a repo is linked, the API reads it from GitHub once (repo info, root folder list, README) and
 stores a small preview with the project. Showing a project never calls GitHub: GitHub allows only 60
-anonymous requests per hour from one server address, and an optional `GITHUB_TOKEN` raises that to
+anonymous requests per hour from one server address, and an optional `GITHUB_API_TOKEN` raises that to
 5,000 (useful on Modal, whose outgoing addresses may be shared with other users).
 
 ### No caching of API answers

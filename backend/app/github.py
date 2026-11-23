@@ -125,4 +125,4 @@ class GitHub:
 
 @lru_cache
 def get_github() -> GitHub:
-    return GitHub(token=get_settings().github_token)
+    return GitHub(token=get_settings().github_api_token)
