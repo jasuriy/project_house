@@ -2,7 +2,7 @@
 
 /* Design tokens, sampled from docs/mockups/upload-page.png and project-page.png. */
 @theme {
-  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-figtree), var(--font-onest), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   --color-page: #fbf7f6;

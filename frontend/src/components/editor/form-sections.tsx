@@ -123,7 +123,7 @@ export function TechSection({ form, setField, catalog, errorFor }: SectionProps)
 
   const row = (field: "languages" | "tools", label: string, options: TagOption[]) => (
     <div className="grid grid-cols-1 gap-[5px] sm:grid-cols-[140px_1fr] sm:gap-x-[0px]">
-      <label htmlFor={field} className="whitespace-nowrap pt-[6px] text-[11px] font-bold leading-[14px] text-ink-2">
+      <label htmlFor={field} className="whitespace-nowrap pt-[6px] text-[11px] font-bold leading-[14px] text-ink-2 max-sm:pt-0 max-sm:text-[13px]">
         {label}
         <span className="ml-[4px] text-danger">*</span>
       </label>
@@ -214,16 +214,22 @@ export function SetupSection({ form, setField, catalog, errorFor }: SectionProps
             className="h-[52px]"
           />
         </Field>
-        <Field id="started_on" label="Started">
-          <DateInput id="started_on" value={form.started_on} onChange={(v) => setField("started_on", v)} />
+        <Field id="started_on" label="Started" error={errorFor("started_on")}>
+          <DateInput
+            id="started_on"
+            value={form.started_on}
+            onChange={(v) => setField("started_on", v)}
+            invalid={!!errorFor("started_on")}
+          />
         </Field>
-        <Field id="finished_on" label="Finished">
+        <Field id="finished_on" label="Finished" error={errorFor("finished_on")}>
           <div className="flex items-center gap-[12px]">
             <DateInput
               id="finished_on"
               value={form.ongoing ? null : form.finished_on}
               onChange={(v) => setField("finished_on", v)}
               disabled={form.ongoing}
+              invalid={!!errorFor("finished_on")}
             />
             <label className="flex shrink-0 cursor-pointer items-center gap-[6px] text-[11.5px] text-ink-2">
               <input
@@ -249,11 +255,13 @@ function DateInput({
   value,
   onChange,
   disabled,
+  invalid,
 }: {
   id: string;
   value: string | null;
   onChange: (value: string | null) => void;
   disabled?: boolean;
+  invalid?: boolean;
 }) {
   return (
     <input
@@ -261,8 +269,9 @@ function DateInput({
       type="date"
       value={value ?? ""}
       disabled={disabled}
+      aria-invalid={invalid || undefined}
       onChange={(e) => onChange(e.target.value || null)}
-      className="h-[25px] w-full min-w-0 rounded-[6px] border border-field-line bg-field px-[10px] text-[12.5px] text-ink-2 outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-50"
+      className={`h-[25px] w-full min-w-0 rounded-[6px] border max-sm:h-[44px] max-sm:text-[16px] ${invalid ? "border-danger" : "border-field-line"} bg-field px-[10px] text-[12.5px] text-ink-2 outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-50`}
     />
   );
 }

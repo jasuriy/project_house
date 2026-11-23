@@ -7,8 +7,9 @@
 // - Changes are saved ~800 ms after typing stops; only the changed fields are sent.
 // - Every API call goes through one queue, so answers arrive in the order requests were sent
 //   and an older answer can never overwrite a newer one.
-// - When an answer arrives, a field takes the server's value only if the person has not typed in
-//   it since the request left. That keeps newer typing and still picks up the server's clean-up
+// - A server answer never overwrites a field with unsaved typing: a field takes the server's
+//   value only if it is not waiting to be saved and was not edited since the request left.
+//   That keeps the person's typing and still picks up the server's clean-up
 //   (trimmed text, "python" -> "Python").
 
 import { useRouter } from "next/navigation";
@@ -44,10 +45,11 @@ export function useProjectDraft(draftIdFromUrl: string | null) {
   const [loading, setLoading] = useState(draftIdFromUrl !== null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{ code: string; message: string } | null>(null);
 
   const idRef = useRef<string | null>(null);
   const creatingRef = useRef<Promise<string> | null>(null);
+  const projectRef = useRef<Project | null>(null);
   const formRef = useRef<ProjectForm>(EMPTY_FORM);
   const versionsRef = useRef<Versions>(zeroVersions());
   const pendingRef = useRef<Set<FormField>>(new Set());
@@ -56,10 +58,12 @@ export function useProjectDraft(draftIdFromUrl: string | null) {
 
   /** Takes a server answer; `sent` are the field versions at the moment the request left. */
   const applyServer = useCallback((answer: Project, sent: Versions | null) => {
+    projectRef.current = answer;
     setProject(answer);
     const next = { ...formRef.current };
     for (const field of FORM_FIELDS) {
-      if (sent === null || versionsRef.current[field] === sent[field]) {
+      const untouched = sent === null || versionsRef.current[field] === sent[field];
+      if (untouched && !pendingRef.current.has(field)) {
         (next as Record<string, unknown>)[field] = answer[field];
       }
     }
@@ -95,12 +99,19 @@ export function useProjectDraft(draftIdFromUrl: string | null) {
   /** The draft's id; creates the draft on the first call (and only once). */
   const ensureDraft = useCallback((): Promise<string> => {
     if (idRef.current) return Promise.resolve(idRef.current);
-    creatingRef.current ??= api.createProject().then((created) => {
-      idRef.current = created.id;
-      setProject(created);
-      router.replace(`/new?draft=${created.id}`, { scroll: false });
-      return created.id;
-    });
+    creatingRef.current ??= api.createProject().then(
+      (created) => {
+        idRef.current = created.id;
+        projectRef.current = created;
+        setProject(created);
+        router.replace(`/new?draft=${created.id}`, { scroll: false });
+        return created.id;
+      },
+      (error: unknown) => {
+        creatingRef.current = null; // let the next attempt try again
+        throw error;
+      },
+    );
     return creatingRef.current;
   }, [router]);
 
@@ -124,25 +135,35 @@ export function useProjectDraft(draftIdFromUrl: string | null) {
     [enqueue, ensureDraft, applyServer],
   );
 
-  /** Sends the fields changed since the last save. */
-  const flush = useCallback((): Promise<unknown> => {
+  /** Saves the fields changed so far. Resolves either way; failures show in saveState. */
+  const flush = useCallback((): Promise<void> => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
-    if (pendingRef.current.size === 0) return queueRef.current;
-    const fields = [...pendingRef.current];
-    pendingRef.current.clear();
+    if (pendingRef.current.size === 0) return queueRef.current.then(() => undefined);
     setSaveState("saving");
-    return send((id) => api.updateProject(id, pick(formRef.current, fields)))
-      .then(() => {
-        if (pendingRef.current.size === 0) setSaveState("saved");
+    return enqueue(async () => {
+      if (pendingRef.current.size === 0) return; // an earlier save already sent them
+      const id = await ensureDraft();
+      // Read, clear and snapshot in one step, right when the request leaves.
+      const fields = [...pendingRef.current];
+      pendingRef.current.clear();
+      const sent = { ...versionsRef.current };
+      try {
+        const answer = await api.updateProject(id, pick(formRef.current, fields));
+        applyServer(answer, sent);
         setSaveError(null);
-      })
-      .catch((error: unknown) => {
+        if (pendingRef.current.size === 0) setSaveState("saved");
+      } catch (error) {
         for (const field of fields) pendingRef.current.add(field); // not saved: send again next time
         setSaveState("error");
-        setSaveError(error instanceof ApiError ? error.message : "Could not save");
-      });
-  }, [send]);
+        setSaveError(
+          error instanceof ApiError
+            ? { code: error.code, message: error.message }
+            : { code: "network_error", message: "Could not reach the server" },
+        );
+      }
+    });
+  }, [enqueue, ensureDraft, applyServer]);
 
   const setField = useCallback(
     <K extends FormField>(field: K, value: ProjectForm[K]) => {
@@ -168,11 +189,17 @@ export function useProjectDraft(draftIdFromUrl: string | null) {
     return () => window.removeEventListener("pagehide", onLeave);
   }, []);
 
-  /** Saves what is pending, then publishes. Answers the published project. */
+  /** Saves what is pending, then publishes. Refuses if the latest changes could not be saved. */
   const publish = useCallback(async (): Promise<Project> => {
     await flush();
+    if (pendingRef.current.size > 0) {
+      throw new ApiError(409, "not_saved", "Your latest changes are not saved yet");
+    }
     return send((id) => api.publish(id));
   }, [flush, send]);
+
+  /** The newest server answer (also between renders). */
+  const latestProject = useCallback(() => projectRef.current, []);
 
   return {
     form,
@@ -186,6 +213,7 @@ export function useProjectDraft(draftIdFromUrl: string | null) {
     enqueue,
     send,
     publish,
+    latestProject,
   };
 }
 

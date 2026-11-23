@@ -1,6 +1,7 @@
 // Browser-side helpers for the demo video: read it locally, then upload it straight to R2.
 
 const POSTER_MAX_WIDTH = 1280;
+const READ_TIMEOUT_MS = 10_000;
 
 /** Reads a chosen video file in the browser: its length and a JPEG of its first frame. */
 export function readVideo(file: File): Promise<{ duration: number | null; poster: Blob | null }> {
@@ -11,13 +12,19 @@ export function readVideo(file: File): Promise<{ duration: number | null; poster
     video.preload = "auto";
     video.src = url;
 
+    let done = false;
     const finish = (poster: Blob | null) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
       // Some WebM files report an infinite length; send "unknown" instead.
       const duration = Number.isFinite(video.duration) ? video.duration : null;
       resolve({ duration, poster });
     };
 
+    // If the browser cannot decode the file, upload it anyway, without a first frame.
+    const timer = setTimeout(() => finish(null), READ_TIMEOUT_MS);
     video.onerror = () => finish(null);
     video.onloadeddata = () => {
       video.currentTime = Math.min(0.1, video.duration || 0); // a frame just after the start

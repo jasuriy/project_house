@@ -27,7 +27,13 @@ export function ProjectEditor() {
   }, []);
 
   const missing = new Set(draft.project?.missing_fields ?? ALL_REQUIRED);
-  const errorFor = (field: string) => (showErrors && missing.has(field) ? "Required" : null);
+  const errorFor = (field: string) => {
+    if (draft.saveError?.code === "invalid_dates" && (field === "started_on" || field === "finished_on")) {
+      return draft.saveError.message;
+    }
+    return showErrors && missing.has(field) ? "Required" : null;
+  };
+  const latestMissing = () => new Set(draft.latestProject()?.missing_fields ?? ALL_REQUIRED);
 
   async function render() {
     setShowErrors(true);
@@ -38,7 +44,7 @@ export function ProjectEditor() {
       const published = await draft.publish();
       router.push(`/projects/${published.slug}`);
     } catch (e) {
-      if (e instanceof ApiError && e.code === "project_incomplete") scrollToFirstMissing(missing);
+      if (e instanceof ApiError && e.code === "project_incomplete") scrollToFirstMissing(latestMissing());
       else setRenderError(e instanceof ApiError ? e.message : "Could not render the project");
       setRendering(false);
     }
@@ -64,23 +70,29 @@ export function ProjectEditor() {
       nav={<SideNav missing={missing} />}
       middle={
         <>
-          <DetailsSection {...sectionProps} />
-          <TechSection {...sectionProps} />
-          <SetupSection {...sectionProps} />
+          <div className="order-1 lg:order-none">
+            <DetailsSection {...sectionProps} />
+          </div>
+          <div className="order-3 lg:order-none">
+            <TechSection {...sectionProps} />
+          </div>
+          <div className="order-4 lg:order-none">
+            <SetupSection {...sectionProps} />
+          </div>
         </>
       }
       right={
         <>
-          <div id="demo" className="flex scroll-mt-4 flex-col gap-[13px]">
+          <div id="demo" className="order-2 flex scroll-mt-4 flex-col gap-[14px] lg:order-none lg:gap-[13px]">
             <VideoCard draft={draft} catalog={catalog} error={errorFor("video")} />
             <RepoCard draft={draft} error={errorFor("repo")} />
           </div>
           {renderError && (
-            <p role="alert" className="text-[13px] text-danger">
+            <p role="alert" className="order-5 text-[13px] text-danger lg:order-none">
               {renderError}
             </p>
           )}
-          <div className="mt-[4px]">
+          <div className="order-5 lg:order-none lg:mt-[4px]">
             <ReadyCard missing={missing} />
           </div>
         </>
@@ -111,18 +123,20 @@ function EditorLayout({
   return (
     <div className="min-h-screen">
       {header}
-      <main className="mx-auto max-w-[1280px] pl-[31px] pr-[29px] pb-[40px] pt-[13px]">
-        <h1 className="pl-[14px] text-[32.7px] font-extrabold leading-[38px] tracking-[-0.025em] text-ink">
+      <main className="mx-auto max-w-[1280px] px-[16px] pb-[40px] pt-[13px] md:px-[24px] lg:pl-[31px] lg:pr-[29px]">
+        <h1 className="text-[26px] font-extrabold leading-[32px] tracking-[-0.025em] text-ink lg:pl-[14px] lg:text-[32.7px] lg:leading-[38px]">
           Build your project page
         </h1>
-        <p className="pl-[15px] text-[15.4px] leading-[20px] text-muted">
+        <p className="text-[15px] leading-[20px] text-muted lg:pl-[15px] lg:text-[15.4px]">
           Everything someone needs to understand your project.
         </p>
         {children ?? (
-          <div className="mt-[18px] grid grid-cols-[185px_minmax(0,511fr)_minmax(0,492fr)] items-start gap-x-[15px]">
-            <div className="pt-[9px]">{nav}</div>
-            <div className="flex flex-col gap-[14px]">{middle}</div>
-            <div className="flex flex-col gap-[13px]">{right}</div>
+          // Desktop: side nav | form | video, repo, ready. Below 1024 px the two column wrappers
+          // dissolve ("contents") and the cards stack in side-nav order (the order-* classes).
+          <div className="mt-[18px] flex flex-col gap-[14px] lg:grid lg:grid-cols-[185px_minmax(0,511fr)_minmax(0,492fr)] lg:items-start lg:gap-x-[15px] lg:gap-y-0">
+            <div className="hidden pt-[9px] lg:block">{nav}</div>
+            <div className="contents lg:flex lg:flex-col lg:gap-[14px]">{middle}</div>
+            <div className="contents lg:flex lg:flex-col lg:gap-[13px]">{right}</div>
           </div>
         )}
       </main>

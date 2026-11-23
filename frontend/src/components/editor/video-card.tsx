@@ -104,7 +104,7 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
       )}
 
       {video && !job && (
-        <div className="mt-[5px] flex items-center gap-[12px]">
+        <div className="mt-[5px] flex flex-wrap items-center gap-x-[12px] gap-y-[6px]">
           <span className="flex h-[33px] w-[33px] items-center justify-center rounded-[7px] border border-line bg-[#fffdfc]">
             <Folder size={18} strokeWidth={1.6} aria-hidden="true" />
           </span>
@@ -122,7 +122,7 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
           <button
             type="button"
             onClick={choose}
-            className="ml-[16px] flex items-center gap-[6px] rounded-[5px] text-[12px] font-semibold text-primary outline-none hover:text-primary-strong focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="flex items-center gap-[6px] rounded-[5px] text-[12px] font-semibold text-primary max-sm:min-h-[44px] max-sm:text-[14px] sm:ml-[16px] outline-none hover:text-primary-strong focus-visible:ring-2 focus-visible:ring-primary/30"
           >
             <RotateCw size={14} strokeWidth={2} aria-hidden="true" />
             Replace
@@ -139,7 +139,21 @@ export function VideoCard({ draft, catalog, error: requiredError }: { draft: Pro
   );
 }
 
-function Preview({ url, poster, duration }: { url: string; poster: string | null; duration: number | null }) {
+/**
+ * Signed links change on every answer (new signature), but the file is the same. Keep the first
+ * link while the file path is unchanged, so the player does not reload on every autosave.
+ */
+function useStableLink(link: string | null): string | null {
+  const [stable, setStable] = useState(link);
+  const path = (l: string | null) => l?.split("?")[0] ?? null;
+  if (path(stable) !== path(link)) setStable(link);
+  return path(stable) === path(link) ? stable : link;
+}
+
+function Preview(props: { url: string; poster: string | null; duration: number | null }) {
+  const url = useStableLink(props.url) ?? props.url;
+  const poster = useStableLink(props.poster);
+  const { duration } = props;
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   return (

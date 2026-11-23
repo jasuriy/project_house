@@ -25,7 +25,7 @@ export function Card({ id, icon, title, subtitle, className = "", children }: Ca
           {title}
         </h2>
       </header>
-      {subtitle && <p className="-mt-[2px] text-[11.5px] leading-[16px] text-muted">{subtitle}</p>}
+      {subtitle && <p className="-mt-[2px] text-[11.5px] leading-[16px] text-muted max-sm:text-[13.5px] max-sm:leading-[19px]">{subtitle}</p>}
       {children}
     </section>
   );

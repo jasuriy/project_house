@@ -37,8 +37,8 @@ export function RepoCard({ draft, error: requiredError }: { draft: ProjectDraft;
 
   return (
     <Card icon={<GitHubIcon size={20} />} title="GitHub repository" subtitle="Link your project repository with source code, setup, and docs.">
-      <div className="mt-[9px] flex items-center gap-[18px]">
-        <div className="flex-1">
+      <div className="mt-[9px] flex flex-wrap items-center gap-x-[18px] gap-y-[8px]">
+        <div className="min-w-[220px] flex-1">
           <label htmlFor="repo_url" className="sr-only">
             Repository link
           </label>
@@ -59,7 +59,7 @@ export function RepoCard({ draft, error: requiredError }: { draft: ProjectDraft;
                 }
               }}
               aria-invalid={!!shownError || undefined}
-              className={`h-[25px] w-full rounded-[7px] border bg-field pl-[33px] pr-[10px] text-[12.3px] text-ink-2 outline-none placeholder:text-faint focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 ${
+              className={`h-[25px] w-full rounded-[7px] border bg-field pl-[33px] max-sm:h-[44px] max-sm:text-[16px] pr-[10px] text-[12.3px] text-ink-2 outline-none placeholder:text-faint focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 ${
                 shownError ? "border-danger" : "border-field-line"
               }`}
             />
@@ -88,13 +88,15 @@ export function RepoCard({ draft, error: requiredError }: { draft: ProjectDraft;
 }
 
 function RepoPreview({ repo }: { repo: RepoSnapshot }) {
-  const readme = repo.entries.find((e) => e.name.toLowerCase() === "readme.md");
-  const rows = [...repo.entries.filter((e) => e !== readme).slice(0, readme ? PREVIEW_ROWS - 1 : PREVIEW_ROWS)];
+  // Hidden entries (.github, .devcontainer) say little about a project, so they are not shown.
+  const visible = repo.entries.filter((e) => !e.name.startsWith("."));
+  const readme = visible.find((e) => e.name.toLowerCase() === "readme.md");
+  const rows = visible.filter((e) => e !== readme).slice(0, readme ? PREVIEW_ROWS - 1 : PREVIEW_ROWS);
   if (readme) rows.push(readme);
 
   return (
-    <div className="mt-[9px] grid grid-cols-[168px_1fr] overflow-hidden rounded-[8px] border border-line bg-[#fdf9fb]">
-      <ul className="border-r border-line px-[5px] py-[5px]" aria-label="Files">
+    <div className="mt-[9px] grid grid-cols-1 sm:grid-cols-[168px_1fr] overflow-hidden rounded-[8px] border border-line bg-[#fdf9fb]">
+      <ul className="border-b border-line px-[5px] py-[5px] sm:border-b-0 sm:border-r" aria-label="Files">
         {rows.map((entry) => {
           const selected = entry === readme;
           return (
@@ -119,7 +121,7 @@ function RepoPreview({ repo }: { repo: RepoSnapshot }) {
           <FileText size={14} strokeWidth={1.7} aria-hidden="true" />
           README.md
         </p>
-        <ol className="mt-[5px] font-mono text-[7.5px] leading-[16px] text-ink-2">
+        <ol className="mt-[5px] font-mono text-[7.5px] leading-[16px] max-sm:text-[10px] max-sm:leading-[18px] text-ink-2">
           {repo.readme_lines.slice(0, README_LINES).map((line, i) => (
             <li key={i} className="flex gap-[14px]">
               <span className="w-[10px] shrink-0 text-right text-faint">{i + 1}</span>

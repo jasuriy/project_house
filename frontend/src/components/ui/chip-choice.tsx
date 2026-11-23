@@ -25,7 +25,7 @@ export function ChipChoice({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(id)}
-            className={`inline-flex h-[30px] items-center gap-[9px] rounded-[7px] border px-[10px] text-[11.5px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 ${
+            className={`inline-flex h-[30px] items-center gap-[9px] rounded-[7px] border px-[10px] text-[11.5px] max-sm:h-[44px] max-sm:px-[14px] max-sm:text-[14px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 ${
               selected
                 ? "border-[#d3cffd] bg-primary-soft text-primary"
                 : "border-line bg-[#fffefd] text-ink-2 hover:border-field-line"
