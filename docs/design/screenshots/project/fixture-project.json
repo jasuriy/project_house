@@ -5,7 +5,6 @@
   "name": "Quloq AI",
   "short_description": "Turn conversations into clear, searchable transcripts.",
   "project_type": "web_app",
-  "ai_powered": true,
   "category": "ai_ml",
   "post_languages": [
     "uz",
@@ -13,7 +12,6 @@
   ],
   "problem": "Long recordings are hard to review. Uzbek and Russian conversations need clear, accessible transcripts.",
   "outcome": "Upload audio, identify speakers, and search an organized transcript.",
-  "audience": "Teams, researchers & creators",
   "languages": [
     "Python",
     "TypeScript"

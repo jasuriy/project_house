@@ -16,6 +16,7 @@ from the mockup's word widths with the real Figtree font.
 | Video card | wide box, y 278-572 | 16:9 box, y 279-696 | EXPECTED (D23) |
 | Caption under the video, play icon | shown | removed | EXPECTED (decision on display page video) |
 | At a glance | x 803-1232, y 284-565 | x 803-1232, y 285-566 | MATCH |
+| Badge "AI POWERED", At a glance "For" row | drawn | removed | EXPECTED: fields removed (Bek, 2026-11-24, D25); the card keeps its mockup height |
 | At a glance "Type" value | "Web application" | "Web app" | MINOR: one label list (catalog) for both pages |
 | Timeline row | not in mockup | shown when a start date exists | EXPECTED (D13) |
 | Technology stack | x 48-560, h 201 | x 48-560, h 197 | MATCH (shifted down by the taller video) |
