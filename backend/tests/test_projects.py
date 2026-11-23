@@ -48,7 +48,7 @@ async def upload(
     """The whole upload as the browser does it: ask for a link, upload, report done."""
     ticket = await client.post(
         f"/api/v1/projects/{project_id}/uploads/{kind}/url",
-        json={"file_name": f"demo.{kind}", "content_type": content_type, "size": size},
+        json={"content_type": content_type, "size": size},
     )
     assert ticket.status_code == 200, ticket.text
     key = ticket.json()["key"]
@@ -152,6 +152,23 @@ async def test_repeated_choices_and_tech_are_kept_once(client: AsyncClient) -> N
     assert body["tools"] == ["Redis", "MyTool"]  # a typed name outside the catalog is allowed
 
 
+async def test_typed_tech_names_take_the_catalog_spelling(client: AsyncClient) -> None:
+    project_id = await new_draft(client)
+
+    body = (
+        await client.patch(
+            f"/api/v1/projects/{project_id}",
+            json={
+                "languages": ["python", "Python", "TYPESCRIPT"],
+                "tools": ["REDIS", "mytool", "MyTool"],
+            },
+        )
+    ).json()
+
+    assert body["languages"] == ["Python", "TypeScript"]
+    assert body["tools"] == ["Redis", "mytool"]  # unknown names keep the first spelling
+
+
 async def test_autosave_rejects_bad_values(client: AsyncClient) -> None:
     project_id = await new_draft(client)
     url = f"/api/v1/projects/{project_id}"
@@ -191,15 +208,9 @@ async def test_upload_link_is_given_only_for_allowed_files(client: AsyncClient) 
     project_id = await new_draft(client)
     url = f"/api/v1/projects/{project_id}/uploads/video/url"
 
-    wrong_type = await client.post(
-        url, json={"file_name": "a.mov", "content_type": "video/quicktime", "size": 10}
-    )
-    too_big = await client.post(
-        url, json={"file_name": "a.mp4", "content_type": "video/mp4", "size": 300 * MB + 1}
-    )
-    allowed = await client.post(
-        url, json={"file_name": "a.mp4", "content_type": "video/mp4", "size": 300 * MB}
-    )
+    wrong_type = await client.post(url, json={"content_type": "video/quicktime", "size": 10})
+    too_big = await client.post(url, json={"content_type": "video/mp4", "size": 300 * MB + 1})
+    allowed = await client.post(url, json={"content_type": "video/mp4", "size": 300 * MB})
 
     assert wrong_type.json()["error"]["code"] == "upload_type_not_allowed"
     assert too_big.json()["error"]["code"] == "upload_too_large"
@@ -279,6 +290,18 @@ async def test_new_video_replaces_old_video_and_its_first_frame(
     assert second["video"]["poster_url"] is None
     assert old_video in storage.deleted
     assert old_poster in storage.deleted
+
+
+async def test_new_video_is_kept_even_if_the_old_one_cannot_be_deleted(
+    client: AsyncClient, storage: FakeStorage
+) -> None:
+    project_id = await new_draft(client)
+    await upload(client, storage, project_id, "video", "video/mp4", 1000)
+    storage.fail_deletes = True
+
+    body = await upload(client, storage, project_id, "video", "video/webm", 2000)
+
+    assert body["video"]["content_type"] == "video/webm"  # saved; the old file is left behind
 
 
 async def test_first_frame_needs_a_video(client: AsyncClient, storage: FakeStorage) -> None:

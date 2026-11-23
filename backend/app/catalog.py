@@ -151,6 +151,17 @@ TECH_CATALOG: list[tuple[str, str, str | None]] = [
     ("Git", "DevOps & Tools", "git"),
 ]
 
+_TECH_BY_LOWER_NAME = {name.lower(): name for name, _, _ in TECH_CATALOG}
+
+
+def canonical_tech_names(names: list[str]) -> list[str]:
+    """Catalog spelling for catalog names ("python" -> "Python"); repeats dropped, any case."""
+    result: dict[str, str] = {}
+    for name in names:
+        result.setdefault(name.lower(), _TECH_BY_LOWER_NAME.get(name.lower(), name))
+    return list(result.values())
+
+
 router = APIRouter()
 
 

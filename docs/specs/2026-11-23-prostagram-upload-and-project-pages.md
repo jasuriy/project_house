@@ -260,6 +260,8 @@ returned limit 60]. Linking again refreshes the snapshot. Only public repos can 
 
 Done only after both pages pass review, in this order, each step confirmed with Bek:
 
+0. Before push day: write the new Modal app file (the old `modal_app.py` was deleted with the old
+   code), building its image from `backend/uv.lock`, and confirm Modal runs Python 3.13 [A].
 1. Back up the old Neon database (`pg_dump`).
 2. Empty the R2 bucket `projecthouse-images` (all old images).
 3. Drop every old table in Neon, including `alembic_version` (otherwise the new migrations collide

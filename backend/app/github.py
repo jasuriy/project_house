@@ -78,14 +78,16 @@ class GitHub:
             headers=self.headers,
             transport=self.transport,
             timeout=10,
+            follow_redirects=True,  # a renamed repo answers 301 to its new address
         ) as client:
             info = await self._get(client, f"/repos/{owner}/{repo}")
             if info is None or info.json()["private"]:
                 return None
-            contents = await self._get(client, f"/repos/{owner}/{repo}/contents")
+            full_name = info.json()["full_name"]  # current name, also after a rename
+            contents = await self._get(client, f"/repos/{full_name}/contents")
             readme = await self._get(
                 client,
-                f"/repos/{owner}/{repo}/readme",
+                f"/repos/{full_name}/readme",
                 headers={"Accept": "application/vnd.github.raw"},
             )
 

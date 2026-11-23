@@ -1,9 +1,10 @@
 """Business rules for projects: drafts, autosave, uploads, repo preview, publishing.
 
-Rule for the database: each public function here is one unit of work and commits it itself.
-Routers never commit; they only call these functions.
+Rule for the database: every function here that changes data is one unit of work and commits
+it itself. Routers never commit; they only call these functions.
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -18,6 +19,8 @@ from app.github import GitHub, GitHubUnavailable, parse_repo_url
 from app.projects.models import Project
 from app.projects.schemas import ProjectOut, UploadComplete, UploadRequest, UploadTicket, VideoOut
 from app.storage import Storage
+
+logger = logging.getLogger(__name__)
 
 REQUIRED_TEXT = [
     "name",
@@ -169,8 +172,12 @@ async def complete_upload(
 
     await session.commit()
     # Old files are deleted only after the new ones are saved, so a failure never loses both.
+    # The upload already succeeded, so a failed clean-up must not turn it into an error.
     for key in replaced:
-        await storage.delete(key)
+        try:
+            await storage.delete(key)
+        except Exception:
+            logger.exception("Could not delete replaced file %s; it is left in the bucket", key)
     await session.refresh(project)
     return project
 

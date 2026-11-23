@@ -52,7 +52,9 @@ TechName = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=catalog.MAX_TECH_NAME)
 ]
 TechList = Annotated[
-    list[TechName], Field(max_length=catalog.MAX_TECH_PER_FIELD), AfterValidator(_unique)
+    list[TechName],
+    Field(max_length=catalog.MAX_TECH_PER_FIELD),
+    AfterValidator(catalog.canonical_tech_names),
 ]
 
 
@@ -85,7 +87,6 @@ class ProjectUpdate(BaseModel):
 
 
 class UploadRequest(BaseModel):
-    file_name: str = Field(min_length=1, max_length=200)
     content_type: str = Field(max_length=100)
     size: int = Field(gt=0)
 

@@ -12,6 +12,7 @@ class FakeStorage:
     def __init__(self) -> None:
         self.files: dict[str, StoredFile] = {}
         self.deleted: list[str] = []
+        self.fail_deletes = False  # set True to act like R2 being unreachable
 
     def put(self, key: str, size: int, content_type: str) -> None:
         """What the browser's upload to the signed link would do."""
@@ -27,6 +28,8 @@ class FakeStorage:
         return self.files.get(key)
 
     async def delete(self, key: str) -> None:
+        if self.fail_deletes:
+            raise ConnectionError("R2 is unreachable")
         self.files.pop(key, None)
         self.deleted.append(key)
 

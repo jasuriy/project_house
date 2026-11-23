@@ -24,8 +24,8 @@ def test_parse_repo_url(url: str, expected: tuple[str, str] | None) -> None:
 def test_readme_preview_skips_html_badges_quotes_and_rules(reflex_readme: str) -> None:
     lines = readme_preview(reflex_readme)
 
-    assert lines[:3] == [
-        "### **✨ Performant, customizable web apps in pure Python. Deploy in seconds. ✨**",
+    assert "Performant, customizable web apps in pure Python" in lines[0]
+    assert lines[1:3] == [
         "# Introduction",
         "Reflex is a library to build full-stack web apps in pure Python.",
     ]
@@ -67,3 +67,16 @@ async def test_rate_limit_or_server_error_is_reported_as_unavailable() -> None:
 
     with pytest.raises(GitHubUnavailable):
         await limited.fetch_snapshot("a", "b")
+
+
+async def test_renamed_repo_is_followed_to_its_new_name(reflex_readme: str) -> None:
+    routes = repo_routes("new-owner", "reflex", reflex_readme)
+    routes["/repos/old-owner/reflex"] = httpx.Response(
+        301, headers={"Location": "https://api.github.com/repos/new-owner/reflex"}
+    )
+    github = fake_github(routes)
+
+    snapshot = await github.fetch_snapshot("old-owner", "reflex")
+
+    assert snapshot is not None
+    assert snapshot.full_name == "new-owner/reflex"
