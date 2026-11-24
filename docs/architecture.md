@@ -255,7 +255,7 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
 
 - **State.** The typed fields, the uploaded video (its temporary key, name, size, length), the
   repo preview and the text typed in the repo box are React state. The repo text lives here, not in
-  the repo card, so Render can refuse a link that is typed but not connected yet (`repoPending`). The checklist ("Ready to render", the side nav checks) is computed
+  the repo card, so Render can refuse a link that is typed but not connected yet (`repoPending`). The checklist ("Ready to render") is computed
   from them and the catalog's `required_fields`, with the server's blank rule (spaces only = empty).
 - **Leaving the page empties it.** F5 or closing the tab: the browser's memory is gone. Moving to
   another page of the site: Next.js keeps the page hidden (React `Activity`) and would show the old

@@ -12,7 +12,7 @@ Positions were measured by scanning card borders in both images (`diff-1280.png`
 | Draft saved | right of the header | removed | EXPECTED: nothing is saved before Render (Bek, 2026-11-24, D24) |
 | Render project button | x 1104-1250, h 29 | x 1105-1250, h 29 | MATCH |
 | Title "Build your project page" | 32.7 px, x 45 | 32.7 px, x 45 | MATCH |
-| Side nav | x 31-216, rows 37 px | same | MATCH |
+| Side nav | x 31-216, rows 37 px | none | EXPECTED: removed, page fills the width (Bek, 2026-11-24, D27) |
 | Middle column | x 232-743 | x 232-742 | MATCH |
 | Right column | x 758-1250 | x 758-1250 | MATCH |
 | Project details, first rows | label/input positions | within 3 px | MATCH |
@@ -36,6 +36,6 @@ mockup is blurry there), Onest for Cyrillic letters (Figtree has none).
 Text sizes are measured from the mockup (word widths): labels 11 px, technology chips 10.5 px,
 card subtitles 11.5 px. On phones (below 640 px) inputs are 16 px and controls 44 px tall.
 
-Other sizes: 1440 and 1920 centre the 1280 layout; 768 and below stack the sections in side-nav
-order (details, video, repo, technology, setup, ready). No horizontal scroll at 1920, 1440, 1280,
+Other sizes: since D27 the page fills every width (edges at the header's 38 px / 30 px); 768 and below stack the
+sections in form order (details, video, repo, technology, setup, ready). No horizontal scroll at 1920, 1440, 1280,
 768, 390 or 360 (scrollWidth equals clientWidth).

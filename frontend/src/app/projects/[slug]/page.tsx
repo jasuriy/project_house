@@ -22,7 +22,7 @@ export default function ProjectPage({ params }: PageProps<"/projects/[slug]">) {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <Suspense fallback={<main className="mx-auto max-w-[1280px] px-[16px] py-[40px] text-muted md:px-[48px]">Loading...</main>}>
+      <Suspense fallback={<main className="px-[16px] py-[40px] text-muted md:px-[48px]">Loading...</main>}>
         <ProjectView params={params} />
       </Suspense>
     </div>
@@ -37,7 +37,8 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
   return (
     <DemoPlayer slug={slug} video={project.video}>
       <title>{`${project.name} - Prostagram`}</title>
-      <main className="mx-auto max-w-[1280px] px-[16px] pb-[48px] pt-[8px] md:px-[24px] lg:pl-[48px] lg:pr-[47px]">
+      {/* Full width, edges in line with the header (Bek, 2026-11-24, D27). */}
+      <main className="px-[16px] pb-[48px] pt-[8px] md:px-[24px] lg:pl-[48px] lg:pr-[47px]">
         <div className="lg:pl-[4px]">
           <Breadcrumb category={labelOf(catalog.categories, project.category)} />
         </div>

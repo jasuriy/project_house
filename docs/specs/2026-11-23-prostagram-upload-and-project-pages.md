@@ -49,6 +49,7 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D24 | No drafts (Bek, 2026-11-24): nothing is stored before "Render project". Closing the page, F5 or leaving it for another page of the site gives an empty form; an unfinished form is not wanted. The form lives in the browser, files wait in R2's temporary folder `uploads/` (a bucket lifecycle rule deletes them after 1 day), and Render sends one request that creates the published project. The mockup's "Draft saved" status is removed. The project page's logo links to the home page `/`. Replaces T1. |
 | D25 | Form trimmed (Bek, 2026-11-24): "AI powered" (D9) and "Who is it for? (audience)" are removed from the upload page, the project page (badge, "For" row) and the database (migration 0003, values deleted). The GitHub repository is optional: without it the project page shows no "View source" and no repository preview, and the technology card takes the full row; a link that is typed but not connected stops Render ("Connect the repository (press Enter) or clear the link"). "Repository linked" is removed from the Ready card. Getting started and Requirements stay required and get example text in the box ("e.g. npm install, npm run dev", "e.g. Python 3.11+, Node 20"). |
 | D26 | Tech stack limits (Bek, 2026-11-24): at most 7 programming languages and at most 5 frameworks & tools (was 20 each). The form stops adding at the limit ("At most N"); the server refuses longer lists. The mockup data (6 tools) and the Reflex sample below (7 tools) are older than this rule and are kept as display data only. |
+| D27 | Upload page layout (Bek, 2026-11-24): the left section nav is removed, and the page is no longer a centred 1280 px column: it fills the screen width, its edges in line with the header's logo and Render button. Two columns (form | video, repository, ready) keep the 511:492 ratio. The project page also fills the width (same day, Bek): its rows keep their column ratios, so on wide screens the video grows and the space under "At a glance" grows with it. |
 
 ## 3. Choices made by Claude (technical, Bek may object)
 
@@ -72,8 +73,8 @@ Layout from `docs/mockups/upload-page.png`:
 - **Header:** logo + "Prostagram"; centre breadcrumb "home > Workspace / New project"; right the
   primary button "Render project ->". (The mockup's "Draft saved" is removed, D24.)
 - **Title:** "Build your project page", subtitle "Everything someone needs to understand your project."
-- **Left nav (sticky):** Project details, Demo & links, Technology, Setup & delivery. Clicking scrolls
-  to the section. A green check appears when all required fields of that section are filled.
+- ~~**Left nav (sticky):** Project details, Demo & links, Technology, Setup & delivery.~~ Removed (D27);
+  the page fills the screen width.
 - **Middle column:**
   - *Project details:* Project name*, Short description*, Project type* (chips, one choice),
     **Category*** (dropdown, D8), **Post language*** (chips + dropdown, several, D7),

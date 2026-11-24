@@ -9,7 +9,6 @@ import { DetailsSection, SetupSection, TechSection } from "./form-sections";
 import { ReadyCard } from "./ready-card";
 import { RepoCard } from "./repo-card";
 import { SECTIONS } from "./sections";
-import { SideNav } from "./side-nav";
 import { VideoCard } from "./video-card";
 
 /** The upload page: owns the form and the catalog, and lays out every section. */
@@ -78,7 +77,6 @@ export function ProjectEditor() {
   return (
     <EditorLayout
       header={<EditorHeader onRender={render} rendering={rendering} />}
-      nav={<SideNav missing={missing} />}
       middle={
         <>
           <div className="order-1 lg:order-none">
@@ -120,13 +118,11 @@ function scrollToFirstMissing(missing: Set<string>) {
 /** Page frame shared by the editor and its loading state, so nothing jumps when data arrives. */
 function EditorLayout({
   header,
-  nav,
   middle,
   right,
   children,
 }: {
   header: ReactNode;
-  nav?: ReactNode;
   middle?: ReactNode;
   right?: ReactNode;
   children?: ReactNode;
@@ -134,18 +130,18 @@ function EditorLayout({
   return (
     <div className="min-h-screen">
       {header}
-      <main className="mx-auto max-w-[1280px] px-[16px] pb-[40px] pt-[13px] md:px-[24px] lg:pl-[31px] lg:pr-[29px]">
-        <h1 className="text-[26px] font-extrabold leading-[32px] tracking-[-0.025em] text-ink lg:pl-[14px] lg:text-[32.7px] lg:leading-[38px]">
+      {/* Full width, edges in line with the header's logo and Render button (Bek, 2026-11-24, D27). */}
+      <main className="px-[16px] pb-[40px] pt-[13px] md:pl-[38px] md:pr-[30px]">
+        <h1 className="text-[26px] font-extrabold leading-[32px] tracking-[-0.025em] text-ink lg:text-[32.7px] lg:leading-[38px]">
           Build your project page
         </h1>
-        <p className="text-[15px] leading-[20px] text-muted lg:pl-[15px] lg:text-[15.4px]">
+        <p className="text-[15px] leading-[20px] text-muted lg:text-[15.4px]">
           Everything someone needs to understand your project.
         </p>
         {children ?? (
-          // Desktop: side nav | form | video, repo, ready. Below 1024 px the two column wrappers
-          // dissolve ("contents") and the cards stack in side-nav order (the order-* classes).
-          <div className="mt-[18px] flex flex-col gap-[14px] lg:grid lg:grid-cols-[185px_minmax(0,511fr)_minmax(0,492fr)] lg:items-start lg:gap-x-[15px] lg:gap-y-0">
-            <div className="hidden pt-[9px] lg:block">{nav}</div>
+          // Desktop: form | video, repo, ready. Below 1024 px the two column wrappers dissolve
+          // ("contents") and the cards stack in form order (the order-* classes).
+          <div className="mt-[18px] flex flex-col gap-[14px] lg:grid lg:grid-cols-[minmax(0,511fr)_minmax(0,492fr)] lg:items-start lg:gap-x-[15px] lg:gap-y-0">
             <div className="contents lg:flex lg:flex-col lg:gap-[14px]">{middle}</div>
             <div className="contents lg:flex lg:flex-col lg:gap-[13px]">{right}</div>
           </div>
@@ -162,7 +158,6 @@ export function EditorSkeleton() {
   return (
     <EditorLayout
       header={<EditorHeader />}
-      nav={<div className="h-[160px]" />}
       middle={
         <>
           {block(400)}
