@@ -279,12 +279,11 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
 - The preview plays the person's own file from memory (`URL.createObjectURL`), so nothing is
   downloaded back from R2 and no signed link can expire on this page.
 
-### The project page: one player, two places
+### The project page video
 
-"Try demo" (top) and the video box (lower) share one player through a React context
-(`src/components/project/demo-player.tsx`). The video never starts by itself; "Try demo" scrolls to
-it and plays it with controls; at the end it returns to its first frame. If the page has been open
-for more than 50 minutes, "Try demo" first asks the API for fresh links
+The video box (`src/components/project/demo-player.tsx`) uses the browser's own controls from the
+start (D28). The video never starts by itself; at the end it returns to its first frame. If the page
+has been open for more than 50 minutes, pressing play first asks the API for fresh links
 (`/projects/by-slug/<slug>/video`). React alone sets the video's `src`; setting it by hand as well
 would make the browser load the video twice and stop playback.
 

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { DemoPlayer } from "@/components/project/demo-player";
 import {
   AtAGlance,
   Breadcrumb,
@@ -35,7 +34,7 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
   if (!project) notFound();
 
   return (
-    <DemoPlayer slug={slug} video={project.video}>
+    <>
       <title>{`${project.name} - Prostagram`}</title>
       {/* Full width, edges in line with the header (Bek, 2026-11-24, D27). */}
       <main className="px-[16px] pb-[48px] pt-[8px] md:px-[24px] lg:pl-[48px] lg:pr-[47px]">
@@ -51,7 +50,7 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
         </div>
 
         <div className="mt-[16px] grid grid-cols-1 items-start gap-[16px] lg:mt-[21px] lg:grid-cols-[minmax(0,730fr)_minmax(0,430fr)] lg:gap-[25px]">
-          <VideoCard />
+          <VideoCard project={project} />
           <div className="lg:mt-[6px]">
             <AtAGlance project={project} catalog={catalog} />
           </div>
@@ -71,6 +70,6 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
           <DetailCards project={project} catalog={catalog} />
         </div>
       </main>
-    </DemoPlayer>
+    </>
   );
 }

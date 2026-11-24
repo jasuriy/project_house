@@ -29,7 +29,7 @@ import type { Catalog, Project } from "@/lib/api";
 import { AUTHOR } from "@/lib/author";
 import { labelOf, labelsOf, techRows, timeline } from "@/lib/catalog";
 import { previewEntries } from "@/lib/repo";
-import { TryDemoButton, VideoStage } from "./demo-player";
+import { DemoVideo } from "./demo-player";
 
 // The project page, built from docs/mockups/project-page.png. Server components: they only show
 // data; the one interactive part (the demo player) lives in demo-player.tsx.
@@ -92,20 +92,6 @@ export function Hero({ project, catalog }: { project: Project; catalog: Catalog 
         <span aria-hidden="true">&bull;</span>
         <span>{labelOf(catalog.statuses, project.status)}</span>
       </p>
-      <div className="mt-[10px] flex flex-wrap gap-[16px]">
-        <TryDemoButton />
-        {project.repo_url && (
-          <a
-            href={project.repo_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-[34px] w-[144px] items-center justify-center gap-[11px] rounded-[7px] border border-[#dcd5d4] bg-[#fefcfb] text-[13px] font-bold text-ink outline-none transition-colors hover:border-ink-2 focus-visible:ring-2 focus-visible:ring-primary/30 max-sm:h-[44px]"
-          >
-            <GitHubIcon size={17} />
-            View source
-          </a>
-        )}
-      </div>
     </div>
   );
 }
@@ -152,10 +138,10 @@ export function SummaryCards({ project, catalog }: { project: Project; catalog: 
   );
 }
 
-export function VideoCard() {
+export function VideoCard({ project }: { project: Project }) {
   return (
     <section aria-label="Demo video" className={`${card} p-[7px]`}>
-      <VideoStage />
+      <DemoVideo slug={project.slug} video={project.video} />
     </section>
   );
 }

@@ -35,3 +35,5 @@ Other sizes: 1440 and 1920 centre the 1280 layout; 768 and below stack the secti
 scroll at 1920, 1440, 768, 390 or 360. On phones the two buttons are 44 px tall and card text is larger.
 
 D27 (Bek, 2026-11-24): the page is no longer a centred 1280 px column; it fills the width with edges in line with the header (logo x 52). At 1280 the layout is unchanged; at 1440 and 1920 every row widens in its ratio, and the empty space under "At a glance" grows (about 180 px at 1440, 350 px at 1920).
+
+D28 (Bek, 2026-11-24): "Try demo" and "View source" removed; the video shows its own controls from the start and has no duration badge. The behaviour list above (no controls before "Try demo") is historical.

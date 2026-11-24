@@ -26,8 +26,8 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D1 | Sample project for testing: `reflex-dev/reflex` (values in section 10). |
 | D2 | Build the two mockups exactly (layout, look). The page shows real form data, not the mockup text. |
 | D3 | Name in the header: **Prostagram**. Logo: the purple squares icon from the mockups. |
-| D4 | "Try demo" plays the uploaded video. No autoplay. When the video ends it stops; to watch again, click "Try demo" again. No live-demo URL field. |
-| D5 | Before playback the video box shows the first frame of the video, no play icon, no caption. The duration badge (for example "0:58") stays. During playback the player controls are shown (pause, seek, volume, fullscreen). |
+| D4 | ~~"Try demo" plays the uploaded video.~~ Replaced by D28. No autoplay. When the video ends it stops; to watch again, click "Try demo" again. No live-demo URL field. |
+| D5 | ~~(duration badge and hidden controls replaced by D28)~~ Before playback the video box shows the first frame of the video, no play icon, no caption. The duration badge (for example "0:58") stays. During playback the player controls are shown (pause, seek, volume, fullscreen). |
 | D6 | No login for now. The author is static: name "Jasurbek", photo `profile_photo.jpg` (640 x 640 JPEG [V]). The header avatar, GitHub icon and "Explore projects" are static and do nothing yet. |
 | D7 | Post language: one or more of English, O'zbek, Русский (the languages the post is written in). Shown in "At a glance" as "Languages" (for example "English & O'zbek"). |
 | D8 | Category: one choice from a fixed list (section 5.2). Shown in the breadcrumb. |
@@ -50,6 +50,7 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D25 | Form trimmed (Bek, 2026-11-24): "AI powered" (D9) and "Who is it for? (audience)" are removed from the upload page, the project page (badge, "For" row) and the database (migration 0003, values deleted). The GitHub repository is optional: without it the project page shows no "View source" and no repository preview, and the technology card takes the full row; a link that is typed but not connected stops Render ("Connect the repository (press Enter) or clear the link"). "Repository linked" is removed from the Ready card. Getting started and Requirements stay required and get example text in the box ("e.g. npm install, npm run dev", "e.g. Python 3.11+, Node 20"). |
 | D26 | Tech stack limits (Bek, 2026-11-24): at most 7 programming languages and at most 5 frameworks & tools (was 20 each). The form stops adding at the limit ("At most N"); the server refuses longer lists. The mockup data (6 tools) and the Reflex sample below (7 tools) are older than this rule and are kept as display data only. |
 | D27 | Upload page layout (Bek, 2026-11-24): the left section nav is removed, and the page is no longer a centred 1280 px column: it fills the screen width, its edges in line with the header's logo and Render button. Two columns (form | video, repository, ready) keep the 511:492 ratio. The project page also fills the width (same day, Bek): its rows keep their column ratios, so on wide screens the video grows and the space under "At a glance" grows with it. |
+| D28 | Project page redundancy removed (Bek, 2026-11-24): no "Try demo" (it duplicated the video's own play control) and no "View source" (it duplicated "Open on GitHub" in the repository preview). The video shows the browser's own controls from the start (play, time, volume, fullscreen), never starts by itself, and returns to its first frame at the end; the separate duration badge is removed (the controls show the time). |
 
 ## 3. Choices made by Claude (technical, Bek may object)
 
@@ -141,11 +142,9 @@ Layout from `docs/mockups/project-page.png`. Data source of each element:
 | Badge "WEB APP" | project type (the mockup's "AI POWERED" part removed, D25) |
 | Title, subtitle | name, short description |
 | "By Jasurbek • <Status>" with photo | static author (D6), status |
-| Try demo | plays the video (D4) |
-| View source | GitHub repo URL (hidden without a repo, D25) |
 | The problem / The outcome | problem / outcome |
 | What you get | deliverables, one tick per item |
-| Video box | first frame, duration badge, controls during playback (D5) |
+| Video box | first frame, the browser's own controls from the start (D28) |
 | At a glance | Type, Languages (post languages joined with " & "), Status, Delivery (deliverables joined with " + "), Timeline (dates, hidden when empty) |
 | Technology stack | catalog groups; custom entries under "Other" |
 | Repository preview | stored snapshot (section 8), "Open on GitHub"; hidden without a repo, the technology card then takes the full row (D25) |
@@ -198,7 +197,7 @@ R2 answers byte-range requests [V: a signed GET with `Range: bytes=0-99` returne
 
 - The project page is rendered fresh on every request and never cached (by Next.js or Vercel);
   a cached page would carry expired links and the video would fail with 403.
-- If the tab stayed open longer than 50 minutes, clicking "Try demo" first asks the backend for a
+- If the tab stayed open longer than 50 minutes, pressing play first asks the backend for a
   fresh link (`GET /api/v1/projects/by-slug/{slug}/video-url`), then plays.
 
 ### 7.4 R2 setup (once)
