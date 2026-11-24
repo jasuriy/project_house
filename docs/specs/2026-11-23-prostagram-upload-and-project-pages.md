@@ -48,6 +48,7 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D23 | Video box is 16:9 on both pages (Bek, 2026-11-23), not the mockup's wide 452:177 shape, so 16:9 demo videos show without side bars. |
 | D24 | No drafts (Bek, 2026-11-24): nothing is stored before "Render project". Closing the page, F5 or leaving it for another page of the site gives an empty form; an unfinished form is not wanted. The form lives in the browser, files wait in R2's temporary folder `uploads/` (a bucket lifecycle rule deletes them after 1 day), and Render sends one request that creates the published project. The mockup's "Draft saved" status is removed. The project page's logo links to the home page `/`. Replaces T1. |
 | D25 | Form trimmed (Bek, 2026-11-24): "AI powered" (D9) and "Who is it for? (audience)" are removed from the upload page, the project page (badge, "For" row) and the database (migration 0003, values deleted). The GitHub repository is optional: without it the project page shows no "View source" and no repository preview, and the technology card takes the full row; a link that is typed but not connected stops Render ("Connect the repository (press Enter) or clear the link"). "Repository linked" is removed from the Ready card. Getting started and Requirements stay required and get example text in the box ("e.g. npm install, npm run dev", "e.g. Python 3.11+, Node 20"). |
+| D26 | Tech stack limits (Bek, 2026-11-24): at most 7 programming languages and at most 5 frameworks & tools (was 20 each). The form stops adding at the limit ("At most N"); the server refuses longer lists. The mockup data (6 tools) and the Reflex sample below (7 tools) are older than this rule and are kept as display data only. |
 
 ## 3. Choices made by Claude (technical, Bek may object)
 
@@ -79,7 +80,8 @@ Layout from `docs/mockups/upload-page.png`:
     What problem does it solve?*, What is the outcome?* (two textareas side by side).
     (AI powered and audience removed, D25.)
   - *Technology stack:* Programming languages* (chips + dropdown), Frameworks & tools* (chips +
-    dropdown). Both search the catalog and accept a typed custom value (D14).
+    dropdown). Both search the catalog and accept a typed custom value (D14). At most 7 languages and
+    5 frameworks & tools (D26).
   - *Setup & delivery:* Deliverable* (chips + dropdown, several, D11), Getting started* and
     Requirements* (with example text, D25), License*, Status*, Limitations (optional, D15), **How it works** (optional, D10),
     **Started** / **Finished** or **still ongoing** (optional, D13).

@@ -166,6 +166,8 @@ async def test_bad_values_are_refused(client: AsyncClient) -> None:
         {"post_languages": ["de"]},
         {"name": "x" * 81},
         {"tools": ["x" * 41]},
+        {"languages": [f"lang{i}" for i in range(8)]},  # at most 7 (D26)
+        {"tools": [f"tool{i}" for i in range(6)]},  # at most 5 (D26)
         {"video_key": "videos/someone-else.mp4"},  # not a field of the form
     ):
         response = await client.post("/api/v1/projects", json={**REFLEX, **bad})

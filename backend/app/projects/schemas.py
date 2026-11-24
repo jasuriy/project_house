@@ -51,11 +51,12 @@ def _choices(options: dict[str, str]) -> object:
 TechName = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=catalog.MAX_TECH_NAME)
 ]
-TechList = Annotated[
-    list[TechName],
-    Field(max_length=catalog.MAX_TECH_PER_FIELD),
-    AfterValidator(catalog.canonical_tech_names),
-]
+
+
+def _tech_list(most: int) -> object:
+    return Annotated[
+        list[TechName], Field(max_length=most), AfterValidator(catalog.canonical_tech_names)
+    ]
 
 
 class VideoUpload(BaseModel):
@@ -82,8 +83,8 @@ class ProjectCreate(BaseModel):
     post_languages: _choices(catalog.POST_LANGUAGES) = []
     problem: _text("problem") = None
     outcome: _text("outcome") = None
-    languages: TechList = []
-    tools: TechList = []
+    languages: _tech_list(catalog.MAX_LANGUAGES) = []
+    tools: _tech_list(catalog.MAX_TOOLS) = []
     deliverables: _choices(catalog.DELIVERABLES) = []
     getting_started: _text("getting_started") = None
     requirements: _text("requirements") = None

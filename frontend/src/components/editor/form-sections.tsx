@@ -122,7 +122,7 @@ export function TechSection({ form, setField, catalog, errorFor }: SectionProps)
           options={withCustom(options, form[field])}
           allowCustom
           maxLength={catalog.max_tech_name}
-          maxItems={catalog.max_tech_per_field}
+          maxItems={field === "languages" ? catalog.max_languages : catalog.max_tools}
           invalid={!!errorFor(field)}
         />
         {errorFor(field) && <p className="mt-[3px] text-[11px] text-danger">{errorFor(field)}</p>}

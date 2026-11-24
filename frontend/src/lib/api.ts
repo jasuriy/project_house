@@ -13,7 +13,8 @@ export type Catalog = {
   licenses: Choice[];
   text_limits: Record<string, number>;
   max_tech_name: number;
-  max_tech_per_field: number;
+  max_languages: number;
+  max_tools: number;
   upload_rules: Record<UploadKind, { content_types: string[]; max_bytes: number }>;
   // What Render needs: form field names, plus "video". The server checks the same list.
   required_fields: string[];

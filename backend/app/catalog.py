@@ -76,7 +76,9 @@ TEXT_LIMITS = {
 }
 
 MAX_TECH_NAME = 40  # one technology name, catalog or typed by the user
-MAX_TECH_PER_FIELD = 20
+# Most entries per tech field (Bek, 2026-11-24, D26).
+MAX_LANGUAGES = 7
+MAX_TOOLS = 5
 
 # What may be uploaded. "video" is the demo video, "poster" its first frame (a still image).
 UPLOAD_RULES = {
@@ -196,7 +198,8 @@ async def get_catalog() -> dict:
         "licenses": _choices(LICENSES),
         "text_limits": TEXT_LIMITS,
         "max_tech_name": MAX_TECH_NAME,
-        "max_tech_per_field": MAX_TECH_PER_FIELD,
+        "max_languages": MAX_LANGUAGES,
+        "max_tools": MAX_TOOLS,
         "upload_rules": UPLOAD_RULES,
         "required_fields": REQUIRED_FIELDS,
         "tech": [{"name": n, "group": g, "icon": icon} for n, g, icon in TECH_CATALOG],
