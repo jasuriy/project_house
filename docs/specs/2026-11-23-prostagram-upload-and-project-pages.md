@@ -92,8 +92,9 @@ Layout from `docs/mockups/upload-page.png`:
     file name, size and duration, "Upload complete", "Replace". While uploading: a progress bar.
   - *GitHub repository (optional, D25):* URL input; after linking, "Repository connected" and the
     preview (root files and the first lines of the README). Emptying the box removes the link.
-  - *Ready to render:* three checks: Project details complete, Demo video uploaded, Technology stack
-    added ("Repository linked" removed, D25). Text: "Your showcase will include outcomes, video, code, and setup details."
+  - *Ready to render:* one check per form section: Project details complete, Demo video uploaded,
+    Technology stack added, Setup & delivery complete ("Repository linked" removed, D25; Setup added
+    and the "Your showcase will include..." line removed, inspection finding 1).
   - Footnote: "Review your details, then click Render project."
 
 New fields (marked bold above) use exactly the mockup's field styles.

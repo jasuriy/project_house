@@ -1,6 +1,6 @@
 import { Info, Sparkle } from "lucide-react";
 import { StatusDot } from "@/components/ui/icons";
-import { READY_ITEMS, isComplete } from "./sections";
+import { SECTIONS, isComplete } from "./sections";
 
 export function ReadyCard({ missing }: { missing: Set<string> }) {
   return (
@@ -14,16 +14,13 @@ export function ReadyCard({ missing }: { missing: Set<string> }) {
           Ready to render
         </h2>
         <ul className="mt-[8px] grid grid-cols-1 gap-x-[20px] gap-y-[10px] pl-[13px] sm:grid-cols-2">
-          {READY_ITEMS.map((item) => (
-            <li key={item.label} className="flex items-center gap-[10px] text-[12.2px] text-ink-2">
-              <StatusDot done={isComplete(item.fields, missing)} size={18} />
-              {item.label}
+          {SECTIONS.map((section) => (
+            <li key={section.id} className="flex items-center gap-[10px] text-[12.2px] text-ink-2">
+              <StatusDot done={isComplete(section.fields, missing)} size={18} />
+              {section.ready}
             </li>
           ))}
         </ul>
-        <p className="mt-[10px] border-t border-[#e2daf6] pl-[13px] pt-[9px] text-[11.5px] text-muted">
-          Your showcase will include outcomes, video, code, and setup details.
-        </p>
       </section>
       <p className="mt-[18px] flex items-center gap-[10px] pl-[3px] text-[11.3px] text-muted">
         <Info size={17} strokeWidth={1.7} aria-hidden="true" className="text-ink-2" />

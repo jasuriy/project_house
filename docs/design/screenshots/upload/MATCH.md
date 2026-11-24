@@ -28,7 +28,7 @@ Positions were measured by scanning card borders in both images (`diff-1280.png`
 | Video preview, file row | as drawn | same | MATCH |
 | GitHub card and preview | as drawn | same | MATCH |
 | README lines | ~7 px mono, full lines | 7.5 px mono, last line cut | MATCH (text barely readable, as in the mockup) |
-| Ready to render card | four checks | three checks, "Repository linked" removed | EXPECTED: the repository is optional (D25) |
+| Ready to render card | four checks | four checks: "Repository linked" removed (D25), "Setup & delivery complete" added, footer line removed | EXPECTED: one check per form section (inspection finding 1) |
 
 Fonts: Figtree (closest of 8 candidates), JetBrains Mono for the README lines (closest of 9; the
 mockup is blurry there), Onest for Cyrillic letters (Figtree has none).
