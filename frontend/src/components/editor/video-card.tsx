@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlay, Folder, LoaderCircle, Play, RotateCw, Upload } from "lucide-react";
+import { CirclePlay, Folder, LoaderCircle, RotateCw, Upload } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { StatusDot } from "@/components/ui/icons";
@@ -97,7 +97,7 @@ export function VideoCard({ state, catalog, error: requiredError }: { state: Pro
       {job ? (
         <Progress job={job} />
       ) : video ? (
-        <Preview url={video.previewUrl} poster={video.posterPreviewUrl} duration={video.duration} />
+        <Preview url={video.previewUrl} poster={video.posterPreviewUrl} />
       ) : (
         <button
           type="button"
@@ -161,42 +161,24 @@ export function VideoCard({ state, catalog, error: requiredError }: { state: Pro
   );
 }
 
-/** Plays the person's own file from memory (an object URL), so nothing is downloaded. */
-function Preview({ url, poster, duration }: { url: string; poster: string | null; duration: number | null }) {
-  const ref = useRef<HTMLVideoElement>(null);
-  const [playing, setPlaying] = useState(false);
+/**
+ * Plays the person's own file from memory (an object URL), so nothing is downloaded. The browser's
+ * own controls from the start, the same as on the project page; the length is shown once, below.
+ */
+function Preview({ url, poster }: { url: string; poster: string | null }) {
   return (
     <div className="mt-[9px] rounded-[9px] border border-line bg-[#fbf8f7] p-[5px]">
-      <div className="relative aspect-video overflow-hidden rounded-[6px] bg-[#1b1a33]">
+      <div className="aspect-video overflow-hidden rounded-[6px] bg-[#1b1a33]">
         <video
-          ref={ref}
           src={url}
           poster={poster ?? undefined}
           preload="metadata"
-          controls={playing}
-          onEnded={() => setPlaying(false)}
+          playsInline
+          controls
+          onEnded={(e) => e.currentTarget.load()}
           className="h-full w-full object-contain"
+          aria-label="Demo video preview"
         />
-        {!playing && (
-          <>
-            <button
-              type="button"
-              aria-label="Play preview"
-              onClick={() => {
-                setPlaying(true);
-                void ref.current?.play();
-              }}
-              className="absolute left-1/2 top-1/2 flex h-[46px] w-[46px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#2b2b33]/85 text-white outline-none focus-visible:ring-2 focus-visible:ring-white"
-            >
-              <Play size={20} fill="currentColor" strokeWidth={0} className="ml-[3px]" aria-hidden="true" />
-            </button>
-            {duration !== null && (
-              <span className="absolute bottom-[6px] right-[6px] rounded-[6px] bg-[#2b2b33]/90 px-[8px] py-[2px] text-[12px] font-medium text-white">
-                {formatDuration(duration)}
-              </span>
-            )}
-          </>
-        )}
       </div>
     </div>
   );

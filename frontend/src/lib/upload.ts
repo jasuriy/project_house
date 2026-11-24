@@ -70,7 +70,8 @@ export function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// The same as the browser's video player shows it ("0:58" for 58.6 s), so the two never disagree.
 export function formatDuration(seconds: number): string {
-  const total = Math.round(seconds);
-  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+  const total = Math.floor(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }

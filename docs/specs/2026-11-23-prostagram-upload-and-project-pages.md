@@ -88,7 +88,8 @@ Layout from `docs/mockups/upload-page.png`:
     Requirements* (with example text, D25), License*, Status*, Limitations (optional, D15), **How it works** (optional, D10),
     **Started** / **Finished** or **still ongoing** (optional, D13).
 - **Right column:**
-  - *Demo video:* drop zone / file picker. After upload: first-frame preview with duration badge,
+  - *Demo video:* drop zone / file picker. After upload: first-frame preview with the browser's own player
+    controls (no custom play button or duration badge, inspection finding 6),
     file name, size and duration, "Upload complete", "Replace". While uploading: a progress bar.
   - *GitHub repository (optional, D25):* URL input; after linking, "Repository connected" and the
     preview (root files and the first lines of the README). Emptying the box removes the link.
