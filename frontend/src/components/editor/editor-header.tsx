@@ -16,6 +16,7 @@ export function EditorHeader({
   status?: string;
 }) {
   const count = done?.filter(Boolean).length ?? 0;
+  const left = READY_PARTS.filter((_, i) => done && !done[i]).map((p) => p.label);
   return (
     <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
       <div className="mx-auto flex h-[52px] max-w-[1920px] items-center justify-between gap-[16px] px-[16px] sm:px-[48px]">
@@ -32,19 +33,25 @@ export function EditorHeader({
                 </b>{" "}
                 ready
               </span>
-              <ol aria-label="Parts ready" className="flex gap-[4px]">
+              {/* A progress bar: as many segments fill from the left as parts are ready, whichever they are
+                  (Bek, 2026-11-25). Hovering it lists what is still to do. */}
+              <div
+                role="progressbar"
+                aria-label="Parts ready"
+                aria-valuemin={0}
+                aria-valuemax={READY_PARTS.length}
+                aria-valuenow={count}
+                aria-valuetext={left.length ? `${count} of ${READY_PARTS.length} ready. To do: ${left.join(", ")}` : "All parts ready"}
+                title={left.length ? `To do: ${left.join(", ")}` : "All parts ready"}
+                className="flex gap-[4px]"
+              >
                 {READY_PARTS.map((part, i) => (
-                  <li
+                  <span
                     key={part.label}
-                    title={`${part.label}: ${done[i] ? "done" : "to do"}`}
-                    className={`h-[4px] w-[16px] rounded-[2px] ${done[i] ? "bg-primary" : "bg-track"}`}
-                  >
-                    <span className="sr-only">
-                      {part.label}: {done[i] ? "done" : "to do"}
-                    </span>
-                  </li>
+                    className={`h-[4px] w-[16px] rounded-[2px] transition-colors duration-300 ${i < count ? "bg-primary" : "bg-track"}`}
+                  />
                 ))}
-              </ol>
+              </div>
             </div>
           )}
           {done && (
