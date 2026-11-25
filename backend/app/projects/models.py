@@ -28,7 +28,6 @@ class Project(Base):
     short_description: Mapped[str | None] = mapped_column(Text)
     project_type: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str | None] = mapped_column(Text)
-    post_languages: Mapped[list[str]] = _text_list()
     problem: Mapped[str | None] = mapped_column(Text)
     outcome: Mapped[str | None] = mapped_column(Text)
 
@@ -38,11 +37,8 @@ class Project(Base):
 
     # Setup & delivery
     deliverables: Mapped[list[str]] = _text_list()
-    getting_started: Mapped[str | None] = mapped_column(Text)
-    requirements: Mapped[str | None] = mapped_column(Text)
     license: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str | None] = mapped_column(Text)
-    limitations: Mapped[str | None] = mapped_column(Text)
     how_it_works: Mapped[str | None] = mapped_column(Text)
     started_on: Mapped[date | None]
     finished_on: Mapped[date | None]

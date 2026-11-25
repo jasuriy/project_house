@@ -19,14 +19,11 @@ REFLEX = {
     "short_description": "Web apps in pure Python.",
     "project_type": "library",
     "category": "developer_tools",
-    "post_languages": ["en"],
     "problem": "Python developers have to learn JavaScript to build a web frontend.",
     "outcome": "Frontend and backend written in Python.",
     "languages": ["Python", "TypeScript", "JavaScript"],
     "tools": ["Starlette", "Granian", "Socket.IO", "Redis", "Radix UI"],
     "deliverables": ["source_code", "package"],
-    "getting_started": "uv init -> uv add reflex -> uv run reflex init -> uv run reflex run",
-    "requirements": "Python 3.11+",
     "license": "Apache-2.0",
     "status": "beta",
     "started_on": "2022-10-25",
@@ -153,8 +150,7 @@ async def test_incomplete_project_is_refused_with_everything_missing(
     assert error["code"] == "project_incomplete"
     assert error["message"] == (
         "Missing: short_description, project_type, category, problem, outcome, "
-        "getting_started, requirements, license, status, post_languages, languages, tools, "
-        "deliverables, video"
+        "license, status, languages, tools, deliverables, video"
     )
     assert await row_count() == 0
     assert final_keys(storage) == []
@@ -163,7 +159,11 @@ async def test_incomplete_project_is_refused_with_everything_missing(
 async def test_bad_values_are_refused(client: AsyncClient) -> None:
     for bad in (
         {"category": "cooking"},
-        {"post_languages": ["de"]},
+        # removed fields (D29): the form no longer has them
+        {"post_languages": ["en"]},
+        {"getting_started": "uv run reflex run"},
+        {"requirements": "Python 3.11+"},
+        {"limitations": "none"},
         {"name": "x" * 81},
         {"tools": ["x" * 41]},
         {"languages": [f"lang{i}" for i in range(8)]},  # at most 7 (D26)
@@ -286,14 +286,12 @@ async def test_tech_names_take_the_catalog_spelling(
 ) -> None:
     payload = {
         **await reflex_payload(client, storage),
-        "post_languages": ["en", "uz", "en"],
         "languages": ["python", "Python", "TYPESCRIPT"],
         "tools": ["REDIS", "mytool", "MyTool"],
     }
 
     body = (await client.post("/api/v1/projects", json=payload)).json()
 
-    assert body["post_languages"] == ["en", "uz"]
     assert body["languages"] == ["Python", "TypeScript"]
     assert body["tools"] == ["Redis", "mytool"]  # unknown names keep the first spelling
 

@@ -32,8 +32,6 @@ CATEGORIES = {
     "other": "Other",
 }
 
-POST_LANGUAGES = {"en": "English", "uz": "O'zbek", "ru": "Русский"}
-
 STATUSES = {
     "idea": "Idea",
     "prototype": "Prototype",
@@ -70,9 +68,6 @@ TEXT_LIMITS = {
     "problem": 600,
     "outcome": 600,
     "how_it_works": 600,
-    "getting_started": 300,
-    "requirements": 300,
-    "limitations": 300,
 }
 
 MAX_TECH_NAME = 40  # one technology name, catalog or typed by the user
@@ -95,12 +90,10 @@ REQUIRED_TEXT = [
     "category",
     "problem",
     "outcome",
-    "getting_started",
-    "requirements",
     "license",
     "status",
 ]
-REQUIRED_LISTS = ["post_languages", "languages", "tools", "deliverables"]
+REQUIRED_LISTS = ["languages", "tools", "deliverables"]
 REQUIRED_FIELDS = [*REQUIRED_TEXT, *REQUIRED_LISTS, "video"]
 
 LANGUAGES_GROUP = "Languages"
@@ -192,7 +185,6 @@ async def get_catalog() -> dict:
     return {
         "project_types": _choices(PROJECT_TYPES),
         "categories": _choices(CATEGORIES),
-        "post_languages": _choices(POST_LANGUAGES),
         "statuses": _choices(STATUSES),
         "deliverables": _choices(DELIVERABLES),
         "licenses": _choices(LICENSES),

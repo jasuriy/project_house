@@ -80,17 +80,13 @@ class ProjectCreate(BaseModel):
     short_description: _text("short_description") = None
     project_type: Annotated[str | None, _one_of(catalog.PROJECT_TYPES)] = None
     category: Annotated[str | None, _one_of(catalog.CATEGORIES)] = None
-    post_languages: _choices(catalog.POST_LANGUAGES) = []
     problem: _text("problem") = None
     outcome: _text("outcome") = None
     languages: _tech_list(catalog.MAX_LANGUAGES) = []
     tools: _tech_list(catalog.MAX_TOOLS) = []
     deliverables: _choices(catalog.DELIVERABLES) = []
-    getting_started: _text("getting_started") = None
-    requirements: _text("requirements") = None
     license: Annotated[str | None, _one_of(catalog.LICENSES)] = None
     status: Annotated[str | None, _one_of(catalog.STATUSES)] = None
-    limitations: _text("limitations") = None
     how_it_works: _text("how_it_works") = None
     started_on: date | None = None
     finished_on: date | None = None
@@ -134,17 +130,13 @@ class ProjectOut(BaseModel):
     short_description: str | None
     project_type: str | None
     category: str | None
-    post_languages: list[str]
     problem: str | None
     outcome: str | None
     languages: list[str]
     tools: list[str]
     deliverables: list[str]
-    getting_started: str | None
-    requirements: str | None
     license: str | None
     status: str | None
-    limitations: str | None
     how_it_works: str | None
     started_on: date | None
     finished_on: date | None
