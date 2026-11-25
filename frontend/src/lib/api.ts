@@ -70,6 +70,20 @@ export type Project = ProjectForm & {
   updated_at: string;
 };
 
+/** One project in the feed (GET /projects): what its card shows. */
+export type ProjectCard = {
+  slug: string;
+  name: string | null;
+  short_description: string | null;
+  project_type: string | null;
+  category: string | null;
+  status: string | null;
+  languages: string[];
+  tools: string[];
+  poster_url: string | null;
+  published_at: string;
+};
+
 export type UploadTicket = { upload_url: string; key: string; headers: Record<string, string> };
 
 /** Everything sent on Render: the form plus the temporary file keys and the repository link. */

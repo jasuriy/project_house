@@ -1,31 +1,45 @@
-import Image from "next/image";
-import Link from "next/link";
-import { LogoMark } from "@/components/ui/icons";
-import { AUTHOR } from "@/lib/author";
+import { Suspense } from "react";
+import { FeedEmpty, FeedHeader, FeedToolbar, ProjectCardView } from "@/components/feed/feed";
+import { fetchCatalog, fetchFeed } from "@/lib/server-api";
 
-// Home: one way in, the Add project button, which opens the upload page. Header and button use
-// the upload page's sizes and colours (D29), so the step from here to /new looks seamless.
-export default function Home() {
+// Home: the feed of published projects (Bek, 2026-11-25). It is read on every request (new projects
+// and fresh signed image links), so the data part sits inside a Suspense boundary; the header is in
+// it too, because its search box shows the current search.
+export default function Home({ searchParams }: PageProps<"/">) {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
-        <div className="mx-auto flex h-[52px] max-w-[1920px] items-center justify-between gap-[16px] px-[16px] sm:px-[48px]">
-          <span className="inline-flex h-[44px] items-center gap-[8px] text-[17px] font-bold text-ink">
-            <LogoMark />
-            Prostagram
-          </span>
-          <Image src={AUTHOR.photo} alt={AUTHOR.name} width={32} height={32} className="rounded-full" />
-        </div>
-      </header>
-
-      <main className="flex flex-1 items-center justify-center px-[16px]">
-        <Link
-          href="/new"
-          className="inline-flex h-[44px] items-center rounded-[8px] bg-primary px-[20px] text-[15px] font-semibold text-white shadow-[0_1px_2px_rgba(79,70,229,0.25),0_4px_12px_rgba(79,70,229,0.2)] outline-none transition-colors hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          Add project
-        </Link>
-      </main>
+    <div className="min-h-screen">
+      <Suspense fallback={<FeedHeader />}>
+        <Feed searchParams={searchParams} />
+      </Suspense>
     </div>
+  );
+}
+
+const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+
+async function Feed({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const params = await searchParams;
+  const catalog = await fetchCatalog();
+  // An unknown category in the address is ignored rather than turned into an error page.
+  const category = catalog.categories.some((c) => c.id === one(params.category)) ? one(params.category) : "";
+  const q = one(params.q).slice(0, 80);
+  const projects = await fetchFeed({ category, q });
+  return (
+    <>
+      <FeedHeader category={category} q={q} />
+      <main className="mx-auto flex max-w-[1920px] flex-col gap-[24px] px-[16px] pb-[48px] pt-[16px] sm:px-[48px]">
+        <h1 className="sr-only">Projects</h1>
+        <FeedToolbar catalog={catalog} category={category} q={q} count={projects.length} />
+        {projects.length === 0 ? (
+          <FeedEmpty filtered={!!(category || q)} />
+        ) : (
+          <ul aria-label="Projects" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-gc">
+            {projects.map((project) => (
+              <ProjectCardView key={project.slug} project={project} catalog={catalog} />
+            ))}
+          </ul>
+        )}
+      </main>
+    </>
   );
 }

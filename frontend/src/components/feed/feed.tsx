@@ -1,0 +1,217 @@
+import { ChevronDown, CirclePlay, Plus, Search } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { card, Chip, TypeBadge } from "@/components/page/parts";
+import { LogoMark, TechIcon } from "@/components/ui/icons";
+import type { Catalog, ProjectCard } from "@/lib/api";
+import { AUTHOR } from "@/lib/author";
+import { labelOf } from "@/lib/catalog";
+
+// The feed on the home page (Bek, 2026-11-25): a grid of project cards, newest first, with
+// category tabs and a search in the header. Filters live in the address (?category=&q=), so a feed can
+// be shared and works without any script: tabs are links, More is a details list, search a GET form.
+
+const primary =
+  "inline-flex h-[40px] items-center justify-center gap-[8px] whitespace-nowrap rounded-[8px] bg-primary px-[16px] text-[13px] font-semibold text-white " +
+  "shadow-[0_1px_2px_rgba(79,70,229,0.25),0_4px_12px_rgba(79,70,229,0.2)] outline-none transition-colors hover:bg-primary-strong " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary max-sm:h-[44px]";
+
+/** Logo, the search in the middle (a GET form that keeps the chosen category), Add project. */
+export function FeedHeader({ category = "", q = "" }: { category?: string; q?: string }) {
+  return (
+    <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
+      <div className="mx-auto grid min-h-[68px] max-w-[1920px] grid-cols-[1fr_minmax(0,560px)_1fr] items-center gap-[24px] px-[16px] sm:px-[48px] max-sm:grid-cols-[1fr_auto] max-sm:gap-y-[12px] max-sm:py-[12px]">
+        <Link
+          href="/"
+          className="inline-flex h-[44px] items-center gap-[8px] justify-self-start text-[17px] font-bold text-ink outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <LogoMark />
+          Prostagram
+        </Link>
+        <form role="search" action="/" className="relative w-full max-sm:col-span-2 max-sm:row-start-2">
+          {category && <input type="hidden" name="category" value={category} />}
+          <label htmlFor="q" className="sr-only">
+            Search projects
+          </label>
+          <Search size={18} strokeWidth={1.8} aria-hidden="true" className="pointer-events-none absolute left-[18px] top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            id="q"
+            name="q"
+            type="search"
+            defaultValue={q}
+            maxLength={80}
+            placeholder="Search projects or technologies"
+            className="h-[44px] w-full rounded-full border border-transparent bg-page pl-[48px] pr-[18px] text-body text-ink outline-none transition-colors placeholder:text-faint hover:border-line focus:border-primary focus:bg-card focus:shadow-[0_0_0_3px_rgba(79,70,229,0.16)]"
+          />
+        </form>
+        <Link href="/new" className={`${primary} justify-self-end`}>
+          <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
+          Add project
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+// The categories that fit one row stay in it; the rest wait under "More".
+const IN_ROW = 8;
+
+/** Category tabs in one row: plain text, the chosen one on a soft background; the rest under "More". */
+export function FeedToolbar({ catalog, category, q, count }: { catalog: Catalog; category: string; q: string; count: number }) {
+  const href = (next: string) => {
+    const query = new URLSearchParams();
+    if (next) query.set("category", next);
+    if (q) query.set("q", q);
+    return query.size ? `/?${query}` : "/";
+  };
+  const tab = (active: boolean) =>
+    "inline-flex h-[36px] shrink-0 items-center gap-[4px] whitespace-nowrap rounded-full px-[14px] text-[14px] outline-none transition-colors max-sm:h-[44px] " +
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary " +
+    (active ? "bg-ink/[0.06] font-semibold text-ink" : "font-medium text-muted hover:text-ink");
+  const more = catalog.categories.slice(IN_ROW);
+  const chosenInMore = more.find((c) => c.id === category);
+  return (
+    <div className="flex items-center justify-between gap-[24px] border-b border-line pb-[12px] max-desk:pb-[8px]">
+      {/* Desktop: one row, the rest under More. Narrower screens: every category in a row that scrolls sideways. */}
+      <nav aria-label="Categories" className="min-w-0 overflow-x-auto [scrollbar-width:none] max-desk:-mx-[16px] max-desk:px-[16px] sm:max-desk:-mx-[48px] sm:max-desk:px-[48px] desk:overflow-visible">
+        <ul className="flex items-center gap-[4px]">
+          <li>
+            <Link href={href("")} aria-current={category ? undefined : "page"} className={tab(!category)}>
+              All
+            </Link>
+          </li>
+          {catalog.categories.map((c, i) => (
+            <li key={c.id} className={i >= IN_ROW ? "desk:hidden" : undefined}>
+              <Link href={href(c.id)} aria-current={category === c.id ? "page" : undefined} className={tab(category === c.id)}>
+                {c.label}
+              </Link>
+            </li>
+          ))}
+          {more.length > 0 && (
+            <li className="relative hidden desk:block">
+              {/* A disclosure that needs no script: the list opens under the button. The key makes a
+                  new choice render it again, closed (React would otherwise keep it open). */}
+              <details key={category} className="group">
+                <summary className={`${tab(!!chosenInMore)} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}>
+                  {chosenInMore?.label ?? "More"}
+                  <ChevronDown size={16} strokeWidth={2} aria-hidden="true" className="transition-transform group-open:rotate-180" />
+                </summary>
+                <ul className="absolute left-0 top-[calc(100%+8px)] z-30 w-[220px] rounded-[12px] border border-line bg-card p-[6px] shadow-[0_12px_32px_-12px_rgba(23,22,47,0.28)]">
+                  {more.map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        href={href(c.id)}
+                        aria-current={category === c.id ? "page" : undefined}
+                        className={`flex h-[36px] items-center rounded-[8px] px-[10px] text-[14px] outline-none hover:bg-page focus-visible:bg-page ${
+                          category === c.id ? "font-semibold text-ink" : "text-ink-2"
+                        }`}
+                      >
+                        {c.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          )}
+        </ul>
+      </nav>
+      <p className="shrink-0 text-[13px] text-muted max-desk:hidden">
+        {count} {count === 1 ? "project" : "projects"}
+        {q ? ` for “${q}”` : ""}
+      </p>
+    </div>
+  );
+}
+
+/** One project: first frame, name and status, description, tags, stack, author. The whole card opens the page. */
+export function ProjectCardView({ project, catalog }: { project: ProjectCard; catalog: Catalog }) {
+  const icons = new Map(catalog.tech.map((t) => [t.name, t.icon]));
+  const stack = [...project.languages, ...project.tools];
+  // As many names as fit on one line of the card (about 24 letters), at least one, then "+N".
+  const shown: string[] = [];
+  for (const name of stack) {
+    if (shown.length && shown.join("").length + name.length > 24) break;
+    shown.push(name);
+  }
+  return (
+    <li className="min-w-0">
+      <Link
+        href={`/projects/${project.slug}`}
+        className={`${card} group flex h-full flex-col overflow-hidden outline-none transition-shadow hover:shadow-[0_12px_32px_-16px_rgba(23,22,47,0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`}
+      >
+        <div className="relative aspect-video overflow-hidden bg-[#17162f]">
+          {project.poster_url ? (
+            // A signed R2 link that changes on every request: a plain img, not the image optimizer.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={project.poster_url}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-[#9b98c4]">
+              <CirclePlay size={40} strokeWidth={1.5} aria-hidden="true" />
+            </span>
+          )}
+        </div>
+        <div className="flex flex-1 flex-col gap-[12px] p-[16px]">
+          <div className="flex flex-col gap-[4px]">
+            <div className="flex items-start justify-between gap-[12px]">
+              <h2 className="min-w-0 text-h font-semibold leading-[1.3] [overflow-wrap:anywhere]">{project.name}</h2>
+              {project.status && (
+                <span className="mt-[3px] inline-flex shrink-0 items-center gap-[6px] text-cap text-muted">
+                  <span aria-hidden="true" className="h-[8px] w-[8px] rounded-full bg-primary" />
+                  {labelOf(catalog.statuses, project.status)}
+                </span>
+              )}
+            </div>
+            <p className="line-clamp-2 text-body text-muted">{project.short_description}</p>
+          </div>
+          <div className="flex flex-wrap gap-[8px]">
+            {project.project_type && <TypeBadge>{labelOf(catalog.project_types, project.project_type)}</TypeBadge>}
+            {project.category && <Chip>{labelOf(catalog.categories, project.category)}</Chip>}
+          </div>
+          {shown.length > 0 && (
+            <ul aria-label="Built with" className="flex flex-wrap items-center gap-x-[12px] gap-y-[6px] text-cap text-ink-2">
+              {shown.map((name) => (
+                <li key={name} className="inline-flex items-center gap-[6px]">
+                  <TechIcon name={name} slug={icons.get(name) ?? null} size={16} />
+                  {name}
+                </li>
+              ))}
+              {stack.length > shown.length && <li className="text-muted">+{stack.length - shown.length}</li>}
+            </ul>
+          )}
+          <p className="mt-auto flex items-center gap-[8px] border-t border-line pt-[12px] text-cap text-muted">
+            <Image src={AUTHOR.photo} alt="" width={24} height={24} className="h-[24px] w-[24px] rounded-full object-cover" />
+            {AUTHOR.name}
+          </p>
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+/** No projects at all, or none for these filters: say which, and give the next step. */
+export function FeedEmpty({ filtered }: { filtered: boolean }) {
+  return (
+    <div className={`${card} flex flex-col items-center gap-[12px] px-[24px] py-[64px] text-center`}>
+      <p className="text-h font-semibold">{filtered ? "No projects match" : "No projects yet"}</p>
+      <p className="max-w-[420px] text-body text-muted">
+        {filtered ? "Try another category or a shorter search." : "Add the first one: a demo video, the story and the stack on one page."}
+      </p>
+      {filtered ? (
+        <Link href="/" className="text-[13px] font-semibold text-primary-strong underline-offset-4 hover:underline">
+          Clear filters
+        </Link>
+      ) : (
+        <Link href="/new" className={primary}>
+          <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
+          Add project
+        </Link>
+      )}
+    </div>
+  );
+}
