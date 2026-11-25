@@ -5,13 +5,15 @@ No business rules here; they live in service.py.
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import catalog
 from app.db import get_session
 from app.github import GitHub, RepoSnapshot, get_github
 from app.projects import service
 from app.projects.schemas import (
+    Feed,
     ProjectCreate,
     ProjectOut,
     RepoLink,
@@ -27,6 +29,7 @@ Session = Annotated[AsyncSession, Depends(get_session)]
 Files = Annotated[Storage, Depends(get_storage)]
 Repos = Annotated[GitHub, Depends(get_github)]
 UploadKind = Literal["video", "poster"]
+Category = Literal[tuple(catalog.CATEGORIES)]  # type: ignore[valid-type]
 
 
 # --- used by the upload page before Render; nothing is stored -------------------------------
@@ -50,6 +53,18 @@ async def create_project(
     data: ProjectCreate, session: Session, storage: Files, github: Repos
 ) -> ProjectOut:
     return service.to_out(await service.create_project(session, storage, github, data), storage)
+
+
+@router.get("/projects")
+async def list_projects(
+    session: Session,
+    storage: Files,
+    category: Category | None = None,
+    q: Annotated[str | None, Query(max_length=80)] = None,
+    limit: Annotated[int, Query(ge=1, le=96)] = 48,
+) -> Feed:
+    """The feed: newest first; optionally one category and a search (name, description, stack)."""
+    return await service.list_published(session, storage, category, q, limit)
 
 
 @router.get("/projects/by-slug/{slug}")

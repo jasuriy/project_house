@@ -146,3 +146,22 @@ class ProjectOut(BaseModel):
     repo: RepoSnapshot | None
     created_at: datetime
     updated_at: datetime
+
+
+class ProjectCard(BaseModel):
+    """One project in the feed: what its card shows, with a fresh signed link to the first frame."""
+
+    slug: str
+    name: str | None
+    short_description: str | None
+    project_type: str | None
+    category: str | None
+    status: str | None
+    languages: list[str]
+    tools: list[str]
+    poster_url: str | None
+    published_at: datetime
+
+
+class Feed(BaseModel):
+    items: list[ProjectCard]

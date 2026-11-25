@@ -324,3 +324,52 @@ async def test_api_answers_are_never_cached(client: AsyncClient) -> None:
     response = await client.get("/api/v1/projects/by-slug/nothing-here")
 
     assert response.headers["cache-control"] == "no-store"
+
+
+# --- feed --------------------------------------------------------------------------------------
+
+
+async def test_feed_lists_newest_first_with_filters_and_search(
+    client: AsyncClient, storage: FakeStorage, reflex_repo: None
+) -> None:
+    first = await client.post("/api/v1/projects", json=await reflex_payload(client, storage))
+    second_payload = {
+        **await reflex_payload(client, storage, poster=False),
+        "name": "Speech 100% notes",
+        "short_description": "Transcripts for Uzbek audio.",
+        "category": "ai_ml",
+        "repo_url": None,
+    }
+    second = await client.post("/api/v1/projects", json=second_payload)
+    assert first.status_code == second.status_code == 201
+
+    feed = (await client.get("/api/v1/projects")).json()["items"]
+    assert [p["slug"] for p in feed] == ["speech-100-notes", "reflex"]  # newest first
+    assert feed[1]["poster_url"].startswith("https://r2.test/download/posters/")
+    assert feed[0]["poster_url"] is None
+    assert set(feed[1]) == {
+        "slug",
+        "name",
+        "short_description",
+        "project_type",
+        "category",
+        "status",
+        "languages",
+        "tools",
+        "poster_url",
+        "published_at",
+    }
+
+    by_category = (await client.get("/api/v1/projects", params={"category": "ai_ml"})).json()
+    assert [p["slug"] for p in by_category["items"]] == ["speech-100-notes"]
+    by_text = (await client.get("/api/v1/projects", params={"q": "PURE python"})).json()
+    assert [p["slug"] for p in by_text["items"]] == ["reflex"]
+    by_tech = (await client.get("/api/v1/projects", params={"q": "redis"})).json()
+    assert [p["slug"] for p in by_tech["items"]] == ["speech-100-notes", "reflex"]  # both use Redis
+    literal = (await client.get("/api/v1/projects", params={"q": "100%"})).json()
+    assert [p["slug"] for p in literal["items"]] == ["speech-100-notes"]
+    none = (await client.get("/api/v1/projects", params={"q": "1%0"})).json()
+    assert none["items"] == []  # % typed by the person is not a wildcard
+
+    bad = await client.get("/api/v1/projects", params={"category": "cooking"})
+    assert bad.status_code == 422

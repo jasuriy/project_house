@@ -13,7 +13,7 @@ import uuid
 from datetime import UTC, datetime
 
 from slugify import slugify
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,7 +21,15 @@ from app.catalog import REQUIRED_LISTS, REQUIRED_TEXT, UPLOAD_RULES
 from app.errors import AppError
 from app.github import GitHub, GitHubUnavailable, RepoSnapshot, parse_repo_url
 from app.projects.models import Project
-from app.projects.schemas import ProjectCreate, ProjectOut, UploadRequest, UploadTicket, VideoOut
+from app.projects.schemas import (
+    Feed,
+    ProjectCard,
+    ProjectCreate,
+    ProjectOut,
+    UploadRequest,
+    UploadTicket,
+    VideoOut,
+)
 from app.storage import Storage, StoredFile
 
 logger = logging.getLogger(__name__)
@@ -230,3 +238,42 @@ async def get_published_video(session: AsyncSession, storage: Storage, slug: str
     if video is None:
         raise AppError(404, "video_not_found", "This project has no video")
     return video
+
+
+# --- feed -----------------------------------------------------------------------------------
+
+
+def _like(text: str) -> str:
+    """A LIKE pattern that matches the text anywhere; % and _ typed by the person stay literal."""
+    escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+async def list_published(
+    session: AsyncSession, storage: Storage, category: str | None, q: str | None, limit: int
+) -> Feed:
+    """The newest projects first, optionally of one category and matching a search in the name,
+    the short description or the technologies (case does not matter)."""
+    query = select(Project).order_by(Project.published_at.desc()).limit(limit)
+    if category:
+        query = query.where(Project.category == category)
+    if q and q.strip():
+        pattern = _like(q.strip())
+        query = query.where(
+            or_(
+                Project.name.ilike(pattern, escape="\\"),
+                Project.short_description.ilike(pattern, escape="\\"),
+                func.array_to_string(Project.languages, " ").ilike(pattern, escape="\\"),
+                func.array_to_string(Project.tools, " ").ilike(pattern, escape="\\"),
+            )
+        )
+    projects = (await session.scalars(query)).all()
+    return Feed(
+        items=[
+            ProjectCard(
+                **{f: getattr(p, f) for f in ProjectCard.model_fields if f != "poster_url"},
+                poster_url=storage.presign_get(p.poster_key) if p.poster_key else None,
+            )
+            for p in projects
+        ]
+    )
