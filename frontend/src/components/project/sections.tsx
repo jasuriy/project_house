@@ -25,7 +25,6 @@ import type { Catalog, Project } from "@/lib/api";
 import { AUTHOR } from "@/lib/author";
 import { labelOf, techRows, timeline } from "@/lib/catalog";
 import { ClampText } from "./clamp-text";
-import { CopyLinkButton } from "./copy-link";
 import { DemoVideo } from "./demo-player";
 
 // The project page "D7" (decision D29): on the left the name card, the facts, Built with and the
@@ -43,7 +42,6 @@ export function SiteHeader() {
           <LogoMark />
           Prostagram
         </Link>
-        <CopyLinkButton />
       </div>
     </header>
   );

@@ -29,7 +29,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/">["searchPara
       <FeedHeader category={category} q={q} />
       <main className="mx-auto flex max-w-[1920px] flex-col gap-[24px] px-[16px] pb-[48px] pt-[16px] sm:px-[48px]">
         <h1 className="sr-only">Projects</h1>
-        <FeedToolbar catalog={catalog} category={category} q={q} count={projects.length} />
+        <FeedToolbar catalog={catalog} category={category} q={q} />
         {projects.length === 0 ? (
           <FeedEmpty filtered={!!(category || q)} />
         ) : (

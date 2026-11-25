@@ -1,4 +1,4 @@
-import { ChevronDown, CirclePlay, Plus, Search } from "lucide-react";
+import { Bookmark, ChevronDown, CirclePlay, Heart, Plus, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { card, Chip, TypeBadge } from "@/components/page/parts";
@@ -58,7 +58,7 @@ export function FeedHeader({ category = "", q = "" }: { category?: string; q?: s
 const IN_ROW = 8;
 
 /** Category tabs in one row: plain text, the chosen one on a soft background; the rest under "More". */
-export function FeedToolbar({ catalog, category, q, count }: { catalog: Catalog; category: string; q: string; count: number }) {
+export function FeedToolbar({ catalog, category, q }: { catalog: Catalog; category: string; q: string }) {
   const href = (next: string) => {
     const query = new URLSearchParams();
     if (next) query.set("category", next);
@@ -117,10 +117,6 @@ export function FeedToolbar({ catalog, category, q, count }: { catalog: Catalog;
           )}
         </ul>
       </nav>
-      <p className="shrink-0 text-[13px] text-muted max-desk:hidden">
-        {count} {count === 1 ? "project" : "projects"}
-        {q ? ` for “${q}”` : ""}
-      </p>
     </div>
   );
 }
@@ -129,11 +125,13 @@ export function FeedToolbar({ catalog, category, q, count }: { catalog: Catalog;
 export function ProjectCardView({ project, catalog }: { project: ProjectCard; catalog: Catalog }) {
   const icons = new Map(catalog.tech.map((t) => [t.name, t.icon]));
   const stack = [...project.languages, ...project.tools].map((name) => ({ name, icon: icons.get(name) ?? null }));
+  // The card is a box: its top part is the link to the page, its footer holds the author and the
+  // Like and Save buttons (a button cannot sit inside a link).
   return (
-    <li className="min-w-0">
+    <li className={`${card} group flex min-w-0 flex-col overflow-hidden transition-shadow hover:shadow-[0_12px_32px_-16px_rgba(23,22,47,0.28)]`}>
       <Link
         href={`/projects/${project.slug}`}
-        className={`${card} group flex h-full flex-col overflow-hidden outline-none transition-shadow hover:shadow-[0_12px_32px_-16px_rgba(23,22,47,0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`}
+        className="flex flex-1 flex-col outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
       >
         <div className="relative aspect-video overflow-hidden bg-[#17162f]">
           {project.poster_url ? (
@@ -151,7 +149,7 @@ export function ProjectCardView({ project, catalog }: { project: ProjectCard; ca
             </span>
           )}
         </div>
-        <div className="flex flex-1 flex-col gap-[12px] p-[16px]">
+        <div className="flex flex-1 flex-col gap-[12px] p-[16px] pb-[12px]">
           <div className="flex flex-col gap-[4px]">
             <div className="flex items-start justify-between gap-[12px]">
               <h2 className="min-w-0 text-h font-semibold leading-[1.3] [overflow-wrap:anywhere]">{project.name}</h2>
@@ -169,13 +167,36 @@ export function ProjectCardView({ project, catalog }: { project: ProjectCard; ca
             {project.category && <Chip>{labelOf(catalog.categories, project.category)}</Chip>}
           </div>
           {stack.length > 0 && <StackLine items={stack} />}
-          <p className="mt-auto flex items-center gap-[8px] border-t border-line pt-[12px] text-cap text-muted">
-            <Image src={AUTHOR.photo} alt="" width={24} height={24} className="h-[24px] w-[24px] rounded-full object-cover" />
-            {AUTHOR.name}
-          </p>
         </div>
       </Link>
+      <div className="mx-[16px] flex items-center justify-between gap-[8px] border-t border-line py-[8px]">
+        <p className="flex items-center gap-[8px] text-cap text-muted">
+          <Image src={AUTHOR.photo} alt="" width={24} height={24} className="h-[24px] w-[24px] rounded-full object-cover" />
+          {AUTHOR.name}
+        </p>
+        <CardActions name={project.name ?? "this project"} />
+      </div>
     </li>
+  );
+}
+
+/**
+ * Like and Save. They only show for now (Bek, 2026-11-25): pressing them changes nothing until accounts
+ * exist. Thin outline icons, like the rest of the page; 36px targets, 44px on a phone.
+ */
+function CardActions({ name }: { name: string }) {
+  const button =
+    "tap relative inline-flex h-[36px] w-[36px] items-center justify-center rounded-full text-muted outline-none transition-colors " +
+    "hover:bg-page hover:text-ink focus-visible:outline-2 focus-visible:outline-primary";
+  return (
+    <div className="flex items-center gap-[2px]">
+      <button type="button" aria-label={`Like ${name}`} aria-pressed="false" className={button}>
+        <Heart size={18} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+      <button type="button" aria-label={`Save ${name}`} aria-pressed="false" className={button}>
+        <Bookmark size={18} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    </div>
   );
 }
 
