@@ -7,7 +7,6 @@ export type UploadKind = "video" | "poster";
 export type Catalog = {
   project_types: Choice[];
   categories: Choice[];
-  post_languages: Choice[];
   statuses: Choice[];
   deliverables: Choice[];
   licenses: Choice[];
@@ -27,17 +26,13 @@ export type ProjectForm = {
   short_description: string | null;
   project_type: string | null;
   category: string | null;
-  post_languages: string[];
   problem: string | null;
   outcome: string | null;
   languages: string[];
   tools: string[];
   deliverables: string[];
-  getting_started: string | null;
-  requirements: string | null;
   license: string | null;
   status: string | null;
-  limitations: string | null;
   how_it_works: string | null;
   started_on: string | null;
   finished_on: string | null;
@@ -89,17 +84,13 @@ export const EMPTY_FORM: ProjectForm = {
   short_description: null,
   project_type: null,
   category: null,
-  post_languages: [],
   problem: null,
   outcome: null,
   languages: [],
   tools: [],
   deliverables: [],
-  getting_started: null,
-  requirements: null,
   license: null,
   status: null,
-  limitations: null,
   how_it_works: null,
   started_on: null,
   finished_on: null,

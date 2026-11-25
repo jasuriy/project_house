@@ -4,28 +4,24 @@ import { LogoMark } from "@/components/ui/icons";
 import { AUTHOR } from "@/lib/author";
 
 // Home: one way in, the Add project button, which opens the upload page. Header and button use
-// the upload page's sizes and colours, so the step from here to /new looks seamless.
+// the upload page's sizes and colours (D29), so the step from here to /new looks seamless.
 export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex h-[52px] items-center border-b border-[#f0ebea] px-[16px] md:h-[42px] md:pl-[38px] md:pr-[30px]">
-        <div className="flex items-center gap-[7px]">
-          <LogoMark size={23} />
-          <span className="text-[19px] font-extrabold tracking-[-0.015em] text-ink">Prostagram</span>
+      <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
+        <div className="mx-auto flex h-[52px] max-w-[1920px] items-center justify-between gap-[16px] px-[16px] sm:px-[48px]">
+          <span className="inline-flex h-[44px] items-center gap-[8px] text-[17px] font-bold text-ink">
+            <LogoMark />
+            Prostagram
+          </span>
+          <Image src={AUTHOR.photo} alt={AUTHOR.name} width={32} height={32} className="rounded-full" />
         </div>
-        <Image
-          src={AUTHOR.photo}
-          alt={AUTHOR.name}
-          width={25}
-          height={25}
-          className="ml-auto rounded-full"
-        />
       </header>
 
       <main className="flex flex-1 items-center justify-center px-[16px]">
         <Link
           href="/new"
-          className="inline-flex h-[44px] items-center rounded-[6px] bg-primary px-[22px] text-[14px] font-bold text-white shadow-[0_1px_2px_rgba(59,50,219,0.25)] outline-none transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="inline-flex h-[44px] items-center rounded-[8px] bg-primary px-[20px] text-[15px] font-semibold text-white shadow-[0_1px_2px_rgba(79,70,229,0.25),0_4px_12px_rgba(79,70,229,0.2)] outline-none transition-colors hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           Add project
         </Link>

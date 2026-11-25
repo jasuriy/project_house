@@ -16,7 +16,7 @@ export type TechItem = { name: string; icon: string | null };
  * The project's technologies in display rows. Programming languages always go to "Languages"
  * (also when typed by hand); a tool goes to its catalog group, or to "Other" when unknown.
  */
-export function techRows(project: Project, catalog: Catalog): { group: string; items: TechItem[] }[] {
+export function techRows(project: Pick<Project, "languages" | "tools">, catalog: Catalog): { group: string; items: TechItem[] }[] {
   const byName = new Map(catalog.tech.map((t) => [t.name, t]));
   const rows = new Map<string, TechItem[]>();
   const add = (group: string, item: TechItem) => rows.set(group, [...(rows.get(group) ?? []), item]);
@@ -31,10 +31,10 @@ export function techRows(project: Project, catalog: Catalog): { group: string; i
 
 const MONTH = new Intl.DateTimeFormat("en", { month: "short", year: "numeric", timeZone: "UTC" });
 
-/** "Oct 2022 - ongoing", "Oct 2022 - Mar 2023", or null without a start date. */
-export function timeline(project: Project): string | null {
+/** "Oct 2022 – now", "Oct 2022 – Mar 2023", "Oct 2022", or null without a start date (D29 format). */
+export function timeline(project: Pick<Project, "started_on" | "finished_on" | "ongoing">): string | null {
   if (!project.started_on) return null;
   const start = MONTH.format(new Date(project.started_on));
-  const end = project.ongoing ? "ongoing" : project.finished_on ? MONTH.format(new Date(project.finished_on)) : null;
-  return end ? `${start} - ${end}` : start;
+  const end = project.ongoing ? "now" : project.finished_on ? MONTH.format(new Date(project.finished_on)) : null;
+  return end ? `${start} – ${end}` : start;
 }

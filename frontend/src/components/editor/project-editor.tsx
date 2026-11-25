@@ -2,16 +2,34 @@
 
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useLayoutEffect, useState } from "react";
+import { card, PageGrid } from "@/components/page/parts";
+import { Byline } from "@/components/project/sections";
 import { ApiError, type Catalog, api } from "@/lib/api";
 import { dateError, missingFields, repoPending, useProjectForm } from "@/lib/use-project-form";
+import { BuiltEditor } from "./built-editor";
 import { EditorHeader } from "./editor-header";
-import { DetailsSection, SetupSection, TechSection } from "./form-sections";
-import { ReadyCard } from "./ready-card";
-import { RepoCard } from "./repo-card";
-import { SECTIONS } from "./sections";
-import { VideoCard } from "./video-card";
+import { FactsEditor } from "./facts-editor";
+import { IdentEditor } from "./ident-editor";
+import { RepoEditor } from "./repo-editor";
+import { FOCUS_ORDER, isComplete, partsMatch, READY_PARTS } from "./sections";
+import { StoryEditor } from "./story-editor";
+import { VideoSlot } from "./video-slot";
 
-/** The upload page: owns the form and the catalog, and lays out every section. */
+const MESSAGES: Record<string, string> = {
+  name: "Add the project's name.",
+  short_description: "Add what it is and who it is for.",
+  deliverables: "Choose at least one thing people get.",
+  languages: "Add at least one language.",
+  tools: "Add at least one framework or tool.",
+  video: "Add a demo video.",
+  problem: "Say what the problem is.",
+  outcome: "Say what changed.",
+};
+
+/**
+ * The upload page "U4" (D29): the project page itself, every value edited where it shows.
+ * Owns the form and the catalog, and lays the parts out on the project page's grid.
+ */
 export function ProjectEditor() {
   const router = useRouter();
   const state = useProjectForm();
@@ -20,6 +38,7 @@ export function ProjectEditor() {
   const [showErrors, setShowErrors] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     api.catalog().then(setCatalog, () => setCatalogError(true));
@@ -31,6 +50,7 @@ export function ProjectEditor() {
       setShowErrors(false);
       setRendering(false);
       setRenderError(null);
+      setStatus("");
     },
     [],
   );
@@ -38,140 +58,116 @@ export function ProjectEditor() {
   if (catalogError) {
     return (
       <EditorLayout header={<EditorHeader />}>
-        <p role="alert" className="text-[14px] text-danger">
+        <p role="alert" className="text-cap text-danger">
           Could not reach the server. Reload the page to try again.
         </p>
       </EditorLayout>
     );
   }
   if (!catalog) return <EditorSkeleton />;
+  if (process.env.NODE_ENV !== "production" && !partsMatch(catalog.required_fields)) {
+    console.error("READY_PARTS does not hold exactly the catalog's required_fields", catalog.required_fields);
+  }
 
   const missing = missingFields(catalog, state.form, state.video);
+  const done = READY_PARTS.map((part) => isComplete(part.fields, missing));
   const repoWaiting = repoPending(state);
-  // While the link is being checked the card shows "Checking...", so no message then.
-  const repoError =
-    showErrors && repoWaiting && !state.repoLinking ? "Connect the repository (press Enter) or clear the link" : null;
+  // While the link is being checked the card shows "Checking", so no message then.
+  const repoError = showErrors && repoWaiting && !state.repoLinking ? "Press Link to check it, or clear the field." : null;
   const datesWrong = dateError(state.form);
   const errorFor = (field: string) => {
-    if (datesWrong && (field === "started_on" || field === "finished_on")) return datesWrong;
-    return showErrors && missing.has(field) ? "Required" : null;
+    if (field === "started_on") return datesWrong;
+    return showErrors && missing.has(field) ? (MESSAGES[field] ?? "Required") : null;
   };
 
   async function render() {
     setShowErrors(true);
     setRenderError(null);
-    if (missing.size > 0 || datesWrong) return scrollToFirstMissing(missing);
-    if (repoWaiting) return document.getElementById("demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const bad = new Set<string>([...missing, ...(datesWrong ? ["started_on"] : [])]);
+    if (bad.size > 0) {
+      const left = READY_PARTS.filter((part) => !isComplete(part.fields, missing)).map((p) => p.label);
+      setStatus(left.length ? `Not ready yet: ${left.join(", ")}.` : "Check the dates.");
+      // Focus (and so scroll to) the first field that needs attention, in reading order.
+      const first = FOCUS_ORDER.find(([field]) => bad.has(field));
+      if (first) document.getElementById(first[1])?.focus();
+      return;
+    }
+    if (repoWaiting) {
+      setStatus("The repository link is not checked yet.");
+      document.getElementById("repo_url")?.focus();
+      return;
+    }
     setRendering(true);
+    setStatus("Rendering the project.");
     try {
       const project = await state.submit();
       router.push(`/projects/${project.slug}`);
     } catch (e) {
       if (e instanceof ApiError && e.code === "busy") return; // a second click while rendering
-      setRenderError(e instanceof ApiError ? e.message : "Could not render the project");
+      const message = e instanceof ApiError ? e.message : "Could not render the project";
+      setRenderError(message);
+      setStatus(message);
       setRendering(false);
     }
   }
 
-  const sectionProps = { form: state.form, setField: state.setField, catalog, errorFor };
+  const props = { form: state.form, setField: state.setField, catalog, errorFor };
   return (
-    <EditorLayout
-      header={<EditorHeader onRender={render} rendering={rendering} />}
-      middle={
-        <>
-          <div className="order-1 lg:order-none">
-            <DetailsSection {...sectionProps} />
-          </div>
-          <div className="order-3 lg:order-none">
-            <TechSection {...sectionProps} />
-          </div>
-          <div className="order-4 lg:order-none">
-            <SetupSection {...sectionProps} />
-          </div>
-        </>
-      }
-      right={
-        <>
-          <div id="demo" className="order-2 flex scroll-mt-4 flex-col gap-[14px] lg:order-none lg:gap-[13px]">
-            <VideoCard state={state} catalog={catalog} error={errorFor("video")} />
-            <RepoCard state={state} error={repoError} />
-          </div>
-          {renderError && (
-            <p role="alert" className="order-5 text-[13px] text-danger lg:order-none">
-              {renderError}
-            </p>
-          )}
-          <div className="order-5 lg:order-none lg:mt-[4px]">
-            <ReadyCard missing={missing} />
-          </div>
-        </>
-      }
-    />
+    <EditorLayout header={<EditorHeader done={done} onRender={render} rendering={rendering} status={status} />}>
+      <PageGrid
+        first={<IdentEditor {...props} />}
+        media={
+          <>
+            <VideoSlot state={state} catalog={catalog} error={errorFor("video")} />
+            <Byline />
+            <StoryEditor {...props} />
+          </>
+        }
+        rest={[
+          <FactsEditor key="facts" {...props} />,
+          <BuiltEditor key="built" {...props} />,
+          <div key="repo" className="flex flex-col gap-gs">
+            <RepoEditor state={state} error={repoError} />
+            {renderError && (
+              <p role="alert" className="text-cap text-danger">
+                {renderError}
+              </p>
+            )}
+          </div>,
+        ]}
+      />
+    </EditorLayout>
   );
 }
 
-function scrollToFirstMissing(missing: Set<string>) {
-  const section = SECTIONS.find((s) => s.fields.some((f) => missing.has(f)));
-  if (section) document.getElementById(section.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-/** Page frame shared by the editor and its loading state, so nothing jumps when data arrives. */
-function EditorLayout({
-  header,
-  middle,
-  right,
-  children,
-}: {
-  header: ReactNode;
-  middle?: ReactNode;
-  right?: ReactNode;
-  children?: ReactNode;
-}) {
+/** Header and page frame, shared by the editor and its loading state, so nothing jumps when data arrives. */
+function EditorLayout({ header, children }: { header: ReactNode; children: ReactNode }) {
   return (
     <div className="min-h-screen">
       {header}
-      {/* Full width, edges in line with the header's logo and Render button (Bek, 2026-11-24, D27). */}
-      <main className="px-[16px] pb-[40px] pt-[13px] md:pl-[38px] md:pr-[30px]">
-        <h1 className="text-[26px] font-extrabold leading-[32px] tracking-[-0.025em] text-ink lg:text-[32.7px] lg:leading-[38px]">
-          Build your project page
-        </h1>
-        <p className="text-[15px] leading-[20px] text-muted lg:text-[15.4px]">
-          Everything someone needs to understand your project.
-        </p>
-        {children ?? (
-          // Desktop: form | video, repo, ready. Below 1024 px the two column wrappers dissolve
-          // ("contents") and the cards stack in form order (the order-* classes).
-          <div className="mt-[18px] flex flex-col gap-[14px] lg:grid lg:grid-cols-[minmax(0,511fr)_minmax(0,492fr)] lg:items-start lg:gap-x-[15px] lg:gap-y-0">
-            <div className="contents lg:flex lg:flex-col lg:gap-[14px]">{middle}</div>
-            <div className="contents lg:flex lg:flex-col lg:gap-[13px]">{right}</div>
-          </div>
-        )}
+      <main className="mx-auto max-w-[1920px] px-[16px] py-[16px] sm:px-[48px]">
+        <h1 className="sr-only">Build your project page</h1>
+        {children}
       </main>
     </div>
   );
 }
 
 export function EditorSkeleton() {
-  const block = (height: number) => (
-    <div className="animate-pulse rounded-[10px] border border-line bg-card" style={{ height }} />
-  );
+  const block = (height: number) => <div className={`${card} animate-pulse`} style={{ height }} />;
   return (
-    <EditorLayout
-      header={<EditorHeader />}
-      middle={
-        <>
-          {block(400)}
-          {block(142)}
-          {block(260)}
-        </>
-      }
-      right={
-        <>
-          {block(290)}
-          {block(190)}
-          {block(145)}
-        </>
-      }
-    />
+    <EditorLayout header={<EditorHeader />}>
+      <PageGrid
+        first={block(213)}
+        media={
+          <>
+            <div className={`${card} aspect-video animate-pulse`} />
+            {block(40)}
+            {block(153)}
+          </>
+        }
+        rest={[block(65), block(137), block(234)]}
+      />
+    </EditorLayout>
   );
 }

@@ -1,31 +1,250 @@
 @import "tailwindcss";
 
-/* Design tokens, sampled from docs/mockups/upload-page.png and project-page.png. */
+/* Design tokens of the D7 project page and the U4 upload page (decision D29), taken from the approved
+   canvas https://claude.ai/artifact/WLaPPbpz4Roh7KNgiAEZku. */
 @theme {
-  --font-sans: var(--font-figtree), var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-golos), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
-  --color-page: #fbf7f6;
-  --color-card: #fdf9f8;
-  --color-line: #ebe4e3; /* card borders and dividers */
-  --color-field: #fefbfa; /* inputs */
-  --color-field-line: #dcd5d4;
-  --color-ink: #0d0c22; /* headings */
-  --color-ink-2: #1f1e33; /* labels, values */
-  --color-muted: #5a596c; /* secondary text */
-  --color-faint: #8b8a99;
-  --color-primary: #3b32db;
-  --color-primary-strong: #2f27b8;
-  --color-primary-soft: #dedcff; /* selected chip */
-  --color-primary-tint: #efe9fd; /* active nav, ready card */
-  --color-chip: #f3efee; /* technology chips */
-  --color-success: #2eb158;
-  --color-danger: #e5484d;
+  /* desk: the two-column layout; below it the cards stack. wide: every size one step up. */
+  --breakpoint-desk: 68.75rem; /* 1100px */
+  --breakpoint-wide: 106.25rem; /* 1700px */
+
+  --color-page: #f5f5fa;
+  --color-card: #ffffff;
+  --color-line: #e6e5ef; /* card borders and dividers */
+  --color-ink: #17162f; /* headings, values */
+  --color-ink-2: #3d3c55; /* body text */
+  --color-muted: #5b5a74; /* labels, secondary text */
+  --color-faint: #6e6c88; /* placeholders (5.04:1 on white) */
+  --color-primary: #4f46e5;
+  --color-primary-strong: #4338ca;
+  --color-primary-ink: #3730a3; /* text on the tinted type badge */
+  --color-badge: #e9e7fd; /* project type badge, selected file */
+  --color-chip: #f1f0fa; /* category and deliverable chips */
+  --color-track: #ecebf3; /* empty segment */
+  --color-seg-1: #c4bff5;
+  --color-seg-2: #8c84ee;
+  --color-dash: #857fe0; /* dashed outline of an empty field (3.44:1 on white) */
+  --color-danger: #b91c1c;
+
+
+  --animate-seg-fill: seg-fill 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  @keyframes seg-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
+/* One type and spacing scale; on wide screens every role moves one step up the same scale. */
+@theme inline {
+  --text-cap: var(--fs-cap);
+  --text-cap--line-height: var(--lh-cap);
+  --text-body: var(--fs-body);
+  --text-body--line-height: 1.5;
+  --text-h: var(--fs-h);
+  --text-h--line-height: 28px;
+  --text-title: var(--fs-title);
+  --text-title--line-height: 1.1;
+  --text-mono: var(--fs-mono);
+  --spacing-chip: var(--chip);
+  --spacing-pc: var(--pc);
+  --spacing-pi: var(--pi);
+  --spacing-gc: var(--gc);
+  --spacing-gi: var(--gi);
+  --spacing-gs: var(--gs);
+}
+
+:root {
+  --fs-cap: 13px;
+  --lh-cap: 20px;
+  --fs-body: 15px;
+  --fs-h: 17px;
+  --fs-title: 40px;
+  --fs-mono: 13px;
+  --chip: 28px;
+  --pc: 16px; /* card padding */
+  --pi: 24px; /* padding of the name card and the story */
+  --gc: 16px; /* gap between the two columns */
+  --gi: 12px; /* gap inside a card */
+  --gs: 12px; /* gap between cards in a column */
+  --lf: 0.64; /* the video column's share of the width */
+}
+
+/* Phone: the same boundary as Tailwind's max-sm (width < 40rem). Body text is 16px so text fields do
+   not make iOS Safari zoom in. */
+@media (width < 40rem) {
+  :root {
+    --fs-title: 28px;
+    --fs-body: 16px;
+  }
+}
+
+@media (min-width: 106.25rem) {
+  :root {
+    --fs-cap: 15px;
+    --lh-cap: 24px;
+    --fs-body: 17px;
+    --fs-h: 21px;
+    --fs-title: 56px;
+    --fs-mono: 15px;
+    --chip: 32px;
+    --pc: 24px;
+    --pi: 32px;
+    --gc: 24px;
+    --gi: 16px;
+    --gs: 16px;
+    --lf: 0.58;
+  }
+}
+
+/* Edit in place (upload page U4, D29). Every cue is drawn with outline or background, never with
+   border or a padding change, and the padding is paid back by a negative margin: the text sits
+   exactly where the project page prints it, whatever the state. */
+@layer components {
+  .ed {
+    --py: 2px;
+    --px: 8px;
+    display: block;
+    min-width: 0;
+    width: calc(100% + 2 * var(--px));
+    margin: calc(0px - var(--py)) calc(0px - var(--px));
+    padding: var(--py) var(--px);
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    resize: none;
+    overflow: hidden;
+    field-sizing: content;
+    outline: 1px solid transparent;
+    outline-offset: -1px;
+    transition:
+      outline-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .ed::placeholder {
+    color: var(--color-faint);
+    opacity: 1;
+  }
+  .ed:placeholder-shown {
+    outline: 1px dashed var(--color-dash);
+  }
+  .ed:hover {
+    outline: 1px solid var(--color-primary);
+    background: var(--color-page);
+  }
+  .ed:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    background: var(--color-card);
+  }
+  .ed[aria-invalid="true"] {
+    outline: 2px solid var(--color-danger);
+    outline-offset: -2px;
+    background: var(--color-card);
+  }
+
+  /* The 40px name: its grey placeholder is the cue; a dashed box would sit 2px from the description's. */
+  .ed-title {
+    --py: 0px;
+    flex: 0 1 auto;
+    width: auto;
+    max-width: calc(100% + 16px);
+    min-width: 4ch;
+    font-size: var(--fs-title);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  .ed-title::placeholder {
+    color: #8a88a3; /* 3.43:1, large text */
+  }
+  .ed-title:placeholder-shown:not(:hover, :focus, [aria-invalid="true"]) {
+    outline-color: transparent;
+  }
+  .ed-desc {
+    font-size: var(--fs-h);
+    line-height: 1.5;
+    color: var(--color-muted);
+    min-height: calc(3 * 1.5em + 2 * var(--py));
+    max-height: calc(4 * 1.5em + 2 * var(--py));
+    overflow-y: auto;
+  }
+  .ed-story {
+    --py: 4px;
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    color: var(--color-ink-2);
+    min-height: calc(3 * 1.5em + 2 * var(--py));
+    max-height: calc(8 * 1.5em + 2 * var(--py));
+    overflow-y: auto;
+  }
+  @supports not (field-sizing: content) {
+    /* Older browsers: the name takes the full row (the tags wrap under it); heights come from
+       useAutosize. */
+    .ed-title {
+      width: calc(100% + 16px);
+    }
+  }
+
+  /* Things you pick (tags, facts, pills, the video slot): dashed in the shape they will take. */
+  .pick {
+    outline: 1px solid transparent;
+    outline-offset: -1px;
+    transition:
+      outline-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .pick-empty {
+    outline: 1px dashed var(--color-dash);
+    background: transparent;
+    color: var(--color-faint);
+    font-weight: 400;
+  }
+  .pick:hover {
+    outline: 1px solid var(--color-primary);
+    background: var(--color-page);
+  }
+  .pick:focus-visible,
+  .pick:has(:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .pick[data-invalid="true"] {
+    outline: 2px solid var(--color-danger);
+    outline-offset: 1px;
+  }
+
+  /* Phone: small controls get an invisible 44x44 touch area; the drawing does not change. Percentages
+     in top/bottom follow the height and in left/right the width, so one rule grows only what is short. */
+  /* The control itself must be positioned (relative or absolute). */
+  @media (width < 40rem) {
+    /* The 28px name: 7px more above and below to tap (45px); the margin pays it back. */
+    .ed.ed-title {
+      padding-block: 7px;
+      margin-block: -7px;
+    }
+    .tap::before {
+      content: "";
+      position: absolute;
+      inset: min(0px, calc((100% - 44px) / 2));
+    }
+  }
 }
 
 body {
   background: var(--color-page);
-  color: var(--color-ink-2);
+  color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }

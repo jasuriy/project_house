@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { Figtree, JetBrains_Mono, Onest } from "next/font/google";
+import { Golos_Text, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const figtree = Figtree({ subsets: ["latin", "latin-ext"], variable: "--font-figtree" });
-// Figtree has no Cyrillic letters; Onest (similar shapes) draws Russian text.
-const onest = Onest({ subsets: ["cyrillic"], variable: "--font-onest" });
+// Golos Text draws Latin and Cyrillic, so Uzbek and Russian text use the same face (D29).
+const golos = Golos_Text({ subsets: ["latin", "latin-ext", "cyrillic"], variable: "--font-golos" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
 
 export const metadata: Metadata = {
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${figtree.variable} ${onest.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${golos.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );

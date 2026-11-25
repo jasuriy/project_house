@@ -1,38 +1,71 @@
-import { ArrowRight, ChevronRight, House, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { LogoMark } from "@/components/ui/icons";
+import { READY_PARTS } from "./sections";
 
-// The mockup's "Draft saved" status is left out on purpose: nothing is saved before Render
-// (Bek, 2026-11-24).
-export function EditorHeader({ onRender, rendering = false }: { onRender?: () => void; rendering?: boolean }) {
+// The logo is not a link here: leaving the upload page empties the form (D24). "Draft saved" is left
+// out on purpose: nothing is saved before Render.
+export function EditorHeader({
+  done,
+  onRender,
+  rendering = false,
+  status = "",
+}: {
+  done?: boolean[];
+  onRender?: () => void;
+  rendering?: boolean;
+  status?: string;
+}) {
+  const count = done?.filter(Boolean).length ?? 0;
   return (
-    <header className="relative flex h-[52px] items-center border-b border-[#f0ebea] px-[16px] md:h-[42px] md:pl-[38px] md:pr-[30px]">
-      <div className="flex items-center gap-[7px]">
-        <LogoMark size={23} />
-        <span className="text-[19px] font-extrabold tracking-[-0.015em] text-ink">Prostagram</span>
-      </div>
-
-      <nav
-        aria-label="Breadcrumb"
-        className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-[7px] text-[12.3px] text-ink-2 lg:flex"
-      >
-        <House size={15} strokeWidth={1.8} aria-label="Home" />
-        <ChevronRight size={13} strokeWidth={2} aria-hidden="true" className="text-muted" />
-        <span>Workspace</span>
-        <span className="px-[3px] text-muted">/</span>
-        <span aria-current="page">New project</span>
-      </nav>
-
-      <div className="ml-auto flex items-center">
-        <button
-          type="button"
-          onClick={onRender}
-          disabled={rendering}
-          className="inline-flex h-[40px] items-center gap-[8px] rounded-[6px] bg-primary px-[14px] text-[13px] md:h-[29px] md:px-[20px] md:text-[12px] font-bold text-white shadow-[0_1px_2px_rgba(59,50,219,0.25)] outline-none transition-colors hover:bg-primary-strong focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-70"
-        >
-          {rendering ? <LoaderCircle size={14} className="animate-spin" aria-hidden="true" /> : null}
-          Render project
-          <ArrowRight size={14} strokeWidth={2.2} aria-hidden="true" />
-        </button>
+    <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
+      <div className="mx-auto flex h-[52px] max-w-[1920px] items-center justify-between gap-[16px] px-[16px] sm:px-[48px]">
+        <span className="inline-flex h-[44px] items-center gap-[8px] text-[17px] font-bold text-ink">
+          <LogoMark />
+          Prostagram
+        </span>
+        <div className="flex items-center gap-[16px]">
+          {done && (
+            <div className="flex items-center gap-[8px] whitespace-nowrap text-[13px] leading-[20px] text-muted max-sm:hidden">
+              <span>
+                <b className="font-semibold text-ink">
+                  {count} of {READY_PARTS.length}
+                </b>{" "}
+                ready
+              </span>
+              <ol aria-label="Parts ready" className="flex gap-[4px]">
+                {READY_PARTS.map((part, i) => (
+                  <li
+                    key={part.label}
+                    title={`${part.label}: ${done[i] ? "done" : "to do"}`}
+                    className={`h-[4px] w-[16px] rounded-[2px] ${done[i] ? "bg-primary" : "bg-track"}`}
+                  >
+                    <span className="sr-only">
+                      {part.label}: {done[i] ? "done" : "to do"}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {done && (
+            // Phone: the count alone (the page is long there, so it matters most); the bar is desktop only.
+            <span aria-label={`${count} of ${READY_PARTS.length} parts ready`} className="text-[13px] font-semibold text-ink sm:hidden">
+              {count}/{READY_PARTS.length}
+            </span>
+          )}
+          <p aria-live="polite" className="sr-only">
+            {status}
+          </p>
+          <button
+            type="button"
+            onClick={onRender}
+            disabled={rendering || !onRender}
+            className="inline-flex h-[36px] items-center justify-center gap-[8px] whitespace-nowrap rounded-[8px] bg-primary px-[16px] text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(79,70,229,0.25),0_4px_12px_rgba(79,70,229,0.2)] outline-none transition-colors hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70 max-sm:h-[44px]"
+          >
+            {rendering && <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />}
+            Render project
+          </button>
+        </div>
       </div>
     </header>
   );

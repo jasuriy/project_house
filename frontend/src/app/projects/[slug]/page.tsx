@@ -1,17 +1,16 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PageGrid } from "@/components/page/parts";
 import {
-  AtAGlance,
-  Breadcrumb,
-  DetailCards,
-  Hero,
+  BuiltWith,
+  Byline,
+  FactsStrip,
+  IdentCard,
   RepoPreview,
   SiteHeader,
-  SummaryCards,
-  TechStack,
-  VideoCard,
+  StoryCard,
+  VideoFrame,
 } from "@/components/project/sections";
-import { labelOf } from "@/lib/catalog";
 import { fetchCatalog, fetchPublishedProject } from "@/lib/server-api";
 
 // The project is read on every request and never cached: it carries signed video links that
@@ -21,7 +20,7 @@ export default function ProjectPage({ params }: PageProps<"/projects/[slug]">) {
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <Suspense fallback={<main className="px-[16px] py-[40px] text-muted md:px-[48px]">Loading...</main>}>
+      <Suspense fallback={<main className="px-[16px] py-[40px] text-muted sm:px-[48px]">Loading...</main>}>
         <ProjectView params={params} />
       </Suspense>
     </div>
@@ -33,42 +32,26 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
   const [project, catalog] = await Promise.all([fetchPublishedProject(slug), fetchCatalog()]);
   if (!project) notFound();
 
+  // D7 (D29): details on the left, video on the right; the DOM follows the phone's order (PageGrid).
   return (
     <>
       <title>{`${project.name} - Prostagram`}</title>
-      {/* Full width, edges in line with the header (Bek, 2026-11-24, D27). */}
-      <main className="px-[16px] pb-[48px] pt-[8px] md:px-[24px] lg:pl-[48px] lg:pr-[47px]">
-        <div className="lg:pl-[4px]">
-          <Breadcrumb category={labelOf(catalog.categories, project.category)} />
-        </div>
-
-        <div className="mt-[18px] grid grid-cols-1 gap-[16px] lg:grid-cols-[415px_repeat(3,minmax(0,1fr))] lg:gap-x-[17px] lg:gap-y-0">
-          <div className="lg:pl-[3px]">
-            <Hero project={project} catalog={catalog} />
-          </div>
-          <SummaryCards project={project} catalog={catalog} />
-        </div>
-
-        <div className="mt-[16px] grid grid-cols-1 items-start gap-[16px] lg:mt-[21px] lg:grid-cols-[minmax(0,730fr)_minmax(0,430fr)] lg:gap-[25px]">
-          <VideoCard project={project} />
-          <div className="lg:mt-[6px]">
-            <AtAGlance project={project} catalog={catalog} />
-          </div>
-        </div>
-
-        {/* The repository is optional (D25): without it the technology card takes the full row. */}
-        <div
-          className={`mt-[16px] grid grid-cols-1 items-start gap-[16px] lg:mt-[14px] lg:gap-[30px] ${
-            project.repo ? "lg:grid-cols-[minmax(0,512fr)_minmax(0,643fr)]" : ""
-          }`}
-        >
-          <TechStack project={project} catalog={catalog} />
-          <RepoPreview project={project} />
-        </div>
-
-        <div className="mt-[16px] lg:mt-[19px]">
-          <DetailCards project={project} catalog={catalog} />
-        </div>
+      <main className="mx-auto max-w-[1920px] px-[16px] py-[16px] sm:px-[48px]">
+        <PageGrid
+          first={<IdentCard project={project} catalog={catalog} />}
+          media={
+            <>
+              <VideoFrame project={project} />
+              <Byline />
+              <StoryCard project={project} />
+            </>
+          }
+          rest={[
+            <FactsStrip key="facts" project={project} catalog={catalog} />,
+            <BuiltWith key="built" project={project} catalog={catalog} />,
+            <RepoPreview key="repo" project={project} />,
+          ]}
+        />
       </main>
     </>
   );

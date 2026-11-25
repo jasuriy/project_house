@@ -16,7 +16,7 @@ export function DemoVideo({ slug, video }: { slug: string; video: Video | null }
 
   if (!links) {
     return (
-      <div className="flex aspect-video items-center justify-center rounded-[8px] bg-[#1c1d33] text-[14px] text-white/70">
+      <div className="flex h-full w-full items-center justify-center text-cap text-muted">
         No demo video
       </div>
     );
@@ -39,7 +39,8 @@ export function DemoVideo({ slug, video }: { slug: string; video: Video | null }
   }
 
   return (
-    <div className="relative aspect-video overflow-hidden rounded-[8px] bg-[#1c1d33]">
+    // The frame (size, corners, shadow) belongs to the page around it.
+    <div className="h-full w-full bg-[#17162f]">
       <video
         src={links.url}
         poster={links.poster_url ?? undefined}
