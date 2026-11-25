@@ -11,11 +11,11 @@ const PLACEHOLDER = {
   outcome: "What changed: a number, a before and after, what people can do now",
 } as const;
 
-/** The story: its three parts one under another, tall enough to fill the video column (Bek, 2026-11-25). */
+/** The story: the three parts of the project page's story card, side by side. */
 export function StoryEditor({ form, setField, catalog, errorFor }: SectionProps) {
   return (
     <FormSection id="story" icon={BookOpen} title="The story">
-      <div className="flex flex-col gap-[16px]">
+      <div className="grid grid-cols-3 gap-[16px] max-desk:grid-cols-1">
         {STORY.map((step) => (
           <Field
             key={step.field}
@@ -27,7 +27,7 @@ export function StoryEditor({ form, setField, catalog, errorFor }: SectionProps)
           >
             <TextAreaField
               id={step.field}
-              rows={7}
+              rows={4}
               value={form[step.field]}
               maxLength={catalog.text_limits[step.field]}
               placeholder={PLACEHOLDER[step.field]}
