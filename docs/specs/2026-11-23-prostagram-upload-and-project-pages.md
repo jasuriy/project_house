@@ -51,6 +51,8 @@ Out of scope now: login, explore page, editing a rendered project, likes, commen
 | D26 | Tech stack limits (Bek, 2026-11-24): at most 7 programming languages and at most 5 frameworks & tools (was 20 each). The form stops adding at the limit ("At most N"); the server refuses longer lists. The mockup data (6 tools) and the Reflex sample below (7 tools) are older than this rule and are kept as display data only. |
 | D27 | Upload page layout (Bek, 2026-11-24): the left section nav is removed, and the page is no longer a centred 1280 px column: it fills the screen width, its edges in line with the header's logo and Render button. Two columns (form | video, repository, ready) keep the 511:492 ratio. The project page also fills the width (same day, Bek): its rows keep their column ratios, so on wide screens the video grows and the space under "At a glance" grows with it. |
 | D28 | Project page redundancy removed (Bek, 2026-11-24): no "Try demo" (it duplicated the video's own play control) and no "View source" (it duplicated "Open on GitHub" in the repository preview). The video shows the browser's own controls from the start (play, time, volume, fullscreen), never starts by itself, and returns to its first frame at the end; the separate duration badge is removed (the controls show the time). |
+| D29 | Redesign (Bek, 2026-11-25), designs in the canvas https://claude.ai/artifact/WLaPPbpz4Roh7KNgiAEZku: the project page is "D7" (one screen: details, facts, Built with and the repository preview on the left; video, author and the three-part story on the right) and the upload page is "U4", the same page edited in place (every value typed or picked where it shows). Removed from the form, the pages and the database (migration 0004, values deleted): Post language (supersedes D7) and Get it running, that is getting started, requirements and limitations (supersedes D15 and D25's examples), because the repository's README already shows how to run it. The repository preview (D18) takes Get it running's place; the GitHub button under the video is gone ("Open on GitHub" in the preview does that job, D28 rule). The short description gets three lines of room. The upload header keeps a five-part ready bar with "N of 5 ready" (Video, Story, About, Facts, Built with). With no dates, the project page keeps the Timeline cell and shows a dash. Desktop first; phone and tablet are designed after Bek approves desktop. Sections 4 and 6 below describe the earlier mockup layout; where they differ, D29 wins. |
+| D30 | Phone and tablet (Bek, 2026-11-25: wait for the phone design before deploying; design it and build it). Below 1100px both pages are one column in this order: name card, video, author, story, facts, Built with, repository. The DOM follows that order (the desktop grid places the cards), so keyboards and screen readers meet them as a phone shows them; on desktop Tab now goes name card, video, story, facts, Built with, repository. Phone (<640px): title 28px, body 16px (no iOS zoom in text fields); facts Status | License with Timeline on its own row; Built with labels above their chips; repository files above the README; choosers open as bottom sheets with a Done button; every control has a 44x44 touch area; the upload header shows "N/5" beside Render. |
 
 ## 3. Choices made by Claude (technical, Bek may object)
 
@@ -102,13 +104,12 @@ New fields (marked bold above) use exactly the mockup's field styles.
 
 ### 4.1 Required fields
 
-Required: name, short description, project type, category, post language, problem, outcome,
-at least one programming language, at least one framework or tool, at least one deliverable, getting
-started, requirements, license, status, demo video.
-Optional: GitHub repo (D25), limitations, how it works, dates.
+Required (D29): name, short description, project type, category, problem, outcome, at least one
+programming language, at least one framework or tool, at least one deliverable, license, status, demo video.
+Optional: GitHub repo (D25), how it works, dates.
 
-Text limits: name 80, short description 160, problem and outcome 600, getting started,
-requirements, limitations 300, how it works 600 characters. (Bek confirmed 2026-11-23.)
+Text limits: name 80, short description 160, problem and outcome 600, how it works 600 characters.
+(Bek confirmed 2026-11-23; getting started, requirements and limitations removed by D29.)
 
 ## 5. Fixed lists
 

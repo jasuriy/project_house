@@ -255,8 +255,12 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
 
 - **State.** The typed fields, the uploaded video (its temporary key, name, size, length), the
   repo preview and the text typed in the repo box are React state. The repo text lives here, not in
-  the repo card, so Render can refuse a link that is typed but not connected yet (`repoPending`). The checklist ("Ready to render") is computed
-  from them and the catalog's `required_fields`, with the server's blank rule (spaces only = empty).
+  the repository card, so Render can refuse a link that is typed but not checked yet (`repoPending`). The header's
+  "N of 5 ready" bar (D29) is computed from them and the catalog's `required_fields`, with the server's blank
+  rule (spaces only = empty); `components/editor/sections.ts` groups the fields into the five parts.
+- **Edit in place (D29).** The upload page draws the project page itself: the shared pieces live in
+  `components/page/parts.tsx`, and every value is a field in its own place. Editing cues are outlines
+  (`.ed`, `.pick` in `globals.css`), never borders or padding changes, so typing or focusing moves nothing.
 - **Leaving the page empties it.** F5 or closing the tab: the browser's memory is gone. Moving to
   another page of the site: Next.js keeps the page hidden (React `Activity`) and would show the old
   form on return, so a `useLayoutEffect` clean-up resets the state when the page is hidden
