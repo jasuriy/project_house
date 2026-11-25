@@ -21,6 +21,7 @@ export function Popover({
   open: controlledOpen,
   onOpenChange,
   panelClassName,
+  fill,
   children,
 }: {
   trigger: (t: Trigger) => ReactNode;
@@ -31,6 +32,8 @@ export function Popover({
   onOpenChange?: (open: boolean) => void;
   /** Place the panel against the nearest positioned ancestor instead of the trigger (with its own classes). */
   panelClassName?: string;
+  /** The trigger takes the full width and the panel matches it (a field's chooser). */
+  fill?: boolean;
   children: ReactNode;
 }) {
   const [ownOpen, setOwnOpen] = useState(false);
@@ -67,9 +70,11 @@ export function Popover({
     };
   }, [open, onOpenChange]);
 
-  const place = panelClassName ?? `top-[calc(100%+8px)] w-(--pw) ${align === "right" ? "right-0" : "left-0"}`;
+  const place =
+    panelClassName ?? (fill ? "inset-x-0 top-[calc(100%+8px)]" : `top-[calc(100%+8px)] w-(--pw) ${align === "right" ? "right-0" : "left-0"}`);
+  const rootClass = panelClassName ? "inline-flex" : fill ? "relative flex w-full flex-col" : "relative inline-flex";
   return (
-    <div ref={rootRef} className={panelClassName ? "inline-flex" : "relative inline-flex"}>
+    <div ref={rootRef} className={rootClass}>
       {trigger({ open, toggle: () => setOpen(!open), panelId })}
       {open && (
         <>

@@ -1,15 +1,15 @@
 "use client";
 
-import { LoaderCircle, Upload } from "lucide-react";
+import { CirclePlay, CloudUpload, LoaderCircle, TriangleAlert } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { ApiError, type Catalog, api } from "@/lib/api";
 import { formatSize, putWithProgress, readVideo } from "@/lib/upload";
 import type { ProjectFormState } from "@/lib/use-project-form";
-import { FieldError } from "./shared";
+import { FormSection } from "@/components/ui/form";
 
 type Job = { fileName: string; size: number; phase: "preparing" | "uploading" | "finishing"; progress: number };
 
-const frame = "relative aspect-video w-full overflow-hidden rounded-[16px]";
+const frame = "relative aspect-video w-full overflow-hidden rounded-[12px]";
 
 /**
  * The demo video in the project page's video frame: a dashed slot while empty, progress while
@@ -84,8 +84,21 @@ export function VideoSlot({ state, catalog, error: requiredError }: { state: Pro
   const shownError = error ?? (video ? null : requiredError);
   const maxSize = formatSize(catalog.upload_rules.video.max_bytes).replace(".0", "");
 
+  const missing = !!requiredError && !video && !error;
   return (
-    <div className="flex flex-col gap-[4px]">
+    <FormSection
+      id="video-title"
+      icon={CirclePlay}
+      title="Demo video"
+      aside={
+        missing ? (
+          <span id="video-error" className="inline-flex items-center gap-[4px] text-cap text-danger">
+            <TriangleAlert size={14} strokeWidth={2} aria-hidden="true" />
+            Missing
+          </span>
+        ) : null
+      }
+    >
       <input
         ref={inputRef}
         type="file"
@@ -103,10 +116,7 @@ export function VideoSlot({ state, catalog, error: requiredError }: { state: Pro
       {job ? (
         <Progress job={job} />
       ) : video ? (
-        <section
-          aria-label="Demo video"
-          className={`${frame} border border-line bg-[#17162f] shadow-[0_12px_32px_-16px_rgba(23,22,47,0.28)]`}
-        >
+        <div className={`${frame} border border-line bg-[#17162f]`}>
           {/* The person's own file from memory (an object URL): nothing is downloaded. */}
           <video
             src={video.previewUrl}
@@ -121,11 +131,11 @@ export function VideoSlot({ state, catalog, error: requiredError }: { state: Pro
           <button
             type="button"
             onClick={choose}
-            className="pick tap absolute right-[12px] top-[12px] inline-flex h-[36px] items-center rounded-[8px] border border-line bg-card px-[12px] text-[13px] font-semibold text-ink"
+            className="tap absolute right-[12px] top-[12px] inline-flex h-[36px] items-center rounded-[10px] border border-line bg-card px-[12px] text-[13px] font-semibold text-ink outline-none hover:bg-page focus-visible:shadow-[0_0_0_3px_rgba(79,70,229,0.4)]"
           >
             Replace video
           </button>
-        </section>
+        </div>
       ) : (
         <button
           type="button"
@@ -142,25 +152,32 @@ export function VideoSlot({ state, catalog, error: requiredError }: { state: Pro
             const file = e.dataTransfer.files[0];
             if (file) void upload(file);
           }}
-          data-invalid={!!shownError || undefined}
-          aria-describedby={shownError ? "video-error" : undefined}
-          className={`pick ${frame} flex flex-col items-center justify-center gap-[8px] text-center ${
-            dragging ? "bg-badge outline outline-1 outline-primary" : "pick-empty bg-card"
+          aria-describedby={error ? "video-message" : missing ? "video-error" : undefined}
+          className={`${frame} flex flex-col items-center justify-center gap-[8px] border-2 border-dashed text-center outline-none transition-colors focus-visible:shadow-[0_0_0_3px_rgba(79,70,229,0.16)] ${
+            dragging
+              ? "border-primary bg-badge/40"
+              : shownError
+                ? "border-danger bg-card"
+                : "border-[#c9c5f5] bg-card hover:border-primary hover:bg-page"
           }`}
         >
-          <span aria-hidden="true" className="mb-[4px] inline-flex h-[48px] w-[48px] items-center justify-center rounded-full bg-badge text-primary">
-            <Upload size={24} strokeWidth={2} />
+          <span aria-hidden="true" className="mb-[6px] inline-flex h-[64px] w-[64px] items-center justify-center rounded-full bg-badge text-primary">
+            <CloudUpload size={28} strokeWidth={2} />
           </span>
-          <span className="text-h font-semibold text-ink">Add your demo video</span>
-          <span className="text-cap text-muted [@media(hover:none)]:hidden">Drop an MP4 or WebM here, up to {maxSize}</span>
+          <span className="text-h font-semibold text-ink">Select a video to upload</span>
+          <span className="text-cap text-muted [@media(hover:none)]:hidden">or drop it here. MP4 or WebM, up to {maxSize}</span>
           <span className="hidden text-cap text-muted [@media(hover:none)]:inline">MP4 or WebM, up to {maxSize}</span>
-          <span aria-hidden="true" className="mt-[8px] inline-flex h-[36px] items-center rounded-[8px] border border-line bg-card px-[12px] text-[13px] font-semibold text-ink">
+          <span aria-hidden="true" className="mt-[10px] inline-flex h-[40px] items-center rounded-[10px] bg-primary px-[16px] text-[13px] font-semibold text-white">
             Choose video
           </span>
         </button>
       )}
-      <FieldError id="video" message={shownError} />
-    </div>
+      {error && (
+        <p id="video-message" role="status" className="text-cap text-danger">
+          {error}
+        </p>
+      )}
+    </FormSection>
   );
 }
 

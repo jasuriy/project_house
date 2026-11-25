@@ -89,9 +89,13 @@ export function Chip({ icon, children }: { icon?: ReactNode; children: ReactNode
   );
 }
 
-export function DeliverableChip({ id, label }: { id: string; label: string }) {
+export function DeliverableIcon({ id }: { id: string }) {
   const Icon = DELIVERABLE_ICONS[id] ?? Package;
-  return <Chip icon={<Icon size={16} strokeWidth={2} className="shrink-0 text-primary" aria-hidden="true" />}>{label}</Chip>;
+  return <Icon size={16} strokeWidth={2} className="shrink-0 text-primary" aria-hidden="true" />;
+}
+
+export function DeliverableChip({ id, label }: { id: string; label: string }) {
+  return <Chip icon={<DeliverableIcon id={id} />}>{label}</Chip>;
 }
 
 export function TechChip({ name, icon }: { name: string; icon: string | null }) {

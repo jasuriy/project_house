@@ -1,130 +1,86 @@
 "use client";
 
-import { useRef } from "react";
-import { card, DeliverableChip } from "@/components/page/parts";
-import { Popover } from "@/components/ui/popover";
-import { SelectPill } from "@/components/ui/select-pill";
-import { TagPicker } from "@/components/ui/tag-picker";
-import { labelOf } from "@/lib/catalog";
-import { FieldError, GhostPill, PencilButton, type SectionProps, useAutosize } from "./shared";
+import { CodeXml, FileText, Globe, Layers, Monitor, Smartphone, Sparkle, Tag, type LucideIcon } from "lucide-react";
+import { DeliverableIcon } from "@/components/page/parts";
+import { ChipsField } from "@/components/ui/chips-field";
+import { Field, FormSection, SelectField, TextAreaField, TextField } from "@/components/ui/form";
+import type { SectionProps } from "./shared";
 
-/** The name card, edited where the project page shows it: name, type, category, description, You get. */
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  web_app: Monitor,
+  website: Globe,
+  ai_model: Sparkle,
+  library: Layers,
+  api: CodeXml,
+  mobile_app: Smartphone,
+};
+
+/** About the project: the fields of the project page's name card. */
 export function IdentEditor({ form, setField, catalog, errorFor }: SectionProps) {
-  const nameRef = useRef<HTMLTextAreaElement>(null);
-  const descRef = useRef<HTMLTextAreaElement>(null);
-  useAutosize(nameRef, form.name);
-  useAutosize(descRef, form.short_description);
-
-  const nameError = errorFor("name");
-  const tagError = errorFor("project_type") ?? errorFor("category");
-  const descError = errorFor("short_description");
-  const getError = errorFor("deliverables");
-  const deliverables = (
-    <TagPicker
-      id="deliverables-search"
-      label="What people get"
-      values={form.deliverables}
-      onChange={(v) => setField("deliverables", v)}
-      options={catalog.deliverables.map((d) => ({ value: d.id, label: d.label }))}
-    />
-  );
-
+  const limit = catalog.text_limits;
   return (
-    <section aria-label="About the project" className={`${card} flex flex-col gap-gi p-pi max-sm:p-[16px]`}>
-      <div className="flex flex-col gap-[4px]">
-        <div className="flex flex-wrap items-center justify-between gap-x-[16px] gap-y-[8px]">
-          <textarea
-            ref={nameRef}
-            id="name"
-            rows={1}
-            value={form.name ?? ""}
-            maxLength={catalog.text_limits.name}
-            placeholder="Project name"
-            aria-label="Project name"
-            aria-invalid={!!nameError || undefined}
-            aria-describedby={nameError ? "name-error" : undefined}
-            // One value: Enter does not start a new line.
-            onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
-            onChange={(e) => setField("name", e.target.value.replace(/\n/g, " "))}
-            className="ed ed-title"
-          />
-          <div className="flex flex-wrap items-center gap-[8px]">
-            <SelectPill
-              id="project_type"
-              label="Project type"
-              look="badge"
-              placeholder="Type"
-              value={form.project_type}
-              options={catalog.project_types}
-              invalid={!!errorFor("project_type")}
-              errorId="project_type-error"
-              onChange={(v) => setField("project_type", v)}
-            />
-            <SelectPill
-              id="category"
-              label="Category"
-              look="chip"
-              placeholder="Category"
-              value={form.category}
-              options={catalog.categories}
-              invalid={!!errorFor("category")}
-              errorId="project_type-error"
-              onChange={(v) => setField("category", v)}
-            />
-          </div>
-        </div>
-        <FieldError id="name" message={nameError} />
-        {tagError && (
-          <p id="project_type-error" className="text-cap text-danger">
-            Choose a type and a category.
-          </p>
-        )}
-        <textarea
-          ref={descRef}
-          id="short_description"
-          value={form.short_description ?? ""}
-          maxLength={catalog.text_limits.short_description}
-          placeholder="What it is and who it is for"
-          aria-label="Short description"
-          aria-invalid={!!descError || undefined}
-          aria-describedby={descError ? "short_description-error" : undefined}
-          onChange={(e) => setField("short_description", e.target.value)}
-          className="ed ed-desc"
+    <FormSection id="about" icon={FileText} title="About the project">
+      <Field id="name" label="Project name" missing={!!errorFor("name")} count={{ value: (form.name ?? "").length, max: limit.name }}>
+        <TextField
+          id="name"
+          value={form.name}
+          maxLength={limit.name}
+          placeholder="e.g. Reflex"
+          invalid={!!errorFor("name")}
+          onChange={(v) => setField("name", v)}
         />
-        <FieldError id="short_description" message={descError} />
+      </Field>
+      <div className="grid grid-cols-2 gap-[16px] max-sm:grid-cols-1">
+        <Field id="project_type" label="Type" missing={!!errorFor("project_type")}>
+          <SelectField
+            id="project_type"
+            value={form.project_type}
+            options={catalog.project_types}
+            placeholder="Choose"
+            icon={(form.project_type && TYPE_ICONS[form.project_type]) || Monitor}
+            invalid={!!errorFor("project_type")}
+            onChange={(v) => setField("project_type", v)}
+          />
+        </Field>
+        <Field id="category" label="Category" missing={!!errorFor("category")}>
+          <SelectField
+            id="category"
+            value={form.category}
+            options={catalog.categories}
+            placeholder="Choose"
+            icon={Tag}
+            invalid={!!errorFor("category")}
+            onChange={(v) => setField("category", v)}
+          />
+        </Field>
       </div>
-
-      <div className="flex flex-col gap-[4px]">
-        <div className="flex flex-wrap items-center gap-[8px]">
-          <span className="mr-[4px] text-cap text-muted">You get</span>
-          {form.deliverables.map((id) => (
-            <DeliverableChip key={id} id={id} label={labelOf(catalog.deliverables, id)} />
-          ))}
-          <Popover
-            label="What people get"
-            width={320}
-            trigger={({ open, toggle, panelId }) =>
-              form.deliverables.length > 0 ? (
-                <PencilButton id="deliverables" aria-label="Change what people get" aria-expanded={open} aria-controls={panelId} onClick={toggle} />
-              ) : (
-                <GhostPill
-                  id="deliverables"
-                  invalid={!!getError}
-                  aria-expanded={open}
-                  aria-controls={panelId}
-                  aria-describedby={getError ? "deliverables-error" : undefined}
-                  onClick={toggle}
-                >
-                  Add what people get
-                </GhostPill>
-              )
-            }
-          >
-            {deliverables}
-          </Popover>
-        </div>
-        <FieldError id="deliverables" message={getError} />
-      </div>
-    </section>
+      <Field
+        id="short_description"
+        label="Short description"
+        missing={!!errorFor("short_description")}
+        count={{ value: (form.short_description ?? "").length, max: limit.short_description }}
+      >
+        <TextAreaField
+          id="short_description"
+          rows={3}
+          value={form.short_description}
+          maxLength={limit.short_description}
+          placeholder="What it is and who it is for"
+          invalid={!!errorFor("short_description")}
+          onChange={(v) => setField("short_description", v)}
+        />
+      </Field>
+      <Field id="deliverables" label="What people get" missing={!!errorFor("deliverables")}>
+        <ChipsField
+          id="deliverables"
+          label="What people get"
+          values={form.deliverables}
+          options={catalog.deliverables.map((d) => ({ value: d.id, label: d.label, icon: <DeliverableIcon id={d.id} /> }))}
+          placeholder="Choose what people get"
+          invalid={!!errorFor("deliverables")}
+          onChange={(v) => setField("deliverables", v)}
+        />
+      </Field>
+    </FormSection>
   );
 }

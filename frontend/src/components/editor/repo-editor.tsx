@@ -1,20 +1,24 @@
 "use client";
 
-import { LoaderCircle, Trash2 } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useLayoutEffect, useState } from "react";
-import { card, headerButton, OpenOnGitHub, RepoFiles, RepoIdentity } from "@/components/page/parts";
+import { OpenOnGitHub, RepoFiles, RepoIdentity } from "@/components/page/parts";
+import { box, Field, FormSection } from "@/components/ui/form";
 import { GitHubIcon } from "@/components/ui/icons";
 import { ApiError, api } from "@/lib/api";
 import { linkedRepoText, type ProjectFormState } from "@/lib/use-project-form";
-import { PencilButton } from "./shared";
 
 const button =
-  "pick inline-flex h-[40px] shrink-0 items-center justify-center gap-[8px] rounded-[8px] border border-line bg-card px-[12px] text-[13px] font-semibold text-ink disabled:cursor-default disabled:text-muted max-sm:h-[44px] max-sm:min-w-[44px]";
+  "inline-flex h-[44px] shrink-0 items-center justify-center gap-[8px] rounded-[10px] border border-[#d3d1e0] bg-card px-[16px] text-[13px] font-semibold text-ink outline-none transition-colors " +
+  "hover:border-[#a9a7c0] hover:bg-page focus-visible:shadow-[0_0_0_3px_rgba(79,70,229,0.16)] disabled:cursor-default disabled:text-muted disabled:hover:bg-card";
+
+const small =
+  "tap relative inline-flex h-[28px] items-center rounded-[8px] border border-[#d3d1e0] bg-card px-[12px] text-[13px] font-semibold text-ink outline-none transition-colors hover:bg-page focus-visible:shadow-[0_0_0_3px_rgba(79,70,229,0.16)]";
 
 /**
- * The repository card (optional, D25). Linked, it is the project page's preview plus a pencil.
- * Otherwise a link field: Link asks the server to read GitHub (nothing is saved before Render). The
- * typed text lives in the form state, so Render can refuse a link that was typed but never checked.
+ * The repository section (optional, D25). A link field: Link asks the server to read GitHub (nothing
+ * is saved before Render), then the project page's preview shows under it with Change and Remove.
+ * The typed text lives in the form state, so Render can refuse a link that was typed but never checked.
  */
 export function RepoEditor({ state, error: renderError }: { state: ProjectFormState; error: string | null }) {
   const repo = state.repo?.snapshot ?? null;
@@ -79,102 +83,81 @@ export function RepoEditor({ state, error: renderError }: { state: ProjectFormSt
   }
 
   const message = error ?? renderError;
-  const header = (
-    <div className="flex items-center justify-between gap-[8px]">
-      <h2 id="rp" className="text-h font-semibold">
-        Repository
-      </h2>
-      {repo && !editing ? (
-        <div className="flex items-center gap-[8px]">
-          <OpenOnGitHub url={repo.html_url} />
-          <PencilButton aria-label={`Change or remove the repository ${repo.full_name}`} onClick={() => setEditing(true)} />
-        </div>
-      ) : (
-        <span className="text-cap text-muted">Optional</span>
-      )}
-    </div>
-  );
-
   return (
-    <section aria-labelledby="rp" className={`${card} flex flex-col gap-gi p-pc`}>
-      {header}
+    <FormSection
+      id="repository"
+      icon={GitHubIcon}
+      title="Repository"
+      aside={
+        repo && !editing ? (
+          <div className="flex items-center gap-[8px]">
+            <button type="button" onClick={() => setEditing(true)} className={small}>
+              Change
+            </button>
+            <button type="button" onClick={remove} className={`${small} text-danger`}>
+              Remove
+            </button>
+          </div>
+        ) : (
+          <span className="text-cap text-muted">Optional</span>
+        )
+      }
+    >
       {showField ? (
-        <>
-          <div className="flex flex-col gap-[4px]">
-            {/* As high as the repository's name row it is replaced by (40px; 48px on wide screens). */}
-            <div className={`flex min-h-[max(40px,calc(2*var(--lh-cap)))] items-center gap-[8px] ${editing ? "max-sm:flex-wrap" : ""}`}>
-              <span className={`relative block min-w-0 flex-1 ${editing ? "max-sm:basis-full" : ""}`}>
-                <span className="pointer-events-none absolute left-[12px] top-1/2 inline-flex -translate-y-1/2 text-ink">
-                  <GitHubIcon size={18} />
-                </span>
-                <input
-                  id="repo_url"
-                  type="text"
-                  inputMode="url"
-                  autoFocus={editing}
-                  value={value}
-                  placeholder="github.com/owner/repo"
-                  aria-label="GitHub repository, optional"
-                  aria-invalid={!!message || undefined}
-                  aria-describedby={message ? "repo_url-error" : undefined}
-                  onChange={(e) => change(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      void link();
-                    }
-                    if (e.key === "Escape" && editing) cancel();
-                  }}
-                  className={`h-[40px] w-full rounded-[8px] border bg-card pl-[38px] pr-[12px] text-[13px] text-ink outline-none max-sm:h-[44px] max-sm:text-[16px] placeholder:text-faint focus:border-primary focus:shadow-[0_0_0_3px_rgba(79,70,229,0.16)] ${
-                    message ? "border-danger" : "border-[#d9d8e6]"
-                  }`}
-                />
+        <Field id="repo_url" label="GitHub link" message={message}>
+          <div className={`flex items-center gap-[8px] ${editing ? "max-sm:flex-wrap" : ""}`}>
+            <span className={`relative block min-w-0 flex-1 ${editing ? "max-sm:basis-full" : ""}`}>
+              <span aria-hidden="true" className="pointer-events-none absolute left-[14px] top-1/2 inline-flex -translate-y-1/2 text-ink">
+                <GitHubIcon size={18} />
               </span>
-              <span className="flex shrink-0 items-center gap-[8px]">
-                {linking ? (
-                  <button type="button" disabled className={button}>
-                    <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />
-                    Checking
-                  </button>
-                ) : (
-                  <button type="button" disabled={(typed ?? value).trim() === ""} onClick={() => void link()} className={button}>
-                    {editing ? "Save" : "Link"}
-                  </button>
-                )}
-                {editing && !linking && (
-                  <>
-                    <button type="button" onClick={cancel} className={`${headerButton} h-[40px] border-transparent bg-transparent max-sm:h-[44px]`}>
-                      Cancel
-                    </button>
-                    <button type="button" aria-label="Remove the repository" onClick={remove} className={`${button} w-[40px] px-0 text-danger`}>
-                      <Trash2 size={16} strokeWidth={2} aria-hidden="true" />
-                    </button>
-                  </>
-                )}
-              </span>
-            </div>
-            {message && (
-              <p id="repo_url-error" role="status" className="text-cap text-danger">
-                {message}
-              </p>
+              <input
+                id="repo_url"
+                type="text"
+                inputMode="url"
+                autoFocus={editing}
+                value={value}
+                placeholder="github.com/owner/repo"
+                aria-invalid={!!message || undefined}
+                aria-describedby={message ? "repo_url-message" : undefined}
+                onChange={(e) => change(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void link();
+                  }
+                  if (e.key === "Escape" && editing) cancel();
+                }}
+                className={`${box} ${message ? "border-danger" : "border-[#d3d1e0]"} h-[44px] pl-[44px] pr-[14px]`}
+              />
+            </span>
+            {linking ? (
+              <button type="button" disabled className={button}>
+                <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />
+                Checking
+              </button>
+            ) : (
+              <button type="button" disabled={(typed ?? value).trim() === ""} onClick={() => void link()} className={button}>
+                {editing ? "Save" : "Link"}
+              </button>
+            )}
+            {editing && !linking && (
+              <button type="button" onClick={cancel} className={`${button} border-transparent`}>
+                Cancel
+              </button>
             )}
           </div>
-          {repo ? (
-            <RepoFiles repo={repo} />
-          ) : (
-            <div className="flex min-h-[calc(4*(var(--lh-cap)+4px)+14px)] items-center justify-center rounded-[8px] px-[24px] text-center text-cap text-faint outline-1 -outline-offset-1 outline-dash outline-dashed">
-              Its files and README show here once it is linked.
-            </div>
-          )}
-        </>
+        </Field>
       ) : (
         repo && (
-          <>
-            <RepoIdentity repo={repo} />
+          <div className="flex flex-col gap-[12px]">
+            <div className="flex items-center justify-between gap-[12px]">
+              <RepoIdentity repo={repo} />
+              <OpenOnGitHub url={repo.html_url} />
+            </div>
             <RepoFiles repo={repo} />
-          </>
+          </div>
         )
       )}
-    </section>
+    </FormSection>
   );
 }

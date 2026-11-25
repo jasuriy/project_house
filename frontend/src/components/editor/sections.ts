@@ -26,7 +26,7 @@ export const FOCUS_ORDER: [field: string, elementId: string][] = [
   ["short_description", "short_description"],
   ["deliverables", "deliverables"],
   ["status", "status"],
-  ["started_on", "started_on-btn"],
+  ["started_on", "started_on"],
   ["license", "license"],
   ["languages", "languages"],
   ["tools", "tools"],

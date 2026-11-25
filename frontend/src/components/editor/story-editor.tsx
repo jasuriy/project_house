@@ -1,52 +1,42 @@
 "use client";
 
-import { useRef } from "react";
-import { card, SegBar, STORY, StepHeading } from "@/components/page/parts";
-import { FieldError, type SectionProps, useAutosize } from "./shared";
+import { BookOpen } from "lucide-react";
+import { STORY } from "@/components/page/parts";
+import { Field, FormSection, TextAreaField } from "@/components/ui/form";
+import type { SectionProps } from "./shared";
 
 const PLACEHOLDER = {
   problem: "Who has the problem, and what does it cost them?",
-  how_it_works: "The main idea, in a sentence or two (optional)",
+  how_it_works: "The main idea, in a sentence or two",
   outcome: "What changed: a number, a before and after, what people can do now",
 } as const;
 
-/** The story card of the project page, each part written where it shows. */
-export function StoryEditor(props: SectionProps) {
+/** The story: its three parts one under another, tall enough to fill the video column (Bek, 2026-11-25). */
+export function StoryEditor({ form, setField, catalog, errorFor }: SectionProps) {
   return (
-    <section
-      aria-label="The story"
-      className={`${card} grid auto-cols-[minmax(0,1fr)] grid-flow-col gap-x-pi gap-y-gi px-pi py-pc max-sm:grid-flow-row max-sm:gap-[20px] max-sm:p-[16px]`}
-    >
-      {STORY.map((step) => (
-        <StoryStep key={step.field} step={step} {...props} />
-      ))}
-    </section>
-  );
-}
-
-function StoryStep({ step, form, setField, catalog, errorFor }: SectionProps & { step: (typeof STORY)[number] }) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  const value = form[step.field];
-  useAutosize(ref, value);
-  const error = errorFor(step.field);
-  return (
-    <div className="flex min-w-0 flex-col gap-[8px]">
-      <SegBar fill={step.fill} delay={step.delay} />
-      <StepHeading icon={step.icon} htmlFor={step.field}>
-        {step.title}
-      </StepHeading>
-      <textarea
-        ref={ref}
-        id={step.field}
-        value={value ?? ""}
-        maxLength={catalog.text_limits[step.field]}
-        placeholder={PLACEHOLDER[step.field]}
-        aria-invalid={!!error || undefined}
-        aria-describedby={error ? `${step.field}-error` : undefined}
-        onChange={(e) => setField(step.field, e.target.value)}
-        className="ed ed-story"
-      />
-      <FieldError id={step.field} message={error} />
-    </div>
+    <FormSection id="story" icon={BookOpen} title="The story">
+      <div className="flex flex-col gap-[16px]">
+        {STORY.map((step) => (
+          <Field
+            key={step.field}
+            id={step.field}
+            label={step.title}
+            optional={step.field === "how_it_works"}
+            missing={!!errorFor(step.field)}
+            count={{ value: (form[step.field] ?? "").length, max: catalog.text_limits[step.field] }}
+          >
+            <TextAreaField
+              id={step.field}
+              rows={7}
+              value={form[step.field]}
+              maxLength={catalog.text_limits[step.field]}
+              placeholder={PLACEHOLDER[step.field]}
+              invalid={!!errorFor(step.field)}
+              onChange={(v) => setField(step.field, v)}
+            />
+          </Field>
+        ))}
+      </div>
+    </FormSection>
   );
 }

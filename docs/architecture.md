@@ -258,9 +258,9 @@ Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4.
   the repository card, so Render can refuse a link that is typed but not checked yet (`repoPending`). The header's
   "N of 5 ready" bar (D29) is computed from them and the catalog's `required_fields`, with the server's blank
   rule (spaces only = empty); `components/editor/sections.ts` groups the fields into the five parts.
-- **Edit in place (D29).** The upload page draws the project page itself: the shared pieces live in
-  `components/page/parts.tsx`, and every value is a field in its own place. Editing cues are outlines
-  (`.ed`, `.pick` in `globals.css`), never borders or padding changes, so typing or focusing moves nothing.
+- **A labelled form on the project page's grid (D31).** The upload page uses the project page's grid
+  (`PageGrid` in `components/page/parts.tsx`) with one form section per card; the field kit lives in
+  `components/ui/form.tsx` (label above, fixed-size boxes, character count, "Missing" after a failed Render).
 - **Leaving the page empties it.** F5 or closing the tab: the browser's memory is gone. Moving to
   another page of the site: Next.js keeps the page hidden (React `Activity`) and would show the old
   form on return, so a `useLayoutEffect` clean-up resets the state when the page is hidden
