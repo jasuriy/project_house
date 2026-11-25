@@ -2,10 +2,11 @@ import { ChevronDown, CirclePlay, Plus, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { card, Chip, TypeBadge } from "@/components/page/parts";
-import { LogoMark, TechIcon } from "@/components/ui/icons";
+import { LogoMark } from "@/components/ui/icons";
 import type { Catalog, ProjectCard } from "@/lib/api";
 import { AUTHOR } from "@/lib/author";
 import { labelOf } from "@/lib/catalog";
+import { StackLine } from "./stack-line";
 
 // The feed on the home page (Bek, 2026-11-25): a grid of project cards, newest first, with
 // category tabs and a search in the header. Filters live in the address (?category=&q=), so a feed can
@@ -127,13 +128,7 @@ export function FeedToolbar({ catalog, category, q, count }: { catalog: Catalog;
 /** One project: first frame, name and status, description, tags, stack, author. The whole card opens the page. */
 export function ProjectCardView({ project, catalog }: { project: ProjectCard; catalog: Catalog }) {
   const icons = new Map(catalog.tech.map((t) => [t.name, t.icon]));
-  const stack = [...project.languages, ...project.tools];
-  // As many names as fit on one line of the card (about 24 letters), at least one, then "+N".
-  const shown: string[] = [];
-  for (const name of stack) {
-    if (shown.length && shown.join("").length + name.length > 24) break;
-    shown.push(name);
-  }
+  const stack = [...project.languages, ...project.tools].map((name) => ({ name, icon: icons.get(name) ?? null }));
   return (
     <li className="min-w-0">
       <Link
@@ -173,17 +168,7 @@ export function ProjectCardView({ project, catalog }: { project: ProjectCard; ca
             {project.project_type && <TypeBadge>{labelOf(catalog.project_types, project.project_type)}</TypeBadge>}
             {project.category && <Chip>{labelOf(catalog.categories, project.category)}</Chip>}
           </div>
-          {shown.length > 0 && (
-            <ul aria-label="Built with" className="flex flex-wrap items-center gap-x-[12px] gap-y-[6px] text-cap text-ink-2">
-              {shown.map((name) => (
-                <li key={name} className="inline-flex items-center gap-[6px]">
-                  <TechIcon name={name} slug={icons.get(name) ?? null} size={16} />
-                  {name}
-                </li>
-              ))}
-              {stack.length > shown.length && <li className="text-muted">+{stack.length - shown.length}</li>}
-            </ul>
-          )}
+          {stack.length > 0 && <StackLine items={stack} />}
           <p className="mt-auto flex items-center gap-[8px] border-t border-line pt-[12px] text-cap text-muted">
             <Image src={AUTHOR.photo} alt="" width={24} height={24} className="h-[24px] w-[24px] rounded-full object-cover" />
             {AUTHOR.name}

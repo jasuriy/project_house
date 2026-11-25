@@ -1,9 +1,10 @@
 import { LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { LogoMark } from "@/components/ui/icons";
 import { READY_PARTS } from "./sections";
 
-// The logo is not a link here: leaving the upload page empties the form (D24). "Draft saved" is left
-// out on purpose: nothing is saved before Render.
+// The logo goes to the feed, as on every page (Bek, 2026-11-25); leaving the upload page empties the
+// form (D24). "Draft saved" is left out on purpose: nothing is saved before Render.
 export function EditorHeader({
   done,
   onRender,
@@ -20,10 +21,13 @@ export function EditorHeader({
   return (
     <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
       <div className="mx-auto flex h-[52px] max-w-[1920px] items-center justify-between gap-[16px] px-[16px] sm:px-[48px]">
-        <span className="inline-flex h-[44px] items-center gap-[8px] text-[17px] font-bold text-ink">
+        <Link
+          href="/"
+          className="inline-flex h-[44px] items-center gap-[8px] text-[17px] font-bold text-ink outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
           <LogoMark />
           Prostagram
-        </span>
+        </Link>
         <div className="flex items-center gap-[16px]">
           {done && (
             <div className="flex items-center gap-[8px] whitespace-nowrap text-[13px] leading-[20px] text-muted max-sm:hidden">
