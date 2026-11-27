@@ -18,6 +18,8 @@ export type Catalog = {
   // What Render needs: form field names, plus "video". The server checks the same list.
   required_fields: string[];
   tech: { name: string; group: string; icon: string | null }[];
+  // The server's username rules, so the sign-up page checks with exactly the same ones.
+  username_rules: { pattern: string; reserved: string[] };
 };
 
 // The fields a person edits in the form (sent with POST /projects on Render).
@@ -85,6 +87,19 @@ export type ProjectCard = {
   published_at: string;
 };
 
+/** The logged-in person, as GET /auth/me returns them (their own email included). */
+export type Me = {
+  id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  github_login: string | null;
+  avatar_url: string | null;
+  created_at: string;
+};
+
+export type SignUp = { display_name: string; username: string; email: string; password: string };
+
 export type UploadTicket = { upload_url: string; key: string; headers: Record<string, string> };
 
 /** Everything sent on Render: the form plus the temporary file keys and the repository link. */
@@ -146,4 +161,8 @@ export const api = {
   previewRepo: (url: string) => request<RepoSnapshot>("/repos/preview", { method: "POST", body: json({ url }) }),
   // Render: the one request that creates the project.
   createProject: (project: NewProject) => request<Project>("/projects", { method: "POST", body: json(project) }),
+  // Accounts: always from the browser, so the login cookie the answer sets reaches the browser.
+  signUp: (data: SignUp) => request<Me>("/auth/signup", { method: "POST", body: json(data) }),
+  logIn: (email: string, password: string) => request<Me>("/auth/login", { method: "POST", body: json({ email, password }) }),
+  logOut: () => request<null>("/auth/logout", { method: "POST" }),
 };

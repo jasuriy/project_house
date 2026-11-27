@@ -24,6 +24,12 @@ import { previewEntries } from "@/lib/repo";
 // looks exactly like the page it produces (decision D29).
 
 export const card = "rounded-[16px] border border-line bg-card";
+/** The header's main button (Add project, Sign up). `outline-solid`: Tailwind 4's `outline-none`
+ * sets the style to none, so without it the focus ring would not be drawn. */
+export const primaryButton =
+  "inline-flex h-[40px] items-center justify-center gap-[8px] whitespace-nowrap rounded-[8px] bg-primary px-[16px] text-[13px] font-semibold text-white " +
+  "shadow-[0_1px_2px_rgba(79,70,229,0.25),0_4px_12px_rgba(79,70,229,0.2)] outline-none transition-colors hover:bg-primary-strong " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-primary max-sm:h-[44px]";
 export const headerButton =
   "tap relative inline-flex h-[28px] shrink-0 items-center gap-[6px] rounded-[8px] border border-line bg-card px-[12px] text-[13px] font-semibold text-ink " +
   "outline-none transition-colors hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";

@@ -1,5 +1,8 @@
 from httpx import AsyncClient
 
+from app.accounts.schemas import USERNAME
+from app.catalog import RESERVED_USERNAMES
+
 
 async def test_catalog_lists_choices_limits_and_tech(client: AsyncClient) -> None:
     response = await client.get("/api/v1/catalog")
@@ -23,6 +26,7 @@ async def test_catalog_lists_choices_limits_and_tech(client: AsyncClient) -> Non
         "video",
     ]
     assert body["text_limits"]["name"] == 80
+
     assert (body["max_languages"], body["max_tools"]) == (7, 5)
     assert body["upload_rules"]["video"]["max_bytes"] == 300 * 1024 * 1024
     tech = {t["name"]: t for t in body["tech"]}
@@ -31,3 +35,12 @@ async def test_catalog_lists_choices_limits_and_tech(client: AsyncClient) -> Non
     # every technology of the reflex sample is in the catalog
     for name in ["Python", "TypeScript", "JavaScript", "Starlette", "Granian", "Socket.IO"]:
         assert name in tech
+
+
+async def test_catalog_gives_the_username_rules_the_server_uses(client: AsyncClient) -> None:
+    rules = (await client.get("/api/v1/catalog")).json()["username_rules"]
+
+    assert rules["pattern"] == USERNAME.pattern
+    assert set(rules["reserved"]) == set(RESERVED_USERNAMES)
+    # The same pattern works in the browser: no Python-only syntax.
+    assert "(?P" not in rules["pattern"] and r"\A" not in rules["pattern"]

@@ -19,7 +19,8 @@ from app.accounts.schemas import LogIn, SignUp
 from app.errors import AppError
 
 SESSION_LIFETIME = timedelta(days=30)
-# 10 wrong passwords for one email within 15 minutes lock that email's login for 15 minutes.
+# 10 wrong passwords for one email within 15 minutes lock that email's login until the oldest of
+# them is 15 minutes old (so at most 15 minutes, often less).
 MAX_FAILURES = 10
 FAILURE_WINDOW = timedelta(minutes=15)
 
@@ -110,7 +111,9 @@ async def log_in(session: AsyncSession, data: LogIn) -> tuple[User, str]:
     """Checks the password. An unknown email, a wrong password and a GitHub-only account all get
     the same answer, so the answer does not tell whether an email has an account."""
     if await _count_attempt(session, data.email) is None:
-        raise AppError(429, "too_many_attempts", "Too many failed logins. Try again in 15 minutes")
+        raise AppError(
+            429, "too_many_attempts", "Too many failed logins. Try again in a few minutes."
+        )
 
     user = await session.scalar(select(User).where(User.email == data.email))
     if not await check_password(user.password_hash if user else None, data.password):

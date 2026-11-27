@@ -173,6 +173,12 @@ def canonical_tech_names(names: list[str]) -> list[str]:
     return list(result.values())
 
 
+# Accounts (docs/specs/2026-11-27-accounts.md). The page checks a username with the same rules
+# before sending it, so they live here and reach it through the catalog.
+USERNAME_PATTERN = r"^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$"  # 3-30, no hyphen at either end
+# Words the site itself uses as addresses, so no profile can take them.
+RESERVED_USERNAMES = ["new", "login", "signup", "api", "admin", "settings", "u", "projects"]
+
 router = APIRouter()
 
 
@@ -195,4 +201,5 @@ async def get_catalog() -> dict:
         "upload_rules": UPLOAD_RULES,
         "required_fields": REQUIRED_FIELDS,
         "tech": [{"name": n, "group": g, "icon": icon} for n, g, icon in TECH_CATALOG],
+        "username_rules": {"pattern": USERNAME_PATTERN, "reserved": RESERVED_USERNAMES},
     }

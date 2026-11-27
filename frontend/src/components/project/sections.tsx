@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   card,
   Chip,
@@ -31,17 +32,19 @@ import { DemoVideo } from "./demo-player";
 // repository; on the right the video, the author and the story. Server components: they only show
 // data; the interactive parts (player, copy link, "more") are small client components.
 
-export function SiteHeader() {
+/** The logo, and on the right the account group when given (the sign-up and login pages have none). */
+export function SiteHeader({ account }: { account?: ReactNode }) {
   return (
     <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
       <div className="mx-auto flex h-[52px] max-w-[1920px] items-center justify-between gap-[16px] px-[16px] sm:px-[48px]">
         <Link
           href="/"
-          className="inline-flex h-[44px] items-center gap-[8px] text-[17px] font-bold text-ink outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex h-[44px] items-center gap-[8px] text-[17px] font-bold text-ink outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-primary"
         >
           <LogoMark />
           Prostagram
         </Link>
+        {account}
       </div>
     </header>
   );

@@ -1,12 +1,13 @@
 "use client";
 
 import { ChevronDown, TriangleAlert } from "lucide-react";
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, InputHTMLAttributes, ReactNode } from "react";
 import type { Choice } from "@/lib/api";
 
 // The upload page's form kit (U5): a visible label above every field, boxes of a fixed size, an
 // optional icon inside on the left, a chevron on selects, a character count under text fields, and
-// "Missing" beside the label when Render finds the field empty.
+// "Missing" beside the label when Render finds the field empty. The sign-up and login forms use it
+// too, with a grey hint under the box that the message replaces when there is one.
 
 /** An icon component: a lucide icon or any component taking a size (the GitHub mark). */
 export type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
@@ -28,6 +29,8 @@ export function Field({
   aside,
   count,
   message,
+  hint,
+  announce = true,
   className = "",
   children,
 }: {
@@ -38,6 +41,10 @@ export function Field({
   aside?: ReactNode;
   count?: { value: number; max: number };
   message?: string | null;
+  /** Grey text under the box (`${id}-hint`), shown while there is no message. */
+  hint?: ReactNode;
+  /** Read the message out as it appears. Off where focus moves to the field instead (sign-up). */
+  announce?: boolean;
   className?: string;
   children: ReactNode;
 }) {
@@ -63,10 +70,16 @@ export function Field({
         )}
       </div>
       {children}
-      {message && (
-        <p id={`${id}-message`} role="status" className="text-cap text-danger">
+      {message ? (
+        <p id={`${id}-message`} role={announce ? "status" : undefined} className="text-cap text-danger">
           {message}
         </p>
+      ) : (
+        hint && (
+          <p id={`${id}-hint`} className="text-cap text-muted [overflow-wrap:anywhere]">
+            {hint}
+          </p>
+        )
       )}
     </div>
   );
@@ -74,6 +87,11 @@ export function Field({
 
 /** Props every control shares; `invalid` paints the border red and points at the label's "Missing". */
 type Base = { id: string; invalid?: boolean; describedBy?: string };
+/** Browser hints for a text box (password managers, phone keyboards); left out by default. */
+type BrowserHints = Pick<
+  InputHTMLAttributes<HTMLInputElement>,
+  "name" | "autoComplete" | "autoCapitalize" | "spellCheck"
+>;
 /** What explains an invalid field: the label's "Missing" by default, or the given message instead. */
 const described = (id: string, invalid?: boolean, message?: string) => (invalid ? (message ?? `${id}-error`) : undefined);
 
@@ -88,15 +106,23 @@ export function TextField({
   describedBy,
   type = "text",
   disabled,
-}: Base & {
-  value: string | null;
-  onChange: (value: string) => void;
-  maxLength?: number;
-  placeholder?: string;
-  icon?: Icon;
-  type?: string;
-  disabled?: boolean;
-}) {
+  hintId,
+  end,
+  ...hints
+}: Base &
+  BrowserHints & {
+    value: string | null;
+    onChange: (value: string) => void;
+    maxLength?: number;
+    placeholder?: string;
+    icon?: Icon;
+    type?: string;
+    disabled?: boolean;
+    /** What explains the box while it is valid (the Field's hint). */
+    hintId?: string;
+    /** A control at the right end, inside the box (the password's Show/Hide). */
+    end?: ReactNode;
+  }) {
   return (
     <span className="relative block">
       {Icon && (
@@ -111,11 +137,13 @@ export function TextField({
         maxLength={maxLength}
         placeholder={placeholder}
         disabled={disabled}
+        {...hints}
         aria-invalid={invalid || undefined}
-        aria-describedby={described(id, invalid, describedBy)}
+        aria-describedby={described(id, invalid, describedBy) ?? hintId}
         onChange={(e) => onChange(e.target.value)}
-        className={`${box} ${line(invalid)} h-[44px] ${Icon ? "pl-[44px]" : "pl-[14px]"} pr-[14px]`}
+        className={`${box} ${line(invalid)} h-[44px] ${Icon ? "pl-[44px]" : "pl-[14px]"} ${end ? "pr-[84px]" : "pr-[14px]"}`}
       />
+      {end && <span className="absolute right-[4px] top-1/2 -translate-y-1/2">{end}</span>}
     </span>
   );
 }

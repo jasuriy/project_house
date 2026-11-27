@@ -1,7 +1,8 @@
 import { Bookmark, ChevronDown, CirclePlay, Heart, Plus, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { card, Chip, TypeBadge } from "@/components/page/parts";
+import type { ReactNode } from "react";
+import { card, Chip, primaryButton, TypeBadge } from "@/components/page/parts";
 import { LogoMark } from "@/components/ui/icons";
 import type { Catalog, ProjectCard } from "@/lib/api";
 import { AUTHOR } from "@/lib/author";
@@ -13,19 +14,14 @@ import { StackLine } from "./stack-line";
 // category tabs and a search in the header. Filters live in the address (?category=&q=), so a feed can
 // be shared and works without any script: tabs are links, More is a details list, search a GET form.
 
-const primary =
-  "inline-flex h-[40px] items-center justify-center gap-[8px] whitespace-nowrap rounded-[8px] bg-primary px-[16px] text-[13px] font-semibold text-white " +
-  "shadow-[0_1px_2px_rgba(79,70,229,0.25),0_4px_12px_rgba(79,70,229,0.2)] outline-none transition-colors hover:bg-primary-strong " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary max-sm:h-[44px]";
-
-/** Logo, the search in the middle (a GET form that keeps the chosen category), Add project. */
-export function FeedHeader({ category = "", q = "" }: { category?: string; q?: string }) {
+/** Logo, the search in the middle (a GET form that keeps the chosen category), the account group. */
+export function FeedHeader({ category = "", q = "", account }: { category?: string; q?: string; account?: ReactNode }) {
   return (
     <header className="bg-card shadow-[0_1px_0_var(--color-line)]">
       <div className="mx-auto grid min-h-[68px] max-w-[1920px] grid-cols-[1fr_minmax(0,560px)_1fr] items-center gap-[24px] px-[16px] sm:px-[48px] max-sm:grid-cols-[1fr_auto] max-sm:gap-y-[12px] max-sm:py-[12px]">
         <Link
           href="/"
-          className="inline-flex h-[44px] items-center gap-[8px] justify-self-start text-[17px] font-bold text-ink outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex h-[44px] items-center gap-[8px] justify-self-start text-[17px] font-bold text-ink outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-primary"
         >
           <LogoMark />
           Prostagram
@@ -46,10 +42,8 @@ export function FeedHeader({ category = "", q = "" }: { category?: string; q?: s
             className="h-[44px] w-full rounded-full border border-transparent bg-page pl-[48px] pr-[18px] text-body text-ink outline-none transition-colors placeholder:text-faint hover:border-line focus:border-primary focus:bg-card focus:shadow-[0_0_0_3px_rgba(79,70,229,0.16)]"
           />
         </form>
-        <Link href="/new" className={`${primary} justify-self-end`}>
-          <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
-          Add project
-        </Link>
+        {/* The grid keeps the search in the middle whether or not the group is there yet. */}
+        <div className="justify-self-end">{account}</div>
       </div>
     </header>
   );
@@ -203,7 +197,8 @@ function CardActions({ name }: { name: string }) {
 }
 
 /** No projects at all, or none for these filters: say which, and give the next step. */
-export function FeedEmpty({ filtered }: { filtered: boolean }) {
+/** No projects. Add project goes to `/new` for a logged-in person, to sign-up first for a visitor. */
+export function FeedEmpty({ filtered, addHref = "/new" }: { filtered: boolean; addHref?: string }) {
   return (
     <div className={`${card} flex flex-col items-center gap-[12px] px-[24px] py-[64px] text-center`}>
       <p className="text-h font-semibold">{filtered ? "No projects match" : "No projects yet"}</p>
@@ -215,7 +210,7 @@ export function FeedEmpty({ filtered }: { filtered: boolean }) {
           Clear filters
         </Link>
       ) : (
-        <Link href="/new" className={primary}>
+        <Link href={addHref} className={primaryButton}>
           <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
           Add project
         </Link>

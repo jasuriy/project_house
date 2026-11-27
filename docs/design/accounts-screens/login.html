@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in - Prostagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="auth.css">
+<!-- Design mockup of /login, desktop 1440. Opens empty, as shipped in step 2 (no GitHub).
+     Views: #filled, #check (the page's own check: empty fields), #errors (server: wrong email or
+     password), #locked (server: too many tries), #offline (no answer), #loading, #github (step 4;
+     combines with the others). Not app code. -->
+</head>
+<body>
+<header class="site-header">
+  <div class="bar">
+    <a class="logo" href="/"><svg viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><rect x="1" y="1" width="13" height="13" rx="4" fill="#4F46E5"/><rect x="8" y="8" width="13" height="13" rx="4" fill="#8B5CF6" fill-opacity="0.9"/></svg>Prostagram</a>
+  </div>
+</header>
+<main class="auth">
+  <div class="auth__col">
+    <h1 class="auth__title">Log in</h1>
+    <p class="auth__switch">New to Prostagram? <a class="text-link" href="signup.html">Sign up</a></p>
+
+    <form class="auth__card" id="form" novalidate>
+      <a class="github" href="#"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>Continue with GitHub</a>
+      <p class="or">or</p>
+
+      <div class="field">
+        <label class="field__label" for="email">Email</label>
+        <input class="box" id="email" name="email" type="email" autocomplete="username" maxlength="254">
+        <p class="field__error" id="email-error" hidden></p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="password">Password</label>
+        <span class="box-wrap">
+          <input class="box box--pw" id="password" name="password" type="password" autocomplete="current-password" maxlength="128">
+          <button class="reveal" type="button" aria-label="Show password" aria-controls="password">Show</button>
+        </span>
+        <p class="field__error" id="password-error" hidden></p>
+      </div>
+
+      <div id="alert-slot"></div>
+
+      <button class="submit" type="submit" id="submit">Log in</button>
+    </form>
+  </div>
+</main>
+<script>
+// Mockup only.
+const $ = (id) => document.getElementById(id);
+const FIELDS = ["email", "password"];
+const MESSAGES = {
+  errors: "Wrong email or password",
+  locked: "Too many failed logins. Try again in a few minutes.",
+  offline: "Could not reach Prostagram. Check your connection and try again.",
+};
+const ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
+const show = (id, message) => {
+  const box = $(id), err = $(`${id}-error`);
+  err.hidden = !message; err.textContent = message || "";
+  message ? box.setAttribute("aria-invalid", "true") : box.removeAttribute("aria-invalid");
+  message ? box.setAttribute("aria-describedby", err.id) : box.removeAttribute("aria-describedby");
+};
+// The alert is added when the answer comes and removed on the next try, so a repeat is read again.
+const alertMessage = (text) => {
+  $("alert-slot").replaceChildren();
+  if (!text) return;
+  const p = document.createElement("p");
+  p.className = "form-error"; p.setAttribute("role", "alert"); p.innerHTML = ICON + text;
+  $("alert-slot").append(p);
+};
+const problems = () => ({
+  email: $("email").value.trim() ? null : "Enter your email",
+  password: $("password").value ? null : "Enter your password",
+});
+
+$("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  alertMessage(null);
+  const p = problems();
+  for (const id of FIELDS) show(id, p[id]);
+  const first = FIELDS.find((id) => p[id]);
+  if (first) { $(first).focus(); return; }
+  alertMessage(MESSAGES.errors);   // the mockup has no server: every try is "wrong"
+});
+for (const id of FIELDS) $(id).addEventListener("input", () => { if (!$(`${id}-error`).hidden) show(id, problems()[id]); });
+
+document.querySelector(".reveal").addEventListener("click", (e) => {
+  const pw = $("password"), showing = pw.type === "password";
+  pw.type = showing ? "text" : "password";
+  e.currentTarget.textContent = showing ? "Hide" : "Show";
+  e.currentTarget.setAttribute("aria-label", showing ? "Hide password" : "Show password");
+});
+
+const apply = () => {
+  const h = location.hash;
+  document.body.toggleAttribute("data-github", h.includes("github"));
+  const filled = /filled|errors|locked|offline|loading/.test(h);
+  $("email").value = filled ? "alice@example.com" : "";
+  $("password").value = filled ? "correct horse" : "";
+  for (const id of FIELDS) show(id, null);
+  alertMessage(null);
+  if (h.includes("check")) { const p = problems(); for (const id of FIELDS) show(id, p[id]); }
+  for (const key of ["errors", "locked", "offline"]) if (h.includes(key)) alertMessage(MESSAGES[key]);
+  const btn = $("submit");
+  btn.removeAttribute("aria-disabled"); $("form").removeAttribute("aria-busy"); btn.textContent = "Log in";
+  if (h.includes("loading")) {
+    btn.setAttribute("aria-disabled", "true"); $("form").setAttribute("aria-busy", "true");
+    btn.innerHTML = '<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Logging in...';
+  }
+};
+apply();
+addEventListener("hashchange", apply);
+</script>
+</body>
+</html>

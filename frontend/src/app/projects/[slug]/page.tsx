@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { AccountNav } from "@/components/account/account-nav";
 import { PageGrid } from "@/components/page/parts";
 import { BackLink } from "@/components/project/back-link";
 import {
@@ -20,7 +21,13 @@ import { fetchCatalog, fetchPublishedProject } from "@/lib/server-api";
 export default function ProjectPage({ params }: PageProps<"/projects/[slug]">) {
   return (
     <div className="min-h-screen">
-      <SiteHeader />
+      <SiteHeader
+        account={
+          <Suspense fallback={null}>
+            <AccountNav />
+          </Suspense>
+        }
+      />
       <Suspense fallback={<main className="px-[16px] py-[40px] text-muted sm:px-[48px]">Loading...</main>}>
         <ProjectView params={params} />
       </Suspense>

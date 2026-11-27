@@ -26,6 +26,8 @@
   --color-seg-1: #c4bff5;
   --color-seg-2: #8c84ee;
   --color-danger: #b91c1c;
+  --color-danger-line: #f3c4c4; /* the message above a form's button */
+  --color-danger-bg: #fdf2f2;
 
 
   --animate-seg-fill: seg-fill 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;

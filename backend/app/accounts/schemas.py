@@ -8,9 +8,9 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
 
-# Words the site itself uses as addresses, so no profile can take them.
-RESERVED_USERNAMES = {"new", "login", "signup", "api", "admin", "settings", "u", "projects"}
-USERNAME = re.compile(r"^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$")
+from app.catalog import RESERVED_USERNAMES, USERNAME_PATTERN
+
+USERNAME = re.compile(USERNAME_PATTERN)
 # Only the shape: something@domain.tld. Whether the address is real is checked later (A2).
 EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 

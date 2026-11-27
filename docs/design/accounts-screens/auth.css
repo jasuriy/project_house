@@ -1,0 +1,109 @@
+/* Shared styles of the accounts mockups (step 2). Design files, not app code.
+   Tokens: frontend/src/app/globals.css (D29); the wide step (>=1700px) is copied too.
+   Parts copied from the app are marked with their source; NEW marks what this step adds. */
+:root {
+  --page: #f5f5fa; --card: #ffffff; --line: #e6e5ef; --ink: #17162f; --ink-2: #3d3c55; --muted: #5b5a74;
+  --faint: #6e6c88; --primary: #4f46e5; --primary-strong: #4338ca; --primary-ink: #3730a3; --badge: #e9e7fd;
+  --danger: #b91c1c; --box-line: #d3d1e0;
+  --fs-cap: 13px; --lh-cap: 20px; --fs-body: 15px; --fs-h: 17px; --fs-title: 40px; --pi: 24px;
+}
+@media (min-width: 106.25rem) {
+  :root { --fs-cap: 15px; --lh-cap: 24px; --fs-body: 17px; --fs-h: 21px; --fs-title: 56px; --pi: 32px; }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--page); color: var(--ink); font-family: "Golos Text", ui-sans-serif, system-ui, sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* --- Headers --------------------------------------------------------------------------------- */
+.site-header { background: var(--card); box-shadow: 0 1px 0 var(--line); }
+/* SiteHeader (project/sections.tsx): 52px, logo left. NEW: the account group on the right. */
+.bar { max-width: 1920px; margin: 0 auto; height: 52px; padding: 0 48px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+/* FeedHeader (feed.tsx): 68px, logo | search | right group. */
+.bar--feed { height: auto; min-height: 68px; display: grid; grid-template-columns: 1fr minmax(0, 560px) 1fr; gap: 24px; }
+.logo { display: inline-flex; height: 44px; align-items: center; gap: 8px; justify-self: start; font-size: 17px; font-weight: 700; }
+.search { position: relative; width: 100%; }
+.search svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search input { height: 44px; width: 100%; border-radius: 999px; border: 1px solid transparent; background: var(--page); padding: 0 18px 0 48px; font: inherit; font-size: var(--fs-body); color: var(--ink); outline: none; }
+.search input::placeholder { color: var(--faint); }
+.btn-primary { display: inline-flex; height: 40px; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; border-radius: 8px; background: var(--primary); padding: 0 16px; font-size: 13px; font-weight: 600; color: #fff; box-shadow: 0 1px 2px rgba(79,70,229,.25), 0 4px 12px rgba(79,70,229,.2); transition: background-color .15s; }
+.btn-primary:hover { background: var(--primary-strong); }
+
+/* NEW: the right group. Logged out: Log in (quiet) + Sign up (primary). Logged in: Add project + avatar. */
+.account { position: relative; justify-self: end; display: flex; align-items: center; gap: 8px; }
+.btn-quiet { display: inline-flex; height: 40px; align-items: center; border-radius: 8px; padding: 0 14px; font-size: 13px; font-weight: 600; color: var(--ink); transition: background-color .15s; }
+.btn-quiet:hover { background: var(--page); }
+.avatar-btn { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 50%; margin-left: 4px; }
+.avatar-btn:hover .avatar { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--line); }
+.avatar-btn[aria-expanded="true"] .avatar { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px #cfcbf6; }
+.avatar { display: inline-flex; width: 36px; height: 36px; flex-shrink: 0; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: var(--badge); color: var(--primary-ink); font-size: var(--fs-body); font-weight: 600; transition: box-shadow .15s; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* The panel: the feed's More list look (feed.tsx), right-aligned under the avatar. */
+/* The existing Popover (ui/popover.tsx) as it is: role="dialog", 12px padding, width 240, right-aligned. */
+.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: 240px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); padding: 12px; box-shadow: 0 12px 32px -12px rgba(23,22,47,.28); }
+.menu__who { padding: 0 10px 12px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.menu__name { font-size: var(--fs-body); font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.menu__handle { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--muted); overflow-wrap: anywhere; }
+.menu__item { display: flex; width: 100%; height: 36px; align-items: center; gap: 10px; border-radius: 8px; padding: 0 10px; font-size: var(--fs-body); color: var(--ink-2); text-align: left; }
+.menu__item:hover, .menu__item:focus-visible { background: var(--page); outline: none; }
+.menu__item svg { color: var(--muted); }
+
+/* --- Sign-up and login pages ------------------------------------------------------------------- */
+/* NEW: one column, 400px, centred; the title on the page background, the form in a card. */
+.auth { padding: 64px 48px 64px; display: flex; justify-content: center; }
+.auth__col { width: 100%; max-width: 400px; display: flex; flex-direction: column; }
+/* Wide step: the card padding grows 24 -> 32px, so the column grows too and the form keeps its width. */
+@media (min-width: 106.25rem) { .auth__col { max-width: 464px; } }
+.auth__title { font-size: var(--fs-title); line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
+.auth__switch { margin-top: 8px; font-size: var(--fs-body); color: var(--muted); }
+.text-link { font-weight: 500; color: var(--primary-strong); text-underline-offset: 4px; }
+.text-link:hover { text-decoration: underline; }
+/* The upload page's section card (form.tsx FormSection): 16px radius, 1px line, white. */
+.auth__card { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); padding: var(--pi); }
+
+/* Step 4 only: GitHub and the "or" divider. Hidden unless the page is opened with #github. */
+.github, .or { display: none; }
+[data-github] .github { display: inline-flex; }
+[data-github] .or { display: flex; }
+.github { height: 44px; width: 100%; align-items: center; justify-content: center; gap: 10px; border-radius: 10px; border: 1px solid var(--box-line); background: var(--card); font-size: var(--fs-body); font-weight: 500; color: var(--ink); transition: border-color .15s, background-color .15s; }
+.github:hover { border-color: #a9a7c0; background: var(--page); }
+.or { align-items: center; gap: 12px; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--muted); }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* The upload page's Field kit (form.tsx): label above, 44px box, 10px radius, message under it. */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: var(--fs-cap); line-height: var(--lh-cap); font-weight: 500; color: var(--ink); }
+.box-wrap { position: relative; display: block; }
+.box { height: 44px; width: 100%; border-radius: 10px; border: 1px solid var(--box-line); background: var(--card); padding: 0 14px; font: inherit; font-size: var(--fs-body); color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s; }
+.box::placeholder { color: var(--faint); }
+.box:hover { border-color: #a9a7c0; }
+.box[aria-invalid="true"] { border-color: var(--danger); }
+/* As in the kit (form.tsx), focus wins: a focused box is indigo even while it has an error. */
+.box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.16); }
+.box--pw { padding-right: 84px; }
+/* NEW: Show/Hide inside the password box. */
+.reveal { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); height: 36px; min-width: 64px; border-radius: 8px; padding: 0 10px; font-size: var(--fs-cap); font-weight: 600; color: var(--primary-strong); }
+.reveal:hover { background: var(--page); }
+.field__hint { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--muted); overflow-wrap: anywhere; }
+.field__hint b { font-weight: 500; color: var(--ink-2); }
+/* The kit's message under the box (form.tsx): plain red text. NEW in the kit: the grey hint in the same slot. */
+.field__error { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--danger); }
+
+/* NEW: an answer that belongs to no field, above the button. */
+.form-error { display: flex; gap: 8px; border-radius: 10px; border: 1px solid #f3c4c4; background: #fdf2f2; padding: 10px 12px; font-size: var(--fs-body); color: var(--danger); }
+.form-error svg { flex-shrink: 0; margin-top: 3px; }
+
+.submit { display: inline-flex; height: 44px; width: 100%; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; background: var(--primary); font-size: var(--fs-body); font-weight: 600; color: #fff; box-shadow: 0 1px 2px rgba(79,70,229,.25), 0 4px 12px rgba(79,70,229,.2); transition: background-color .15s; }
+.submit:hover { background: var(--primary-strong); }
+.submit[aria-disabled="true"] { cursor: progress; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* The empty message slot takes no gap (as in the app, where the message is simply not rendered). */
+#alert-slot:empty { display: none; }

@@ -38,12 +38,19 @@ def migrated_database() -> None:
     subprocess.run(["alembic", "upgrade", "head"], cwd=BACKEND_DIR, check=True, env=os.environ)
 
 
-@pytest.fixture(autouse=True)
-async def empty_tables() -> AsyncIterator[None]:
-    yield
+async def _truncate() -> None:
     async with SessionFactory() as session:
         await session.execute(text("TRUNCATE projects, users, sessions, login_failures"))
         await session.commit()
+
+
+@pytest.fixture(autouse=True)
+async def empty_tables() -> AsyncIterator[None]:
+    # Before as well as after: rows left by a manual run against this database (a local browser
+    # check) must not change a test's result.
+    await _truncate()
+    yield
+    await _truncate()
 
 
 @pytest.fixture

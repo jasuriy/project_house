@@ -189,7 +189,10 @@ async def test_ten_failed_logins_lock_the_email(client: httpx.AsyncClient) -> No
     # The 11th attempt is refused even with the right password.
     response = await log_in(client, "alice@example.com", "correct horse")
     assert response.status_code == 429
-    assert response.json()["error"]["code"] == "too_many_attempts"
+    assert response.json()["error"] == {
+        "code": "too_many_attempts",
+        "message": "Too many failed logins. Try again in a few minutes.",
+    }
 
     # Failures older than 15 minutes no longer count.
     async with SessionFactory() as db:
