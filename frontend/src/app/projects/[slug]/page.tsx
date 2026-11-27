@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PageGrid } from "@/components/page/parts";
+import { BackLink } from "@/components/project/back-link";
 import {
   BuiltWith,
   Byline,
@@ -37,6 +38,7 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
     <>
       <title>{`${project.name} - Prostagram`}</title>
       <main className="mx-auto max-w-[1920px] px-[16px] py-[16px] sm:px-[48px]">
+        <BackLink />
         <PageGrid
           first={<IdentCard project={project} catalog={catalog} />}
           media={
