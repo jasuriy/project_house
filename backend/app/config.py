@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     r2_access_key_id: str
     r2_secret_access_key: str
     r2_bucket: str
+    # The site people use, e.g. https://projecthouse-pied.vercel.app (no trailing slash). Requests
+    # that change data must come from it (Origin check in main.py), and the login cookie is
+    # Secure when it starts with https://.
+    site_origin: str
 
     # Optional. Without it GitHub allows 60 requests per hour per server address; a token
     # (no scopes needed for public repos) raises that to 5,000.

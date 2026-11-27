@@ -15,6 +15,7 @@ os.environ["DATABASE_URL"] = os.environ.get(
 )
 for name in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"):
     os.environ[name] = "test"
+os.environ["SITE_ORIGIN"] = "http://test"  # the test client's own address
 
 from collections.abc import AsyncIterator, Iterator  # noqa: E402
 
@@ -41,7 +42,7 @@ def migrated_database() -> None:
 async def empty_tables() -> AsyncIterator[None]:
     yield
     async with SessionFactory() as session:
-        await session.execute(text("TRUNCATE projects"))
+        await session.execute(text("TRUNCATE projects, users, sessions, login_failures"))
         await session.commit()
 
 
@@ -67,7 +68,9 @@ async def client(
     storage: FakeStorage, github_routes: GitHubRoutes
 ) -> AsyncIterator[httpx.AsyncClient]:
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+    # Origin as a browser on the site sends it; tests of the Origin check override it.
+    headers = {"Origin": "http://test"}
+    async with httpx.AsyncClient(transport=transport, base_url="http://test", headers=headers) as c:
         yield c
 
 

@@ -8,6 +8,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
+from app.accounts import models as _accounts_models  # noqa: F401  (registers the tables)
 from app.config import get_settings
 from app.db import Base
 from app.projects import models as _projects_models  # noqa: F401  (registers the table)
