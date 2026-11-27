@@ -11,7 +11,9 @@ from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 
+from app.accounts.models import User
 from app.db import SessionFactory
 from app.main import app
 from app.previews import (
@@ -24,6 +26,9 @@ from app.previews import (
 from app.projects.models import Project
 from tests.fakes import FakeStorage, GitHubRoutes, repo_routes
 from tests.test_projects import reflex_payload, row_count
+
+# Render needs an account: every test here runs logged in (conftest.author).
+pytestmark = pytest.mark.usefixtures("author")
 
 needs_ffmpeg = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not installed")
 
@@ -84,6 +89,7 @@ def probe(data: bytes, folder: Path) -> dict:
 async def add_project(video_key: str | None, preview_key: str | None = None) -> uuid.UUID:
     project_id = uuid.uuid4()
     async with SessionFactory() as session:
+        owner = await session.scalar(select(User.id).where(User.username == "ada"))
         session.add(
             Project(
                 id=project_id,
@@ -92,6 +98,7 @@ async def add_project(video_key: str | None, preview_key: str | None = None) -> 
                 name="Sample",
                 video_key=video_key,
                 preview_key=preview_key,
+                owner_id=owner,
             )
         )
         await session.commit()

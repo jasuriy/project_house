@@ -122,6 +122,16 @@ class VideoOut(BaseModel):
     duration_seconds: float | None
 
 
+class Owner(BaseModel):
+    """Who published a project, as everyone may see it (no email, no id)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    username: str
+    display_name: str
+    avatar_url: str | None
+
+
 class ProjectOut(BaseModel):
     id: uuid.UUID
     slug: str
@@ -144,6 +154,7 @@ class ProjectOut(BaseModel):
     video: VideoOut | None
     repo_url: str | None
     repo: RepoSnapshot | None
+    owner: Owner
     created_at: datetime
     updated_at: datetime
 
@@ -163,6 +174,7 @@ class ProjectCard(BaseModel):
     poster_url: str | None
     preview_url: str | None
     published_at: datetime
+    owner: Owner
 
 
 class Feed(BaseModel):

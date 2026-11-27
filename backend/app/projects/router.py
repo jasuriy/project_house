@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import catalog
+from app.accounts.dependencies import current_user
+from app.accounts.models import User
 from app.db import get_session
 from app.github import GitHub, RepoSnapshot, get_github
 from app.previews import PreviewStarter, get_preview_starter, start_quietly
@@ -30,6 +32,9 @@ Session = Annotated[AsyncSession, Depends(get_session)]
 Files = Annotated[Storage, Depends(get_storage)]
 Repos = Annotated[GitHub, Depends(get_github)]
 Previews = Annotated[PreviewStarter, Depends(get_preview_starter)]
+# Publishing needs an account (accounts step 3); reading stays open to everyone.
+Author = Annotated[User, Depends(current_user)]
+LOGGED_IN = [Depends(current_user)]
 UploadKind = Literal["video", "poster"]
 Category = Literal[tuple(catalog.CATEGORIES)]  # type: ignore[valid-type]
 
@@ -37,12 +42,12 @@ Category = Literal[tuple(catalog.CATEGORIES)]  # type: ignore[valid-type]
 # --- used by the upload page before Render; nothing is stored -------------------------------
 
 
-@router.post("/uploads/{kind}/url")
+@router.post("/uploads/{kind}/url", dependencies=LOGGED_IN)
 async def create_upload(kind: UploadKind, request: UploadRequest, storage: Files) -> UploadTicket:
     return service.create_upload(storage, kind, request)
 
 
-@router.post("/repos/preview")
+@router.post("/repos/preview", dependencies=LOGGED_IN)
 async def preview_repo(link: RepoLink, github: Repos) -> RepoSnapshot:
     return await service.preview_repo(github, link.url)
 
@@ -52,9 +57,14 @@ async def preview_repo(link: RepoLink, github: Repos) -> RepoSnapshot:
 
 @router.post("/projects", status_code=201)
 async def create_project(
-    data: ProjectCreate, session: Session, storage: Files, github: Repos, previews: Previews
+    data: ProjectCreate,
+    session: Session,
+    storage: Files,
+    github: Repos,
+    previews: Previews,
+    author: Author,
 ) -> ProjectOut:
-    project = await service.create_project(session, storage, github, data)
+    project = await service.create_project(session, storage, github, data, owner_id=author.id)
     await start_quietly(previews, project.id)  # the feed's short copy is made in the background
     return service.to_out(project, storage)
 

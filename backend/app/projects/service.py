@@ -13,9 +13,10 @@ import uuid
 from datetime import UTC, datetime
 
 from slugify import slugify
-from sqlalchemy import func, or_, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.catalog import REQUIRED_LISTS, REQUIRED_TEXT, UPLOAD_RULES
 from app.errors import AppError
@@ -23,6 +24,7 @@ from app.github import GitHub, GitHubUnavailable, RepoSnapshot, parse_repo_url
 from app.projects.models import Project
 from app.projects.schemas import (
     Feed,
+    Owner,
     ProjectCard,
     ProjectCreate,
     ProjectOut,
@@ -59,11 +61,22 @@ def video_out(project: Project, storage: Storage) -> VideoOut | None:
     )
 
 
+def with_owner() -> Select[tuple[Project]]:
+    """Every read of projects goes through here, so the owner is always loaded with them (the
+    relationship refuses to load on its own: models.py)."""
+    return select(Project).options(selectinload(Project.owner))
+
+
 def to_out(project: Project, storage: Storage) -> ProjectOut:
     """The project as the API returns it, with fresh signed links to its files."""
-    computed = {"video", "repo"}
+    computed = {"video", "repo", "owner"}
     columns = {f: getattr(project, f) for f in ProjectOut.model_fields if f not in computed}
-    return ProjectOut(**columns, video=video_out(project, storage), repo=project.repo_snapshot)
+    return ProjectOut(
+        **columns,
+        video=video_out(project, storage),
+        repo=project.repo_snapshot,
+        owner=Owner.model_validate(project.owner),
+    )
 
 
 # --- before Render: nothing is stored ------------------------------------------------------
@@ -142,9 +155,15 @@ async def _delete_quietly(storage: Storage, keys: list[str]) -> None:
 
 
 async def create_project(
-    session: AsyncSession, storage: Storage, github: GitHub, data: ProjectCreate
+    session: AsyncSession,
+    storage: Storage,
+    github: GitHub,
+    data: ProjectCreate,
+    owner_id: uuid.UUID,
 ) -> Project:
-    """Checks everything, moves the files out of the temporary folder, writes the row."""
+    """Checks everything, moves the files out of the temporary folder, writes the row for its
+    owner. `owner_id` is a plain value on purpose: a slug clash rolls the session back, which
+    expires every object in it, the logged-in user included."""
     missing = missing_fields(data)
     if missing:
         raise AppError(422, "project_incomplete", f"Missing: {', '.join(missing)}")
@@ -184,18 +203,20 @@ async def create_project(
             "poster_key": poster_key,
             "repo_url": snapshot.html_url if snapshot else None,
             "repo_snapshot": snapshot.model_dump(mode="json") if snapshot else None,
+            "owner_id": owner_id,
         }
-        project = await _insert_with_free_slug(session, project_id, {**fields, **files})
+        await _insert_with_free_slug(session, project_id, {**fields, **files})
     except Exception:
         await _delete_quietly(storage, copies)  # no row, so the copies belong to nothing
         raise
 
     # Only after the try: once the row is committed its files must never be deleted, even if
-    # reading back the server-set columns (created_at) fails.
-    await session.refresh(project)
+    # reading it back fails.
     temporary = [data.video.key] + ([data.poster_key] if data.poster_key else [])
     await _delete_quietly(storage, temporary)  # the lifecycle rule would remove them anyway
-    return project
+    # Read back fresh, with the owner and the server-set columns (created_at).
+    query = with_owner().where(Project.id == project_id).execution_options(populate_existing=True)
+    return (await session.scalars(query)).one()
 
 
 async def _insert_with_free_slug(
@@ -227,7 +248,7 @@ async def _insert_with_free_slug(
 
 
 async def get_published(session: AsyncSession, slug: str) -> Project:
-    project = await session.scalar(select(Project).where(Project.slug == slug))
+    project = await session.scalar(with_owner().where(Project.slug == slug))
     if project is None:
         raise AppError(404, "project_not_found", "Project not found")
     return project
@@ -254,7 +275,7 @@ async def list_published(
 ) -> Feed:
     """The newest projects first, optionally of one category and matching a search in the name,
     the short description or the technologies (case does not matter)."""
-    query = select(Project).order_by(Project.published_at.desc()).limit(limit)
+    query = with_owner().order_by(Project.published_at.desc()).limit(limit)
     if category:
         query = query.where(Project.category == category)
     if q and q.strip():
@@ -268,13 +289,14 @@ async def list_published(
             )
         )
     projects = (await session.scalars(query)).all()
-    signed = {"poster_url", "preview_url"}
+    computed = {"poster_url", "preview_url", "owner"}
     return Feed(
         items=[
             ProjectCard(
-                **{f: getattr(p, f) for f in ProjectCard.model_fields if f not in signed},
+                **{f: getattr(p, f) for f in ProjectCard.model_fields if f not in computed},
                 poster_url=storage.presign_get(p.poster_key) if p.poster_key else None,
                 preview_url=storage.presign_get(p.preview_key) if p.preview_key else None,
+                owner=Owner.model_validate(p.owner),
             )
             for p in projects
         ]

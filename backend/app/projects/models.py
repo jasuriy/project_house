@@ -3,10 +3,11 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Text, false, func
+from sqlalchemy import BigInteger, ForeignKey, Text, false, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.accounts.models import User
 from app.db import Base
 
 
@@ -22,6 +23,13 @@ class Project(Base):
     published_at: Mapped[datetime]
     # The page address (/projects/<slug>); unique, so two projects never share one.
     slug: Mapped[str] = mapped_column(Text, unique=True)
+    # Who published it (accounts step 3). RESTRICT: a project never loses its owner silently.
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    # Loaded only on purpose (service.py reads projects with it); a forgotten load fails loudly
+    # instead of querying in the background, which an async session cannot do.
+    owner: Mapped[User] = relationship(lazy="raise")
 
     # Project details
     name: Mapped[str | None] = mapped_column(Text)

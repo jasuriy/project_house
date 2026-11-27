@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useLayoutEffect, useState } from "react";
 import { card, PageGrid } from "@/components/page/parts";
 import { Byline } from "@/components/project/sections";
-import { ApiError, type Catalog, api } from "@/lib/api";
+import { ApiError, type Catalog, type Owner, api } from "@/lib/api";
 import { dateError, missingFields, repoPending, useProjectForm } from "@/lib/use-project-form";
 import { BuiltEditor } from "./built-editor";
 import { EditorHeader } from "./editor-header";
@@ -30,7 +30,8 @@ const MESSAGES: Record<string, string> = {
  * The upload page "U4" (D29): the project page itself, every value edited where it shows.
  * Owns the form and the catalog, and lays the parts out on the project page's grid.
  */
-export function ProjectEditor() {
+/** `owner`: the logged-in person, shown as the author; null when the server could not say. */
+export function ProjectEditor({ owner }: { owner: Owner | null }) {
   const router = useRouter();
   const state = useProjectForm();
   const [catalog, setCatalog] = useState<Catalog | null>(null);
@@ -119,7 +120,7 @@ export function ProjectEditor() {
         media={
           <>
             <VideoSlot state={state} catalog={catalog} error={errorFor("video")} />
-            <Byline />
+            {owner && <Byline owner={owner} />}
             <StoryEditor {...props} />
           </>
         }

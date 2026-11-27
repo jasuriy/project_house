@@ -61,6 +61,9 @@ export type Video = {
   duration_seconds: number | null;
 };
 
+/** Who published a project, as everyone sees them (no email). */
+export type Owner = { username: string; display_name: string; avatar_url: string | null };
+
 export type Project = ProjectForm & {
   id: string;
   slug: string;
@@ -68,6 +71,7 @@ export type Project = ProjectForm & {
   video: Video | null;
   repo_url: string | null;
   repo: RepoSnapshot | null;
+  owner: Owner;
   created_at: string;
   updated_at: string;
 };
@@ -85,6 +89,7 @@ export type ProjectCard = {
   poster_url: string | null;
   preview_url: string | null; // the short, silent copy the card plays (D34); null until it is made
   published_at: string;
+  owner: Owner;
 };
 
 /** The logged-in person, as GET /auth/me returns them (their own email included). */

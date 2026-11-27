@@ -1,11 +1,10 @@
 import { Bookmark, ChevronDown, CirclePlay, Heart, Plus, Search } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Avatar } from "@/components/account/avatar";
 import { card, Chip, primaryButton, TypeBadge } from "@/components/page/parts";
 import { LogoMark } from "@/components/ui/icons";
 import type { Catalog, ProjectCard } from "@/lib/api";
-import { AUTHOR } from "@/lib/author";
 import { labelOf } from "@/lib/catalog";
 import { FeedVideo } from "./feed-video";
 import { StackLine } from "./stack-line";
@@ -166,9 +165,9 @@ export function ProjectCardView({ project, catalog }: { project: ProjectCard; ca
         </div>
       </Link>
       <div className="mx-[16px] flex items-center justify-between gap-[8px] border-t border-line py-[8px]">
-        <p className="flex items-center gap-[8px] text-cap text-muted">
-          <Image src={AUTHOR.photo} alt="" width={24} height={24} className="h-[24px] w-[24px] rounded-full object-cover" />
-          {AUTHOR.name}
+        <p className="flex min-w-0 items-center gap-[8px] text-cap text-muted">
+          <Avatar name={project.owner.display_name} src={project.owner.avatar_url} size={24} />
+          <span className="truncate">{project.owner.display_name}</span>
         </p>
         <CardActions name={project.name ?? "this project"} />
       </div>

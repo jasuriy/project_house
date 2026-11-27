@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -22,8 +21,8 @@ import {
   TypeBadge,
 } from "@/components/page/parts";
 import { LogoMark } from "@/components/ui/icons";
-import type { Catalog, Project } from "@/lib/api";
-import { AUTHOR } from "@/lib/author";
+import { Avatar } from "@/components/account/avatar";
+import type { Catalog, Owner, Project } from "@/lib/api";
 import { labelOf, techRows, timeline } from "@/lib/catalog";
 import { ClampText } from "./clamp-text";
 import { DemoVideo } from "./demo-player";
@@ -156,18 +155,13 @@ export function VideoFrame({ project }: { project: Project }) {
   );
 }
 
-export function Byline() {
+/** Who published the project (on the upload page: who is about to). */
+export function Byline({ owner }: { owner: Owner }) {
   return (
     <div className="flex items-center gap-[12px]">
-      <Image
-        src={AUTHOR.photo}
-        alt=""
-        width={40}
-        height={40}
-        className="h-[40px] w-[40px] shrink-0 rounded-full object-cover shadow-[0_0_0_2px_var(--color-page),0_0_0_4px_#cfcbf6]"
-      />
-      <p className="text-body font-semibold leading-(--lh-cap)">
-        {AUTHOR.name}
+      <Avatar name={owner.display_name} src={owner.avatar_url} size={40} className="shadow-[0_0_0_2px_var(--color-page),0_0_0_4px_#cfcbf6]" />
+      <p className="min-w-0 text-body font-semibold leading-(--lh-cap) [overflow-wrap:anywhere]">
+        {owner.display_name}
         <small className="block text-cap font-normal text-muted">Author</small>
       </p>
     </div>

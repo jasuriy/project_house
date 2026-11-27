@@ -81,6 +81,22 @@ async def client(
         yield c
 
 
+AUTHOR = {
+    "display_name": "Ada Author",
+    "username": "ada",
+    "email": "ada@example.com",
+    "password": "ada password",
+}
+
+
+@pytest.fixture
+async def author(client: httpx.AsyncClient) -> dict[str, str]:
+    """Signs the test client up and in: its cookie jar keeps the session for the next requests."""
+    response = await client.post("/api/v1/auth/signup", json=AUTHOR)
+    assert response.status_code == 201, response.text
+    return AUTHOR
+
+
 @pytest.fixture
 def reflex_readme() -> str:
     return (Path(__file__).parent / "fixtures" / "reflex_README.md").read_text(encoding="utf-8")

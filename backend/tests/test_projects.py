@@ -1,16 +1,24 @@
 """Project endpoints: temporary uploads, repo preview, creating a project on Render, and the
 project page."""
 
+import uuid
+
 import httpx
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import func, select
 
+from app.accounts.models import User
 from app.db import SessionFactory
 from app.projects.models import Project
 from tests.fakes import FakeStorage, GitHubRoutes, repo_routes
 
+# Publishing needs an account: every test here runs logged in (conftest.author).
+pytestmark = pytest.mark.usefixtures("author")
+
 MB = 1024 * 1024
+# The logged-in author as every reader sees them (conftest.AUTHOR without email and password).
+ADA = {"username": "ada", "display_name": "Ada Author", "avatar_url": None}
 VIDEO_SIZE = 33_372_331
 
 # The reflex sample (spec section 10), as the upload page sends it on Render (files added below).
@@ -269,6 +277,8 @@ async def test_same_name_gets_the_next_free_address(
     assert first.json()["slug"] == "reflex"
     assert second.json()["slug"] == "reflex-2"
     assert await row_count() == 2
+    # The clash rolled the session back; the answer still names the owner (read back fresh).
+    assert second.json()["owner"] == ADA
 
 
 async def test_uzbek_name_gets_a_clean_address(
@@ -309,6 +319,7 @@ async def test_project_is_found_by_its_address_with_fresh_links(
 
     assert page.status_code == 200
     assert page.json()["name"] == "Reflex"
+    assert page.json()["owner"] == ADA
     assert page.json()["video"]["url"].startswith("https://r2.test/download/videos/")
     assert links.json()["url"].startswith("https://r2.test/download/videos/")
 
@@ -360,7 +371,9 @@ async def test_feed_lists_newest_first_with_filters_and_search(
         "poster_url",
         "preview_url",
         "published_at",
+        "owner",
     }
+    assert feed[1]["owner"] == ADA  # public fields only: no email, no id
 
     by_category = (await client.get("/api/v1/projects", params={"category": "ai_ml"})).json()
     assert [p["slug"] for p in by_category["items"]] == ["speech-100-notes"]
@@ -375,3 +388,49 @@ async def test_feed_lists_newest_first_with_filters_and_search(
 
     bad = await client.get("/api/v1/projects", params={"category": "cooking"})
     assert bad.status_code == 422
+
+
+# --- ownership (accounts step 3) ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("path", "body"),
+    [
+        ("/api/v1/uploads/video/url", {"content_type": "video/mp4", "size": 10}),
+        ("/api/v1/repos/preview", {"url": "https://github.com/reflex-dev/reflex"}),
+        ("/api/v1/projects", REFLEX),
+    ],
+)
+async def test_publishing_needs_an_account(client: AsyncClient, path: str, body: dict) -> None:
+    client.cookies.clear()  # a visitor
+
+    response = await client.post(path, json=body)
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "not_logged_in"
+    assert await row_count() == 0
+
+
+async def test_render_stores_the_logged_in_owner(
+    client: AsyncClient, storage: FakeStorage, reflex_repo: None
+) -> None:
+    response = await client.post("/api/v1/projects", json=await reflex_payload(client, storage))
+
+    assert response.status_code == 201
+    assert response.json()["owner"] == ADA
+    async with SessionFactory() as session:
+        owner = await session.scalar(
+            select(User.username).join(Project, Project.owner_id == User.id)
+        )
+    assert owner == "ada"
+
+
+async def test_the_owner_cannot_be_chosen_in_the_request(
+    client: AsyncClient, storage: FakeStorage, reflex_repo: None
+) -> None:
+    payload = {**await reflex_payload(client, storage), "owner_id": str(uuid.uuid4())}
+
+    response = await client.post("/api/v1/projects", json=payload)
+
+    assert response.status_code == 422  # unknown fields are refused; the owner is the session's
+    assert await row_count() == 0

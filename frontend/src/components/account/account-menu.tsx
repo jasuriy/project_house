@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { Popover } from "@/components/ui/popover";
 import { api } from "@/lib/api";
+import { Avatar } from "./avatar";
 
 /**
  * The avatar in the header and its menu: who is logged in, then Log out. The menu is the shared
@@ -38,20 +39,14 @@ export function AccountMenu({ name, username, avatarUrl }: { name: string; usern
           onClick={toggle}
           className="group ml-[4px] inline-flex h-[40px] w-[40px] items-center justify-center rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-primary"
         >
-          <span
-            aria-hidden="true"
-            className={`inline-flex h-[36px] w-[36px] items-center justify-center overflow-hidden rounded-full bg-badge text-body font-semibold text-primary-ink transition-shadow ${
+          <Avatar
+            name={name}
+            src={avatarUrl}
+            size={36}
+            className={`transition-shadow ${
               open ? "shadow-[0_0_0_2px_var(--color-card),0_0_0_4px_#cfcbf6]" : "group-hover:shadow-[0_0_0_2px_var(--color-card),0_0_0_4px_var(--color-line)]"
             }`}
-          >
-            {avatarUrl ? (
-              // A GitHub photo (step 4); a plain img, since the address is on GitHub's servers.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              Array.from(name.trim())[0]?.toUpperCase() // a whole character, even an emoji
-            )}
-          </span>
+          />
         </button>
       )}
     >
