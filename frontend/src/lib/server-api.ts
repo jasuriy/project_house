@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { cache } from "react";
-import type { Catalog, Me, Project, ProjectCard } from "./api";
+import type { Catalog, Me, Profile, Project, ProjectCard } from "./api";
 
 // Server components call FastAPI directly (not through the /api rewrite): the request starts on
 // the server, so there is no browser and no cross-origin question.
@@ -16,6 +16,9 @@ async function get<T>(path: string): Promise<T | null> {
 /** A published project by its address, or null when there is none. */
 export const fetchPublishedProject = (slug: string) =>
   get<Project>(`/projects/by-slug/${encodeURIComponent(slug)}`);
+
+/** A person's profile with their projects, or null when no one has this username. */
+export const fetchProfile = (username: string) => get<Profile>(`/users/${encodeURIComponent(username)}`);
 
 export async function fetchCatalog(): Promise<Catalog> {
   const catalog = await get<Catalog>("/catalog");

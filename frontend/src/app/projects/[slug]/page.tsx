@@ -51,7 +51,7 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
           media={
             <>
               <VideoFrame project={project} />
-              <Byline owner={project.owner} />
+              <Byline owner={project.owner} link />
               <StoryCard project={project} />
             </>
           }

@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.accounts.models import User
 from app.catalog import REQUIRED_LISTS, REQUIRED_TEXT, UPLOAD_RULES
 from app.errors import AppError
 from app.github import GitHub, GitHubUnavailable, RepoSnapshot, parse_repo_url
@@ -25,6 +26,8 @@ from app.projects.models import Project
 from app.projects.schemas import (
     Feed,
     Owner,
+    Profile,
+    ProfileUser,
     ProjectCard,
     ProjectCreate,
     ProjectOut,
@@ -271,11 +274,18 @@ def _like(text: str) -> str:
 
 
 async def list_published(
-    session: AsyncSession, storage: Storage, category: str | None, q: str | None, limit: int
+    session: AsyncSession,
+    storage: Storage,
+    category: str | None,
+    q: str | None,
+    limit: int,
+    owner_id: uuid.UUID | None = None,
 ) -> Feed:
     """The newest projects first, optionally of one category and matching a search in the name,
-    the short description or the technologies (case does not matter)."""
+    the short description or the technologies (case does not matter), or of one owner."""
     query = with_owner().order_by(Project.published_at.desc()).limit(limit)
+    if owner_id:
+        query = query.where(Project.owner_id == owner_id)
     if category:
         query = query.where(Project.category == category)
     if q and q.strip():
@@ -301,3 +311,24 @@ async def list_published(
             for p in projects
         ]
     )
+
+
+# --- profile ------------------------------------------------------------------------------------
+
+PROFILE_LIMIT = 96  # the feed's own maximum
+
+
+async def get_profile(session: AsyncSession, storage: Storage, username: str) -> Profile:
+    """A person and their projects, newest first, as the same cards the feed shows."""
+    user = await session.scalar(select(User).where(User.username == username.lower()))
+    if user is None:
+        raise AppError(404, "user_not_found", "No one has this username")
+    feed = await list_published(session, storage, None, None, PROFILE_LIMIT, owner_id=user.id)
+    person = ProfileUser(
+        username=user.username,
+        display_name=user.display_name,
+        avatar_url=user.avatar_url,
+        github_login=user.github_login,
+        joined=user.created_at.strftime("%Y-%m"),
+    )
+    return Profile(user=person, projects=feed.items)

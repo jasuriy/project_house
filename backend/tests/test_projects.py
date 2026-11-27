@@ -2,6 +2,7 @@
 project page."""
 
 import uuid
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -434,3 +435,48 @@ async def test_the_owner_cannot_be_chosen_in_the_request(
 
     assert response.status_code == 422  # unknown fields are refused; the owner is the session's
     assert await row_count() == 0
+
+
+# --- profile page -------------------------------------------------------------------------------
+
+
+async def test_profile_shows_the_person_and_only_their_projects(
+    client: AsyncClient, storage: FakeStorage, reflex_repo: None
+) -> None:
+    await client.post("/api/v1/projects", json=await reflex_payload(client, storage))
+    second = {**await reflex_payload(client, storage), "name": "Second one"}
+    await client.post("/api/v1/projects", json=second)
+    async with SessionFactory() as session:  # someone else's project must not show
+        other = User(username="bob", display_name="Bob", email="bob@example.com")
+        session.add(other)
+        await session.flush()
+        session.add(
+            Project(id=uuid.uuid4(), slug="bobs", published_at=datetime.now(UTC), owner_id=other.id)
+        )
+        await session.commit()
+
+    response = await client.get("/api/v1/users/ADA")  # the address is not case-sensitive
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body["user"]) == {"username", "display_name", "avatar_url", "github_login", "joined"}
+    assert len(body["user"]["joined"]) == 7  # "YYYY-MM": the month only, not the sign-up moment
+    assert {k: body["user"][k] for k in ADA} == ADA
+    assert body["user"]["github_login"] is None
+    assert [p["slug"] for p in body["projects"]] == ["second-one", "reflex"]  # newest first
+    assert all(p["owner"] == ADA for p in body["projects"])
+    assert "ada@example.com" not in response.text
+
+
+async def test_unknown_profile_is_not_found(client: AsyncClient) -> None:
+    response = await client.get("/api/v1/users/nobody-here")
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "user_not_found"
+
+
+async def test_profile_of_someone_without_projects(client: AsyncClient) -> None:
+    body = (await client.get("/api/v1/users/ada")).json()
+
+    assert body["user"]["username"] == "ada"
+    assert body["projects"] == []

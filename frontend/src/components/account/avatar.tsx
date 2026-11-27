@@ -5,6 +5,7 @@ const SIZES = {
   24: "h-[24px] w-[24px] text-cap", // feed card footer
   36: "h-[36px] w-[36px] text-body", // header account menu
   40: "h-[40px] w-[40px] text-h", // project page byline
+  96: "h-[96px] w-[96px] text-title", // profile page
 } as const;
 
 export function Avatar({ name, src, size, className = "" }: { name: string; src: string | null; size: keyof typeof SIZES; className?: string }) {

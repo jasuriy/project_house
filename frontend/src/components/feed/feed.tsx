@@ -5,7 +5,7 @@ import { Avatar } from "@/components/account/avatar";
 import { card, Chip, primaryButton, TypeBadge } from "@/components/page/parts";
 import { LogoMark } from "@/components/ui/icons";
 import type { Catalog, ProjectCard } from "@/lib/api";
-import { labelOf } from "@/lib/catalog";
+import { fullDate, labelOf } from "@/lib/catalog";
 import { FeedVideo } from "./feed-video";
 import { StackLine } from "./stack-line";
 
@@ -116,7 +116,22 @@ export function FeedToolbar({ catalog, category, q }: { catalog: Catalog; catego
 }
 
 /** One project: first frame, name and status, description, tags, stack, author. The whole card opens the page. */
-export function ProjectCardView({ project, catalog }: { project: ProjectCard; catalog: Catalog }) {
+/**
+ * One project card. In the feed the name is an h2 and the footer names the author (a link to their
+ * profile); on a profile page the name is an h3 under the page's "Projects" and the footer shows the
+ * published date instead, since the whole page is about that person.
+ */
+export function ProjectCardView({
+  project,
+  catalog,
+  heading: Heading = "h2",
+  footer = "author",
+}: {
+  project: ProjectCard;
+  catalog: Catalog;
+  heading?: "h2" | "h3";
+  footer?: "author" | "date";
+}) {
   const icons = new Map(catalog.tech.map((t) => [t.name, t.icon]));
   const stack = [...project.languages, ...project.tools].map((name) => ({ name, icon: icons.get(name) ?? null }));
   // The card is a box: its top part is the link to the page, its footer holds the author and the
@@ -147,7 +162,7 @@ export function ProjectCardView({ project, catalog }: { project: ProjectCard; ca
         <div className="flex flex-1 flex-col gap-[12px] p-[16px] pb-[12px]">
           <div className="flex flex-col gap-[4px]">
             <div className="flex items-start justify-between gap-[12px]">
-              <h2 className="min-w-0 text-h font-semibold leading-[1.3] [overflow-wrap:anywhere]">{project.name}</h2>
+              <Heading className="min-w-0 text-h font-semibold leading-[1.3] [overflow-wrap:anywhere]">{project.name}</Heading>
               {project.status && (
                 <span className="mt-[3px] inline-flex shrink-0 items-center gap-[6px] text-cap text-muted">
                   <span aria-hidden="true" className="h-[8px] w-[8px] rounded-full bg-primary" />
@@ -165,10 +180,19 @@ export function ProjectCardView({ project, catalog }: { project: ProjectCard; ca
         </div>
       </Link>
       <div className="mx-[16px] flex items-center justify-between gap-[8px] border-t border-line py-[8px]">
-        <p className="flex min-w-0 items-center gap-[8px] text-cap text-muted">
-          <Avatar name={project.owner.display_name} src={project.owner.avatar_url} size={24} />
-          <span className="truncate">{project.owner.display_name}</span>
-        </p>
+        {footer === "author" ? (
+          <Link
+            href={`/u/${project.owner.username}`}
+            className="flex min-w-0 items-center gap-[8px] rounded-[8px] text-cap text-muted outline-none transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-primary"
+          >
+            <Avatar name={project.owner.display_name} src={project.owner.avatar_url} size={24} />
+            <span className="truncate">{project.owner.display_name}</span>
+          </Link>
+        ) : (
+          <time dateTime={project.published_at} className="text-cap text-muted">
+            {fullDate(project.published_at)}
+          </time>
+        )}
         <CardActions name={project.name ?? "this project"} />
       </div>
     </li>

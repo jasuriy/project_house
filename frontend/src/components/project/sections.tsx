@@ -155,13 +155,25 @@ export function VideoFrame({ project }: { project: Project }) {
   );
 }
 
-/** Who published the project (on the upload page: who is about to). */
-export function Byline({ owner }: { owner: Owner }) {
+/**
+ * Who published the project (on the upload page: who is about to). `link`: the name goes to their
+ * profile; left out on the upload page, where leaving the page empties the form (D24).
+ */
+export function Byline({ owner, link = false }: { owner: Owner; link?: boolean }) {
   return (
     <div className="flex items-center gap-[12px]">
       <Avatar name={owner.display_name} src={owner.avatar_url} size={40} className="shadow-[0_0_0_2px_var(--color-page),0_0_0_4px_#cfcbf6]" />
       <p className="min-w-0 text-body font-semibold leading-(--lh-cap) [overflow-wrap:anywhere]">
-        {owner.display_name}
+        {link ? (
+          <Link
+            href={`/u/${owner.username}`}
+            className="rounded-[4px] underline-offset-4 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-primary"
+          >
+            {owner.display_name}
+          </Link>
+        ) : (
+          owner.display_name
+        )}
         <small className="block text-cap font-normal text-muted">Author</small>
       </p>
     </div>

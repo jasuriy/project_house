@@ -179,3 +179,16 @@ class ProjectCard(BaseModel):
 
 class Feed(BaseModel):
     items: list[ProjectCard]
+
+
+class ProfileUser(Owner):
+    """The person on a profile page (/u/<username>): public fields only, no email, no id, and only
+    the month they joined ("2026-03"), not the moment they signed up."""
+
+    github_login: str | None
+    joined: str
+
+
+class Profile(BaseModel):
+    user: ProfileUser
+    projects: list[ProjectCard]

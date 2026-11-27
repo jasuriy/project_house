@@ -105,6 +105,12 @@ export type Me = {
 
 export type SignUp = { display_name: string; username: string; email: string; password: string };
 
+/** A profile page (/u/<username>): the person and their projects, newest first. */
+export type Profile = {
+  user: Owner & { github_login: string | null; joined: string }; // joined: "2026-03"
+  projects: ProjectCard[];
+};
+
 export type UploadTicket = { upload_url: string; key: string; headers: Record<string, string> };
 
 /** Everything sent on Render: the form plus the temporary file keys and the repository link. */

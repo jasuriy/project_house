@@ -29,12 +29,19 @@ export function techRows(project: Pick<Project, "languages" | "tools">, catalog:
   return GROUP_ORDER.filter((g) => rows.has(g)).map((group) => ({ group, items: rows.get(group)! }));
 }
 
+// Every date on the site: English, UTC, short month ("Aug 2026", "Nov 26, 2026").
 const MONTH = new Intl.DateTimeFormat("en", { month: "short", year: "numeric", timeZone: "UTC" });
+const DAY = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+/** "Mar 2026" */
+export const monthYear = (iso: string) => MONTH.format(new Date(iso));
+/** "Nov 26, 2026" */
+export const fullDate = (iso: string) => DAY.format(new Date(iso));
 
 /** "Oct 2022 – now", "Oct 2022 – Mar 2023", "Oct 2022", or null without a start date (D29 format). */
 export function timeline(project: Pick<Project, "started_on" | "finished_on" | "ongoing">): string | null {
   if (!project.started_on) return null;
-  const start = MONTH.format(new Date(project.started_on));
-  const end = project.ongoing ? "now" : project.finished_on ? MONTH.format(new Date(project.finished_on)) : null;
+  const start = monthYear(project.started_on);
+  const end = project.ongoing ? "now" : project.finished_on ? monthYear(project.finished_on) : null;
   return end ? `${start} – ${end}` : start;
 }

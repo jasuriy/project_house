@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Popover } from "@/components/ui/popover";
 import { api } from "@/lib/api";
@@ -12,6 +13,7 @@ import { Avatar } from "./avatar";
  */
 export function AccountMenu({ name, username, avatarUrl }: { name: string; username: string; avatarUrl: string | null }) {
   const [leaving, setLeaving] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const logOut = async () => {
     if (leaving) return;
@@ -30,7 +32,9 @@ export function AccountMenu({ name, username, avatarUrl }: { name: string; usern
       label="Account menu"
       align="right"
       width={240}
-      trigger={({ open, toggle, panelId }) => (
+      open={open}
+      onOpenChange={setOpen}
+      trigger={({ toggle, panelId }) => (
         <button
           type="button"
           aria-label="Account menu"
@@ -50,9 +54,17 @@ export function AccountMenu({ name, username, avatarUrl }: { name: string; usern
         </button>
       )}
     >
-      <div className="mb-[8px] border-b border-line px-[10px] pb-[12px]">
-        <p className="text-body font-semibold [overflow-wrap:anywhere]">{name}</p>
-        <p className="text-cap text-muted [overflow-wrap:anywhere]">@{username}</p>
+      {/* Your profile: the name block itself is the link (no separate "Your profile" item). It closes
+          the menu, so it is not still open when Back returns to this page. */}
+      <div className="mb-[8px] border-b border-line pb-[8px]">
+        <Link
+          href={`/u/${username}`}
+          onClick={() => setOpen(false)}
+          className="block rounded-[8px] px-[10px] pb-[4px] outline-none hover:bg-page focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-primary"
+        >
+          <span className="block text-body font-semibold [overflow-wrap:anywhere]">{name}</span>
+          <span className="block text-cap text-muted [overflow-wrap:anywhere]">@{username}</span>
+        </Link>
       </div>
       <button
         type="button"

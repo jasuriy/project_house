@@ -5,7 +5,7 @@ No business rules here; they live in service.py.
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import catalog
@@ -17,6 +17,7 @@ from app.previews import PreviewStarter, get_preview_starter, start_quietly
 from app.projects import service
 from app.projects.schemas import (
     Feed,
+    Profile,
     ProjectCreate,
     ProjectOut,
     RepoLink,
@@ -90,3 +91,14 @@ async def get_published_project(slug: str, session: Session, storage: Files) -> 
 async def get_video_links(slug: str, session: Session, storage: Files) -> VideoOut:
     """Fresh signed links, for a project page that stayed open longer than the links last."""
     return await service.get_published_video(session, storage, slug)
+
+
+# --- profile page ------------------------------------------------------------------------------
+
+
+@router.get("/users/{username}")
+async def get_profile(
+    username: Annotated[str, Path(max_length=30)], session: Session, storage: Files
+) -> Profile:
+    """A person's public profile (/u/<username>) with their projects."""
+    return await service.get_profile(session, storage, username)

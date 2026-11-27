@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dilnoza Karimova (@dilnoza) - Prostagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Design mockup of the profile page with no projects, desktop 1440. Owner view by default;
+     open with #visitor for what everyone else sees. The user also has no photo and no GitHub link,
+     so the page shows both fallbacks. Not app code. -->
+<style>
+/* Tokens: frontend/src/app/globals.css (D29). Values at 1440 are the base ones; the wide step (>=1700px) is copied too. */
+:root {
+  --page: #f5f5fa; --card: #ffffff; --line: #e6e5ef; --ink: #17162f; --ink-2: #3d3c55; --muted: #5b5a74;
+  --faint: #6e6c88; --primary: #4f46e5; --primary-strong: #4338ca; --primary-ink: #3730a3; --badge: #e9e7fd; --chip: #f1f0fa;
+  --fs-cap: 13px; --lh-cap: 20px; --fs-body: 15px; --fs-h: 17px; --fs-title: 40px;
+  --chip-h: 28px; --pc: 16px; --gc: 16px; --gs: 12px;
+}
+@media (min-width: 106.25rem) {
+  :root { --fs-cap: 15px; --lh-cap: 24px; --fs-body: 17px; --fs-h: 21px; --fs-title: 56px; --chip-h: 32px; --pc: 24px; --gc: 24px; --gs: 16px; }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--page); color: var(--ink); font-family: "Golos Text", ui-sans-serif, system-ui, sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+button { font: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* FeedHeader (feed.tsx), unchanged */
+.site-header { background: var(--card); box-shadow: 0 1px 0 var(--line); }
+.site-header__in { max-width: 1920px; margin: 0 auto; min-height: 68px; padding: 0 48px; display: grid; grid-template-columns: 1fr minmax(0, 560px) 1fr; align-items: center; gap: 24px; }
+.logo { display: inline-flex; height: 44px; align-items: center; gap: 8px; justify-self: start; font-size: 17px; font-weight: 700; }
+.search { position: relative; width: 100%; }
+.search svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search input { height: 44px; width: 100%; border-radius: 999px; border: 1px solid transparent; background: var(--page); padding: 0 18px 0 48px; font: inherit; font-size: var(--fs-body); color: var(--ink); outline: none; }
+.search input::placeholder { color: var(--faint); }
+.btn-primary { display: inline-flex; height: 40px; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; border-radius: 8px; background: var(--primary); padding: 0 16px; font-size: 13px; font-weight: 600; color: #fff; box-shadow: 0 1px 2px rgba(79,70,229,.25), 0 4px 12px rgba(79,70,229,.2); transition: background-color .15s; }
+.btn-primary:hover { background: var(--primary-strong); }
+.site-header .btn-primary { justify-self: end; }
+
+/* Page frame: same as the feed's main (48px edges, cap 1920) */
+main { max-width: 1920px; margin: 0 auto; padding: 16px 48px 48px; display: flex; flex-direction: column; }
+
+/* BackLink (back-link.tsx, D33), unchanged */
+.back { position: relative; display: flex; width: fit-content; height: 32px; align-items: center; gap: 6px; margin: -4px 0 calc(var(--gs) - 4px); border-radius: 8px; font-size: var(--fs-body); font-weight: 500; color: var(--muted); transition: color .15s; }
+.back:hover { color: var(--ink); }
+.back svg { width: 1em; height: 1em; }
+
+/* NEW: the profile head. On the page background, no card and no cover: name, handle, two facts. */
+.profile { display: flex; align-items: center; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+/* The ring is drawn 4px outside the photo; the margin puts the ring's outer edge on the page's 48px line. */
+.avatar { width: 96px; height: 96px; margin: 4px; flex-shrink: 0; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--page), 0 0 0 4px #cfcbf6; }
+.avatar--initial { display: inline-flex; align-items: center; justify-content: center; background: var(--badge); color: var(--primary-ink); font-size: var(--fs-title); font-weight: 600; line-height: 1; }
+.profile__name { font-size: var(--fs-title); line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; overflow-wrap: anywhere; text-wrap: balance; }
+.profile__handle { margin-top: 4px; font-size: var(--fs-h); line-height: 1.5; color: var(--muted); }
+.profile__facts { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; }
+.fact { display: inline-flex; height: 32px; align-items: center; gap: 8px; font-size: var(--fs-body); color: var(--muted); }
+.fact svg { flex-shrink: 0; }
+a.fact { color: var(--ink-2); font-weight: 500; border-radius: 8px; transition: color .15s; }
+a.fact:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+
+/* The feed grid and card (feed.tsx ProjectCardView), unchanged except the footer (see .card__foot) */
+.grid { margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--gc); }
+.card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--card); transition: box-shadow .15s; }
+.card:hover { box-shadow: 0 12px 32px -16px rgba(23,22,47,.28); }
+.card__link { display: flex; flex: 1; flex-direction: column; }
+.card__media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #17162f; }
+.card__media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.card:hover .card__media img { transform: scale(1.02); }
+.card__media .noposter { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; color: #9b98c4; }
+.card__body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 16px 16px 12px; }
+.card__top { display: flex; flex-direction: column; gap: 4px; }
+.card__row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.card__name { min-width: 0; font-size: var(--fs-h); font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.status { margin-top: 3px; display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--muted); }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+.card__desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--fs-body); color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge, .chip { display: inline-flex; height: var(--chip-h); align-items: center; white-space: nowrap; border-radius: 999px; padding: 0 12px; font-size: var(--fs-cap); line-height: var(--lh-cap); }
+.badge { background: var(--badge); color: var(--primary-ink); font-weight: 600; }
+.chip { background: var(--chip); color: var(--ink); }
+.stack { position: relative; }
+.stack ul { display: flex; flex-wrap: nowrap; align-items: center; gap: 0 12px; overflow: hidden; white-space: nowrap; font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--ink-2); }
+.stack li { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; }
+.stack .more { color: var(--muted); }
+.stack .measure { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; }
+/* CHANGED on the profile: the author is the page itself, so the footer shows the published date instead. */
+.card__foot { margin: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding: 8px 0; }
+.card__date { font-size: var(--fs-cap); line-height: var(--lh-cap); color: var(--muted); }
+.actions { display: flex; align-items: center; gap: 2px; }
+.icon-btn { position: relative; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 50%; color: var(--muted); transition: background-color .15s, color .15s; }
+.icon-btn:hover { background: var(--page); color: var(--ink); }
+.icon-btn:focus-visible { outline-offset: 0; }
+
+/* FeedEmpty (feed.tsx), unchanged look */
+.empty { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 64px 24px; text-align: center; border-radius: 16px; border: 1px solid var(--line); background: var(--card); }
+.empty__title { font-size: var(--fs-h); font-weight: 600; line-height: 28px; }
+.empty__text { max-width: 420px; font-size: var(--fs-body); color: var(--muted); }
+.text-link { font-size: var(--fs-body); font-weight: 500; color: var(--primary-strong); text-underline-offset: 4px; }
+.text-link:hover { text-decoration: underline; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+[data-view="owner"] .for-visitor, [data-view="visitor"] .for-owner { display: none; }
+</style>
+</head>
+<body data-view="owner">
+<header class="site-header">
+  <div class="site-header__in">
+    <a class="logo" href="/"><svg viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><rect x="1" y="1" width="13" height="13" rx="4" fill="#4F46E5"/><rect x="8" y="8" width="13" height="13" rx="4" fill="#8B5CF6" fill-opacity="0.9"/></svg>Prostagram</a>
+    <form class="search" role="search" action="/"><label for="q" class="sr-only">Search projects</label><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input id="q" name="q" type="search" maxlength="80" placeholder="Search projects or technologies"></form>
+    <a class="btn-primary" href="/new"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add project</a>
+  </div>
+</header>
+<main>
+  <a class="back" href="/"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back</a>
+
+  <section class="profile" aria-labelledby="pn">
+    <span class="avatar avatar--initial" aria-hidden="true">D</span>
+    <div>
+      <h1 id="pn" class="profile__name">Dilnoza Karimova</h1>
+      <p class="profile__handle">@dilnoza</p>
+      <ul class="profile__facts">
+        <li><span class="fact"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>Joined Nov 2026</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <h2 class="sr-only">Projects</h2>
+  <div class="empty for-owner">
+    <p class="empty__title">No projects yet</p>
+    <p class="empty__text">Add your first one: a demo video, the story and the stack on one page. It shows here and in the feed.</p>
+    <a class="btn-primary" href="/new"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add project</a>
+  </div>
+  <div class="empty for-visitor">
+    <p class="empty__title">No projects yet</p>
+    <p class="empty__text">When Dilnoza Karimova publishes a project, it shows here.</p>
+    <a class="text-link" href="/">See all projects</a>
+  </div>
+</main>
+<script>
+const setView = () => { document.body.dataset.view = location.hash === "#visitor" ? "visitor" : "owner"; };
+setView();
+addEventListener("hashchange", setView);
+</script>
+</body>
+</html>
