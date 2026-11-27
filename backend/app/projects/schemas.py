@@ -149,7 +149,8 @@ class ProjectOut(BaseModel):
 
 
 class ProjectCard(BaseModel):
-    """One project in the feed: what its card shows, with a fresh signed link to the first frame."""
+    """One project in the feed: what its card shows, with fresh signed links to the first frame and
+    to the short preview the card plays (None until the preview exists)."""
 
     slug: str
     name: str | None
@@ -160,6 +161,7 @@ class ProjectCard(BaseModel):
     languages: list[str]
     tools: list[str]
     poster_url: str | None
+    preview_url: str | None
     published_at: datetime
 
 

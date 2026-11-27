@@ -1,5 +1,8 @@
 """Stand-ins for the outside world (R2 and GitHub), so tests never use the internet."""
 
+import asyncio
+from pathlib import Path
+
 import httpx
 
 from app.github import GitHub
@@ -12,6 +15,7 @@ class FakeStorage:
     def __init__(self) -> None:
         self.files: dict[str, StoredFile] = {}
         self.deleted: list[str] = []
+        self.uploaded: dict[str, bytes] = {}  # files the backend itself wrote (upload_file)
         self.fail_deletes = False  # set True to act like R2 being unreachable
 
     def put(self, key: str, size: int, content_type: str) -> None:
@@ -29,6 +33,12 @@ class FakeStorage:
 
     async def copy(self, source: str, target: str) -> None:
         self.files[target] = self.files[source]
+
+    async def upload_file(self, path: str, key: str, content_type: str) -> None:
+        # Read now: the caller deletes its temporary file right after, as with R2.
+        data = await asyncio.to_thread(Path(path).read_bytes)
+        self.files[key] = StoredFile(size=len(data), content_type=content_type)
+        self.uploaded[key] = data
 
     async def delete(self, key: str) -> None:
         if self.fail_deletes:

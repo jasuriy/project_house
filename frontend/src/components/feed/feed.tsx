@@ -6,6 +6,7 @@ import { LogoMark } from "@/components/ui/icons";
 import type { Catalog, ProjectCard } from "@/lib/api";
 import { AUTHOR } from "@/lib/author";
 import { labelOf } from "@/lib/catalog";
+import { FeedVideo } from "./feed-video";
 import { StackLine } from "./stack-line";
 
 // The feed on the home page (Bek, 2026-11-25): a grid of project cards, newest first, with
@@ -148,6 +149,7 @@ export function ProjectCardView({ project, catalog }: { project: ProjectCard; ca
               <CirclePlay size={40} strokeWidth={1.5} aria-hidden="true" />
             </span>
           )}
+          {project.preview_url && <FeedVideo src={project.preview_url} />}
         </div>
         <div className="flex flex-1 flex-col gap-[12px] p-[16px] pb-[12px]">
           <div className="flex flex-col gap-[4px]">

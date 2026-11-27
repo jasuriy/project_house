@@ -190,6 +190,14 @@ server keeps nothing until "Render project" is pressed:
 - **Watching a video:** the bucket is private. Each project answer contains fresh download links,
   valid for one hour, so a link that leaks stops working. Seeking works because R2 answers "give
   me bytes 1000-2000" requests (verified: 206 Partial Content).
+- **Feed previews (D34):** after the row is written, Render hands the project to a separate Modal
+  function (`preview`, on an image with ffmpeg). It reads the video straight from R2 through a
+  signed link (only the first seconds are downloaded: measured 3.9 MB of a 33 MB file), makes the
+  first 6 seconds at most 480 px tall, silent, H.264, uploads it to `previews/<project id>/` and
+  stores `preview_key`. The feed card plays that copy while it is on screen. The API never encodes:
+  outside Modal the hand-off does nothing (`app/previews.py`), so local runs and tests cannot write
+  to the shared bucket. If the hand-off or the job fails, Render still succeeds and the card shows
+  its first frame; `modal run modal_app.py::backfill_previews` makes any missing previews.
 - **boto3 and async:** boto3 (the S3 library) is not async. Signing a link is pure computation and
   is fine, but checking or deleting a file is a network call. It runs in a worker thread
   (`asyncio.to_thread`), so one slow R2 call does not freeze every other request.

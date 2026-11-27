@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import catalog
 from app.db import get_session
 from app.github import GitHub, RepoSnapshot, get_github
+from app.previews import PreviewStarter, get_preview_starter, start_quietly
 from app.projects import service
 from app.projects.schemas import (
     Feed,
@@ -28,6 +29,7 @@ router = APIRouter(prefix="/api/v1")
 Session = Annotated[AsyncSession, Depends(get_session)]
 Files = Annotated[Storage, Depends(get_storage)]
 Repos = Annotated[GitHub, Depends(get_github)]
+Previews = Annotated[PreviewStarter, Depends(get_preview_starter)]
 UploadKind = Literal["video", "poster"]
 Category = Literal[tuple(catalog.CATEGORIES)]  # type: ignore[valid-type]
 
@@ -50,9 +52,11 @@ async def preview_repo(link: RepoLink, github: Repos) -> RepoSnapshot:
 
 @router.post("/projects", status_code=201)
 async def create_project(
-    data: ProjectCreate, session: Session, storage: Files, github: Repos
+    data: ProjectCreate, session: Session, storage: Files, github: Repos, previews: Previews
 ) -> ProjectOut:
-    return service.to_out(await service.create_project(session, storage, github, data), storage)
+    project = await service.create_project(session, storage, github, data)
+    await start_quietly(previews, project.id)  # the feed's short copy is made in the background
+    return service.to_out(project, storage)
 
 
 @router.get("/projects")

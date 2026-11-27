@@ -51,6 +51,8 @@ class Project(Base):
     video_size: Mapped[int | None] = mapped_column(BigInteger)
     video_duration_seconds: Mapped[float | None]
     poster_key: Mapped[str | None] = mapped_column(Text)
+    # The short, light copy the feed plays (app/previews.py); made after Render, so empty at first.
+    preview_key: Mapped[str | None] = mapped_column(Text)
 
     # GitHub repository and the preview read from it once
     repo_url: Mapped[str | None] = mapped_column(Text)

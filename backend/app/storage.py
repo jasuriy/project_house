@@ -1,8 +1,9 @@
 """File storage in Cloudflare R2 (S3-compatible API).
 
 The browser uploads and downloads files straight from R2 with short-lived signed links
-("presigned URLs"). This module only signs links and checks, copies or deletes stored files; file
-bytes never pass through the backend.
+("presigned URLs"). This module signs links and checks, copies or deletes stored files; uploaded
+file bytes never pass through the API. The one exception is the feed preview, which the preview
+job makes and uploads itself (upload_file).
 """
 
 import asyncio
@@ -31,6 +32,7 @@ class Storage(Protocol):
     def presign_get(self, key: str) -> str: ...
     async def head(self, key: str) -> StoredFile | None: ...
     async def copy(self, source: str, target: str) -> None: ...
+    async def upload_file(self, path: str, key: str, content_type: str) -> None: ...
     async def delete(self, key: str) -> None: ...
 
 
@@ -85,6 +87,17 @@ class R2Storage:
             Bucket=self.bucket,
             Key=target,
             CopySource={"Bucket": self.bucket, "Key": source},
+        )
+
+    async def upload_file(self, path: str, key: str, content_type: str) -> None:
+        # The one file the backend itself writes: the feed preview, made on the server. The content
+        # type is set explicitly; otherwise R2 serves binary/octet-stream, which Safari may refuse.
+        await asyncio.to_thread(
+            self.client.upload_file,
+            path,
+            self.bucket,
+            key,
+            ExtraArgs={"ContentType": content_type},
         )
 
     async def delete(self, key: str) -> None:

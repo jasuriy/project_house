@@ -347,6 +347,7 @@ async def test_feed_lists_newest_first_with_filters_and_search(
     assert [p["slug"] for p in feed] == ["speech-100-notes", "reflex"]  # newest first
     assert feed[1]["poster_url"].startswith("https://r2.test/download/posters/")
     assert feed[0]["poster_url"] is None
+    assert feed[0]["preview_url"] is None  # made after Render, by the preview job
     assert set(feed[1]) == {
         "slug",
         "name",
@@ -357,6 +358,7 @@ async def test_feed_lists_newest_first_with_filters_and_search(
         "languages",
         "tools",
         "poster_url",
+        "preview_url",
         "published_at",
     }
 

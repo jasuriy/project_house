@@ -81,6 +81,7 @@ export type ProjectCard = {
   languages: string[];
   tools: string[];
   poster_url: string | null;
+  preview_url: string | null; // the short, silent copy the card plays (D34); null until it is made
   published_at: string;
 };
 

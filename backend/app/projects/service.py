@@ -268,11 +268,13 @@ async def list_published(
             )
         )
     projects = (await session.scalars(query)).all()
+    signed = {"poster_url", "preview_url"}
     return Feed(
         items=[
             ProjectCard(
-                **{f: getattr(p, f) for f in ProjectCard.model_fields if f != "poster_url"},
+                **{f: getattr(p, f) for f in ProjectCard.model_fields if f not in signed},
                 poster_url=storage.presign_get(p.poster_key) if p.poster_key else None,
+                preview_url=storage.presign_get(p.preview_key) if p.preview_key else None,
             )
             for p in projects
         ]
